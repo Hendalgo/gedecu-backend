@@ -42,4 +42,11 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function country(){
+        return $this->belongsTo('App\Models\Country', 'country_id', 'id');
+    }
+    public function Role(){
+        return $this->belongsTo('App\Models\Role', 'role_id', 'id');
+    }
 }
