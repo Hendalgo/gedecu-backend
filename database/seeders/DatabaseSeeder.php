@@ -3,6 +3,10 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use App\Models\Report;
+use App\Models\Store;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -18,5 +22,14 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
+
+        $this->call(RolesSeeder::class);
+        $this->call(CurrencySeeder::class);
+        $this->call(CountriesSeeder::class);
+        $this->call(ReportsTypesSeeder::class);
+        $this->call(BankSeeder::class);
+        User::factory(50)->create();
+        Store::factory(20)->create();
+        Report::factory(100)->create();
     }
 }
