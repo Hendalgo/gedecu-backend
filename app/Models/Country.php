@@ -9,6 +9,9 @@ class Country extends Model
 {
     use HasFactory;
 
+    public function banks(){
+        return $this->hasMany('\App\Models\Bank', 'country_id');
+    }
     public function currency(){
         return $this->belongsTo('App\Models\Currency', 'currency_id', 'id');
     }

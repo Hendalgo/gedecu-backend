@@ -5,18 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Bank extends Model
+class Movement extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'name',
-        'img',
         'amount',
-        'country_id'
+        'type',
+        'bank_id'
     ];
-
-
-    public function country(){
-        return $this->belongsTo('App\Models\Country', 'country_id', 'id');
-    }
 }

@@ -10,4 +10,9 @@ class ReportType extends Model
     use HasFactory;
 
     protected $table = 'reports_types';
+
+    public function reports()
+    {
+        return $this->hasMany('App\\Models\\Report', 'type_id');
+    }
 }

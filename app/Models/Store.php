@@ -9,6 +9,13 @@ class Store extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'location',
+        'user_id',
+        'country_id'
+    ];
+
     public function country(){
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }

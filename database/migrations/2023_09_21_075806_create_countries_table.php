@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('img')->nullable();
             $table->string('shortcode');
             $table->unsignedBigInteger('currency_id');
+            $table->json('config');
             $table->foreign('currency_id')->references('id')->on('currencies');
             $table->timestamps();
         });

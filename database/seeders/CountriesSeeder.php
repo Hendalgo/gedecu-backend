@@ -18,6 +18,13 @@ class CountriesSeeder extends Seeder
         $colombia->name = 'Colombia';
         $colombia->img = '';
         $colombia->shortcode = 'CO';
+        $colombia->config = json_encode([
+            'styles' => [
+                'color' => '#FFFFFF',
+                'backgroundColor' => '#000000',
+                'borderColor' => '$FDFDFD'
+            ]
+            ]);
         $colombia->currency_id = 1;
         
         $colombia->save();
@@ -27,6 +34,13 @@ class CountriesSeeder extends Seeder
 
         $venezuela->name = 'Venezuela';
         $venezuela->img = '';
+        $venezuela->config = json_encode([
+            'styles' => [
+                'color' => '#FFFFFF',
+                'backgroundColor' => '#000000',
+                'borderColor' => '$FDFDFD'
+            ]
+            ]);
         $venezuela->shortcode = 'VE';
         $venezuela->currency_id = 2;
 
