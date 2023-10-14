@@ -19,24 +19,23 @@ class UserController extends Controller
             $until = $request->get('until');
             $search = $request->get('search');
 
-            $users = User::with('role', 'country')
-                ->when($search, function ($query, $search){
-                    $query->where('name', 'LIKE', "%{$search}%")
-                        ->orWhere('email', 'LIKE', "%{$search}%")
-                        ->orWhereHas('country', function($query) use ($search){
-                            $query->where('name', 'LIKE', "%{$search}%");
-                        })
-                        ->orWhereHas('role', function($query) use ($search){
-                            $query->where('name', 'LIKE', "%{$search}%");
-                        });
-                });
+            $users = User::when($search, function ($query, $search){
+                $query->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhereHas('country', function($query) use ($search){
+                        $query->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
+            
             if($role){
-                $users->where('role_id', "=", $role);
+                $users = $users->where('role_id', "=", $role);
             }
+            
             if ($order) {
-                $users->orderBy($order, $orderBy);
+                $users = $users->orderBy($order, $orderBy);
             }
-            return response()->json($users->paginate(10), 200);
+            
+            return response()->json($users->with('role', 'country')->paginate(10), 200);
         }
         return response()->json(['message' => 'forbiden', 401]);
     }

@@ -14,21 +14,25 @@ class BankController extends Controller
     public function index(Request $request){
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
-            $bank = Bank::with('country.currency');
+            $bank = Bank::query();
             
             $search = $request->get('search');
             $country = $request->get('country');
-            $bank->when($search, function ($query, $search){
-                $query->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('amount', 'LIKE', "%{$search}%")
-                    ->orWhereHas('country', function ($query) use ($search){
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    });
-            });
-            if ($country) {
-                $bank->where('country_id', '=', $country);
+
+            $bank = $bank->join('countries', 'banks.country_id', '=', 'countries.id')
+                ->select('banks.*', 'countries.name as country_name');
+
+            if ($search) {
+                $bank = $bank->where(function ($query) use ($search) {
+                    $query->where('banks.name', 'LIKE', "%{$search}%")
+                        ->orWhere('banks.amount', 'LIKE', "%{$search}%");
+                });
             }
-            return response()->json($bank->paginate(10), 200);
+
+            if ($country) {
+                $bank = $bank->where('banks.country_id', '=', $country);
+            }
+            return response()->json($bank->with('country.currency')->paginate(10), 200);
         }
         else{
                                                     //->select('id', 'name', 'img', 'country_id', 'created_at', 'updated_at')

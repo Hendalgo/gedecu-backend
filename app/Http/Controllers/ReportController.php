@@ -34,6 +34,16 @@ class ReportController extends Controller
         $query = Report::query();
 
         // Apply filters
+        
+        if ($search) {
+            $query = $query->join('banks', 'reports.bank_id', "=", "banks.id"  )
+                ->select('reports.*', 'banks.name as bank_name');
+            $query = $query->where('reports.amount', 'LIKE',  "%{$search}%")
+                ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
+                ->orWhere('meta_data', 'LIKE',  "%{$search}%")
+                ->orWhere('notes', 'LIKE',  "%{$search}%")
+                ->orWhere('banks.name', 'LIKE',  "%{$search}%");
+        }
         if ($order) {
             $query = $query->orderBy($order, $orderBy);
         }
@@ -57,15 +67,6 @@ class ReportController extends Controller
         }
         if ($type) {
             $query = $query->where('type_id', $type);
-        }
-        if ($search) {
-            $query = $query->join('banks', 'reports.bank_id', "=", "banks.id"  )
-                ->select('reports.*', 'banks.name as bank_name');
-            $query = $query->where('reports.amount', 'LIKE',  "%{$search}%")
-                ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
-                ->orWhere('meta_data', 'LIKE',  "%{$search}%")
-                ->orWhere('notes', 'LIKE',  "%{$search}%")
-                ->orWhere('banks.name', 'LIKE',  "%{$search}%");
         }
         
         if ($bank) {
