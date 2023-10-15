@@ -77,7 +77,7 @@ class StoreController extends Controller
             }
             $Store->save();
     
-            return response()->json(['message'=> 'exito'], 200);
+            return response()->json(['message'=> 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden', 401]);
     }
