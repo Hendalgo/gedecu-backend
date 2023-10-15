@@ -81,6 +81,7 @@ Route::middleware('auth.veryfied')->group(function (){
     * Reports Routes 
     */
     Route::get('reports', [ReportController::class, 'index']);
+    Route::get('reports/inconsistences', [ReportController::class, 'getInconsistences']);
     Route::get('reports/{id}', [ReportController::class, 'show']);
     Route::post('reports', [ReportController::class, 'store']);
     Route::put('reports/{id}', [ReportController::class, 'update']);

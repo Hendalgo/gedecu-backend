@@ -22,6 +22,8 @@ class ReportController extends Controller
         $orderBy = $request->get('order_by', 'desc');
         $duplicated = $request->get('duplicated');
         $duplicated_status = $request->get('duplicated_status');
+        
+        $date = $request->get('date');
         $since = $request->get('since');
         $until = $request->get('until');
         $inconsistence = $request->get('inconsistence_check');
@@ -55,20 +57,22 @@ class ReportController extends Controller
                 $query = $query->where('duplicated_status', 'cancel');
             }
             else{
-                $query = $query->whereNull('duplicated_status');
+                $query = $query->where('duplicated', true)->whereNull('duplicated_status');
             }
         }
         if ($since) {
-            $query = $query->whereDate('created_at', '>=', $since);
+            $query = $query->whereDate('reports.created_at', '>=', $since);
         }
 
         if ($until) {
-            $query = $query->whereDate('created_at', '<=', $until);
+            $query = $query->whereDate('reports.created_at', '<=', $until);
         }
         if ($type) {
             $query = $query->where('type_id', $type);
         }
-        
+        if ($date) {
+            $query = $query->whereDate('reports.created_at', "=",$date);
+        }
         if ($bank) {
             $query = $query->where('bank_id', $bank);
 
@@ -336,6 +340,59 @@ class ReportController extends Controller
         }
         else{
             
+        }
+    }
+    public function getInconsistences(Request $request){
+        $user = User::find(auth()->user()->id);
+        if ($user->role->id === 1) {
+            $order = $request->get('order', 'desc');
+            $order_by = $request->get('order_by', 'created_at');
+            $date = $request->get('date');
+            $until = $request->get('until');
+            $review = $request->get('reviewed');
+            //Reports Expense to group in the same array report  Depositante (id 4) and Transferencia Enviada (id 2)
+            $reportsE = Report::query();
+            //Reports Income to group in the same array report Caja fuerte (id 3) and Peticion de transferencia (id 1)
+            $reportsI = Report::query();
+            $reportsE = $reportsE->where(function ($query) {
+                $query->where('type_id', '=', '4')
+                      ->orWhere('type_id', '=', '2');
+            });
+            
+            $reportsI = $reportsI->where(function ($query) {
+                $query->where('type_id', '=', '3')
+                      ->orWhere('type_id', '=', '1');
+            });
+            
+            $reportsE = $reportsE->orderBy($order_by, $order);
+            $reportsI = $reportsI->orderBy($order_by, $order);
+            if ($date) {
+                $reportsE = $reportsE->whereDate('created_at', $date);
+                $reportsI = $reportsI->whereDate('created_at', $date);
+            }
+            if ($review === 'yes') {
+                $reportsE = $reportsE->where('inconsistence_check', true);
+                $reportsI = $reportsI->where('inconsistence_check', true);
+            }
+            else{
+                
+                $reportsE = $reportsE->where('inconsistence_check', false);
+                $reportsI = $reportsI->where('inconsistence_check', false);
+            }
+            $reportsE = $reportsE->with('bank.country.currency', 'type', 'user', 'store')->paginate(2);
+            $reportsI = $reportsI->with('bank.country.currency', 'type', 'user', 'store')->paginate(2);
+            foreach ($reportsI as $e) {
+                if ($e->type->id == 1) {
+                    $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
+                }
+            }
+            return response()->json([
+                'income' => $reportsI,
+                'expense' => $reportsE
+            ], 200);
+        }
+        else{
+            return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 422);
         }
     }
 }
