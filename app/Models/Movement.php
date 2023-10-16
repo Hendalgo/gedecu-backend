@@ -15,4 +15,7 @@ class Movement extends Model
         'bank_amount', 
         'report_id'
     ];
+    public function report(){
+        return $this->belongsTo('\App\Models\Report', 'report_id', 'id');
+    }
 }
