@@ -16,6 +16,8 @@ return new class extends Migration
             $table->double('amount');
             $table->double('bank_amount');
             $table->string('type');
+            $table->unsignedBigInteger('report_id');
+            $table->foreign('report_id')->references('id')->on('reports');
             $table->unsignedBigInteger('bank_id');
             $table->foreign('bank_id')->references('id')->on('banks');
             $table->timestamps();

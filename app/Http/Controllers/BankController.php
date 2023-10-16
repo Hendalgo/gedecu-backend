@@ -76,7 +76,7 @@ class BankController extends Controller
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function show(Request $request, $id){
         
@@ -108,7 +108,7 @@ class BankController extends Controller
     
             return response()->json(['message'=> 'exito'], 201);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function destroy($id){
         $user = User::find(auth()->user()->id);
@@ -123,7 +123,7 @@ class BankController extends Controller
                 return response()->json(['message' => 'error'], 404);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function getBanksTotal(){
         $user = User::find(auth()->user()->id);
@@ -131,36 +131,38 @@ class BankController extends Controller
             $today = Carbon::today();
             $yesterday = Carbon::yesterday();
         
-            $banks = Bank::join('countries', 'banks.country_id', '=', 'countries.id')
+            $countries = Bank::join('countries', 'banks.country_id', '=', 'countries.id')
             ->select('countries.name as country_name', 'countries.id as id_country', 'countries.shortcode', 'currencies.symbol', DB::raw('sum(banks.amount) as total'))
             ->join('currencies', 'countries.currency_id', '=', 'currencies.id')
             ->groupBy('country_name', 'id_country', 'shortcode', 'symbol')
             ->get();
                 
-            foreach ($banks as $bank) {
-                if (isset($bank->total)) {
-                    $totalToday = $bank->total;
-                } else {
-                    $totalToday = 0;
+            foreach ($countries as $country) {
+                $sum = 0;
+                
+                $banks = Bank::where('country_id', $country->id_country)->get();
+                foreach($banks as $bank){
+                    $lastMovement = Movement::where('bank_id', $bank->id)
+                        ->whereDate('created_at', '=', $today)
+                        ->orderBy('created_at', 'asc')
+                        ->first();
+                    if ($lastMovement) {
+                        $sum += $lastMovement->bank_amount;
+                    }
+                    
                 }
-        
-                $totalYesterday = Movement::where('bank_id', $bank->id)
-                    ->whereDate('created_at', $yesterday)
-                    ->sum('amount');
-        
-                if ($totalYesterday != 0) {
-                    $growthPercentage = (($totalToday - $totalYesterday) / $totalYesterday) * 100;
+                if ($sum != 0) {
+                    $growth = round((($country->total - $sum ) / $sum) * 100, 7);
                 } else {
-                    $growthPercentage = 100;
+                    $growth = $sum > 0 ? 100 : 0;
                 }
-        
-                $bank->total = $totalToday;
-                $bank->growth_percentage = $growthPercentage;
+                $country->total_before = $sum;
+                $country->growth_percentage = $growth;
             }
         
-            return response()->json([$banks], 200);
+            return response()->json([$countries], 200);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
         
     }
 }

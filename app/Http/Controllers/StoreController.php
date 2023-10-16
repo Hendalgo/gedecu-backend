@@ -57,7 +57,7 @@ class StoreController extends Controller
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function show($id){
         return response()->json(Store::find($id), 200);
@@ -79,7 +79,7 @@ class StoreController extends Controller
     
             return response()->json(['message'=> 'exito'], 201);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function destroy($id){
         $user = User::find(auth()->user()->id);
@@ -94,6 +94,6 @@ class StoreController extends Controller
                 return response()->json(['message' => 'error'], 404);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
 }

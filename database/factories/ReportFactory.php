@@ -34,7 +34,8 @@ class ReportFactory extends Factory
             'user_id' => User::inRandomOrder()->first()->id,
             'type_id' => ReportType::inRandomOrder()->first()->id,
             'bank_id' => Bank::inRandomOrder()->first()->id,
-            'store_id' => Store::inRandomOrder()->first()->id
+            'store_id' => Store::inRandomOrder()->first()->id,
+            'created_at' => fake()->date()
         ];
     }
 }

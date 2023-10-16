@@ -6,6 +6,7 @@ use App\Models\Bank;
 use App\Models\Movement;
 use App\Models\Report;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -77,73 +78,158 @@ class ReportController extends Controller
             $query = $query->where('bank_id', $bank);
 
             if ($period === 'daily') {
-                $subQuery = Movement::select('bank_id', DB::raw('DATE(created_at) as date'), DB::raw('MAX(id) as id'))
-                    ->where('bank_id', $bank)
-                    ->groupBy('bank_id', 'date');
-            
-                $query = Movement::from(DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->join('movements', 'movements.id', '=', 'sub.id')
-                    ->select('movements.*')
-                    ->orderBy('movements.created_at', 'desc');
+                $days = 7;
+                $now = Carbon::now();
+                $results = [];
+
+                $daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                for ($i = 0; $i < $days; $i++) {
+                    $date = $now->copy()->subDays($i);
+                    $incomes = Movement::whereDate('created_at', $date)
+                        ->where('type', 'income')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $expenses =  Movement::whereDate('created_at', $date)
+                        ->where('type', 'expense')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $dayOfWeek = $daysOfWeek[$date->dayOfWeek]; // Get week day in spanish
+                    $results[$dayOfWeek] = [
+                        'incomes' => $incomes,
+                        'expenses' => $expenses,
+                    ];
+                }
+                return response()->json($results);
             }
             else if ($period === 'week'){
-                $subQuery = Movement::select('bank_id', DB::raw('WEEK(created_at) as week'), DB::raw('MAX(id) as id'))
-                    ->where('bank_id', $bank)
-                    ->groupBy('bank_id', 'week');
-            
-                $query = Movement::from(DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->join('movements', 'movements.id', '=', 'sub.id')
-                    ->select('movements.*')
-                    ->orderBy('movements.created_at', 'desc');
-                
-                return response()->json($query->paginate(10), 200);
-            }
-            elseif ($period === 'month'){
-                $subQuery = Movement::select('bank_id', DB::raw('MONTH(created_at) as month'), DB::raw('MAX(id) as id'))
-                    ->where('bank_id', $bank)
-                    ->groupBy('bank_id', 'month');
-            
-                $query = Movement::from(DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->join('movements', 'movements.id', '=', 'sub.id')
-                    ->select('movements.*')
-                    ->orderBy('movements.created_at', 'desc');
+                $weeks = 8;
+                $now = Carbon::now();
+                $results = [];
+
+                for ($i = 0; $i < $weeks; $i++) {
+                    $startOfWeek = $now->copy()->subWeeks($i)->startOfWeek();
+                    $endOfWeek = $now->copy()->subWeeks($i)->endOfWeek();
+                    $incomes = Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                        ->where('type', 'income')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $expenses =  Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                        ->where('type', 'expense')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $label = $startOfWeek->format('d, M') . ' - ' . $endOfWeek->format('d, M');
+                    $results[$label] = [
+                        'incomes' => $incomes,
+                        'expenses' => $expenses,
+                    ];
+                }
+                return response()->json($results);
 
             }
+            elseif ($period === 'month'){
+                $months = 12;
+                $now = Carbon::now();
+                $results = [];
+                $monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                for ($i = 0; $i < $months; $i++) {
+                    $date = $now->copy()->subMonths($i);
+                    $startOfMonth = $now->copy()->subMonths($i)->startOfMonth();
+                    $endOfMonth = $now->copy()->subMonths($i)->endOfMonth();
+                    $incomes = Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                        ->where('type', 'income')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $expenses =  Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                        ->where('type', 'expense')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $label = $monthNames[$date->month - 1];
+                    $results[$label] = [
+                        'incomes' => $incomes,
+                        'expenses' => $expenses,
+                    ];
+                }
+                return response()->json($results);
+            }
             elseif ($period === 'quarter'){
-                $subQuery = Movement::select('bank_id', DB::raw('QUARTER(created_at) as quarter'), DB::raw('MAX(id) as id'))
-                ->where('bank_id', $bank)
-                ->groupBy('bank_id', 'quarter');
-        
-                $query = Movement::from(DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->join('movements', 'movements.id', '=', 'sub.id')
-                    ->select('movements.*')
-                    ->orderBy('movements.created_at', 'desc');
+                $trimesters = 6;
+                $now = Carbon::now();
+                $results = [];
+
+                $trimesterNames = ['Ene - Mar', 'Abr - Jun', 'Jul - Sep', 'Oct - Dic'];
+
+                for ($i = 0; $i < $trimesters; $i++) {
+                    $startOfTrimester = $now->copy()->subMonths(3*$i)->startOfMonth();
+                    $endOfTrimester = $startOfTrimester->copy()->addMonths(3)->subDay();
+                    $incomes = Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
+                        ->where('type', 'income')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $expenses =  Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
+                        ->where('type', 'expense')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    // Get the trimester name in Spanish and the year
+                    $label = $trimesterNames[$startOfTrimester->month > 9 ? 3 : ($startOfTrimester->month > 6 ? 2 : ($startOfTrimester->month > 3 ? 1 : 0))] . ', ' . $startOfTrimester->year;
+                    $results[$label] = [
+                        'incomes' => $incomes,
+                        'expenses' => $expenses,
+                    ];
+                }
+                return response()->json($results);
             }
             elseif ($period === 'semester'){ 
-                $subQuery = Movement::select('bank_id', DB::raw('YEAR(created_at) as year'), DB::raw('CEILING(MONTH(created_at)/6) as semester'), DB::raw('MAX(id) as id'))
-                ->where('bank_id', $bank)
-                ->groupBy('bank_id', 'year', 'semester');
-            
-                $query = Movement::from(DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->join('movements', 'movements.id', '=', 'sub.id')
-                    ->select('movements.*')
-                    ->orderBy('movements.created_at', 'desc');
+                $semesters = 4;
+                $now = Carbon::now();
+                $results = [];
+                
+                $semesterNames = ['Ene - Jun', 'Jul - Dic'];
+                
+                for ($i = 0; $i < $semesters; $i++) {
+                    $startOfSemester = $now->copy()->subMonths(6*$i)->startOfMonth();
+                    $endOfSemester = $startOfSemester->copy()->addMonths(6)->subDay();
+                    $incomes = Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
+                        ->where('type', 'income')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $egresos =  Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
+                        ->where('type', 'expense')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $label = $semesterNames[$startOfSemester->month > 6 ? 1 : 0] . ', ' . $startOfSemester->year; // Obtiene el nombre del semestre en español y el año
+                    $results[$label] = [
+                        'incomes' => $incomes,
+                        'egresos' => $egresos,
+                    ];
+                }
+                return response()->json(array_reverse($results, true));
+                
+                
             }
-            elseif ($period === 'year'){
-                $subQuery = Movement::select('bank_id', DB::raw('YEAR(created_at) as year'), DB::raw('MAX(id) as id'))
-                    ->where('bank_id', $bank)
-                    ->groupBy('bank_id', 'year');
-            
-                $query = Movement::from(DB::raw("({$subQuery->toSql()}) as sub"))
-                    ->mergeBindings($subQuery->getQuery())
-                    ->join('movements', 'movements.id', '=', 'sub.id')
-                    ->select('movements.*')
-                    ->orderBy('movements.created_at', 'desc');
+            elseif ($period === 'year'){$years = 5;
+                $now = Carbon::now();
+                $results = [];
+                
+                for ($i = 0; $i < $years; $i++) {
+                    $startOfYear = $now->copy()->subYears($i)->startOfYear();
+                    $endOfYear = $now->copy()->subYears($i)->endOfYear();
+                    $incomes = Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
+                        ->where('type', 'income')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    $expenses =  Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
+                        ->where('type', 'expense')
+                        ->where('bank_id', $bank)
+                        ->sum('amount');
+                    // Get the year
+                    $label = $startOfYear->year;
+                    $results[$label] = [
+                        'incomes' => $incomes,
+                        'expenses' => $expenses,
+                    ];
+                }
+                return response()->json($results);
+                
             }
             $query = $query->where('type', '=', $movement);
             return response()->json($query->paginate(10), 200);
@@ -163,7 +249,7 @@ class ReportController extends Controller
         }
         $query = $query->where('user_id', auth()->user()->id);
         
-        $query = $query->with('bank', 'reports_types')->paginate(10);
+        $query = $query->with('bank.country.currency', 'type', 'store', 'user')->paginate(10);
         foreach ($query as $e) {
             if ($e->type_id === 1) {
                 $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
@@ -262,41 +348,44 @@ class ReportController extends Controller
             if ($request->type === 1) {
                 $bank = Bank::find($request->bank_income);
 
-                $bank->amount = $bank->amount + abs($request->amount);
-                
-                $bank->save(); 
                 Movement::create([
                     'amount' => $request->amount,
                     'bank_amount' => $bank->amount,
                     'bank_id' => $bank->id,
+                    'report_id' => $report->id,
                     'type' => 'income'
                 ]);
+                $bank->amount = $bank->amount + abs($request->amount);
+                
+                $bank->save(); 
             }
             else if ($request->type === 2 || $request->type === 7 || $request->type === 8){
                 $bank = Bank::find($request->bank);
 
+                Movement::create([
+                    'amount' => $request->amount,
+                    'bank_amount' => $bank->amount,
+                    'bank_id' => $bank->id,
+                    'report_id' => $report->id,
+                    'type' => 'expense'
+                ]);
                 $bank->amount = $bank->amount - abs($request->amount);
                 
                 $bank->save(); 
+            }
+            else if ($request->type === 6){
+                $bank = Bank::find($request->bank);
+
                 Movement::create([
                     'amount' => $request->amount,
                     'bank_amount' => $bank->amount,
                     'bank_id' => $bank->id,
-                    'type' => 'expense'
+                    'report_id' => $report->id,
+                    'type' => 'income'
                 ]);
-            }
-            else if ($request->type === 2){
-                $bank = Bank::find($request->bank);
-
                 $bank->amount = $bank->amount + abs($request->amount);
                 
                 $bank->save(); 
-                Movement::create([
-                    'amount' => $request->amount,
-                    'bank_amount' => $bank->amount,
-                    'bank_id' => $bank->id,
-                    'type' => 'income'
-                ]);
             }
             return response()->json(['message' => 'exito'], 201);
         }
@@ -306,28 +395,31 @@ class ReportController extends Controller
     }
     public function update (Request $request, $id){
 
-        $validateRequest = $request->validate([
-            'duplicated_status' => [
-                Rule::in(['done', 'cancel'])
-            ],
-            'inconsistence_check' =>'boolean'
-        ]);
-
-        $report = Report::find($id);
-        if (isset($request->inconsistence_check)) {
-            $report->inconsistence_check = $request->inconsistence_check;
-
+        $currentUser = User::find(auth()->user()->id);
+        if ($currentUser->role->id === 1) {
+            $validateRequest = $request->validate([
+                'duplicated_status' => [
+                    Rule::in(['done', 'cancel'])
+                ],
+                'inconsistence_check' =>'boolean'
+            ]);
+    
+            $report = Report::find($id);
+            if (isset($request->inconsistence_check)) {
+                $report->inconsistence_check = $request->inconsistence_check;
+    
+                $report->save();
+    
+                return response()->json(['message' => 'Exito'], 201);
+            }
+            
+            $report->duplicated_status = $request->duplicated_status;
+    
             $report->save();
-
+            
             return response()->json(['message' => 'Exito'], 201);
         }
-        
-        $report->duplicated_status = $request->duplicated_status;
-
-        $report->save();
-        
-        return response()->json(['message' => 'Exito'], 201);
-        
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function destroy(Request $request, $id){
         $validateRequest = $request->validate([

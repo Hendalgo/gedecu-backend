@@ -31,5 +31,6 @@ class DatabaseSeeder extends Seeder
         User::factory(50)->create();
         Store::factory(20)->create();
         Report::factory(100)->create();
+        /* $this->call(UserSeeder::class); */
     }
 }

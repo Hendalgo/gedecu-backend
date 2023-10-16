@@ -37,7 +37,7 @@ class UserController extends Controller
             
             return response()->json($users->with('role', 'country')->paginate(10), 200);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function create(){
     }
@@ -85,14 +85,14 @@ class UserController extends Controller
                 return response()->json(['error'=> 'Hubo un problema al crear el usuario'], 500);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function show($id){
         $currentUser = User::find(auth()->user()->id);
         if ($currentUser->role->id === 1) {
             return response()->json(User::find($id), 200);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function update(Request $request, $id){
         $currentUser = User::find(auth()->user()->id);
@@ -134,7 +134,7 @@ class UserController extends Controller
     
             return response()->json(['message'=> 'exito'], 201);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
 
     }
     public function destroy($id){
@@ -150,7 +150,7 @@ class UserController extends Controller
                 return response()->json(['message' => 'error'], 404);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function getUserRoles(){
         $roles = Role::withCount(['users as count'])->get();
