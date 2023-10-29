@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Bank;
+use App\Models\BankAccount;
 use App\Models\ReportType;
 use App\Models\Store;
 use App\Models\User;
@@ -33,7 +34,7 @@ class ReportFactory extends Factory
             'notes' => fake()->paragraph(),
             'user_id' => User::inRandomOrder()->first()->id,
             'type_id' => ReportType::inRandomOrder()->first()->id,
-            'bank_id' => Bank::inRandomOrder()->first()->id,
+            'bank_account_id' => BankAccount::inRandomOrder()->first()->id,
             'store_id' => Store::inRandomOrder()->first()->id,
             'created_at' => fake()->date()
         ];

@@ -15,8 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('img')->nullable();
-            $table->double('amount');
-            $table->json('config')->nullable();
+            $table->json('meta_data')->nullable();
             $table->unsignedBigInteger('country_id');
             $table->foreign('country_id')->references('id')->on('countries');
             $table->timestamps();

@@ -16,6 +16,7 @@ class ReportsTypesSeeder extends Seeder
         $peticion = new ReportType();
 
         $peticion->name = 'Petición transferencia';
+        $peticion->type = 'income';
         $peticion->config = json_encode([
             'styles' => [
                 'borderColor' => '#9EC5FE',
@@ -29,6 +30,7 @@ class ReportsTypesSeeder extends Seeder
         $transfer_send = new ReportType();
 
         $transfer_send->name = 'Transferencia enviada';
+        $transfer_send->type = 'expense';
         $transfer_send->config = json_encode([
             'styles' => [
                 'borderColor' => '#9EEAF9',
@@ -40,6 +42,7 @@ class ReportsTypesSeeder extends Seeder
 
         $caja =  new ReportType();
         $caja->name = 'Caja fuerte';
+        $caja->type = 'income';
         $caja->config = json_encode([
             'styles' => [
                 'borderColor' => '#C29FFA',
@@ -52,6 +55,7 @@ class ReportsTypesSeeder extends Seeder
 
         $deposit = new ReportType();
         $deposit->name = 'Depositante';
+        $deposit->type = 'expense';
         $deposit->config = json_encode([
             'styles' => [
                 'borderColor' => '#EFADCE',
@@ -64,6 +68,7 @@ class ReportsTypesSeeder extends Seeder
 
         $corresponsal = new ReportType();
         $corresponsal->name = 'Corresponsal';
+        $corresponsal->type = 'neutro';
         $corresponsal->config = json_encode([
             'styles' => [
                 'borderColor' => '#FECBA1',
@@ -76,6 +81,7 @@ class ReportsTypesSeeder extends Seeder
 
         $ingreso = new ReportType();
         $ingreso->name = 'Ingreso';
+        $ingreso->type = 'income';
         $ingreso->config = json_encode([
             'styles' => [
                 'borderColor' => '#A3CFBB',
@@ -88,6 +94,7 @@ class ReportsTypesSeeder extends Seeder
 
         $egreso = new ReportType();
         $egreso->name = 'Egreso';
+        $egreso->type = 'expense';
         $egreso->config = json_encode([
             'styles' => [
                 'borderColor' => '#F1AEB5',
@@ -100,6 +107,7 @@ class ReportsTypesSeeder extends Seeder
 
         $nomina = new ReportType();
         $nomina->name = 'Nomina';
+        $nomina->type = 'expense';
         $nomina->config = json_encode([
             'styles' => [
                 'borderColor' => '#DEE2E6',

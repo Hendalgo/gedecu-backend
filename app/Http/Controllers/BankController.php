@@ -46,13 +46,10 @@ class BankController extends Controller
         if ($user->role->id === 1) {
             $message = [
                 'name.required' => 'El nombre es requerido',
-                'amount.required' => 'El monto es requerido',
-                'amount.numeric' => 'El monto debe ser un valor numérico',
                 'country.required' => 'El país es requerido',
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'amount'=> 'required|numeric',
                 'image'=> 'image',
                 'country_id' => 'required|exists:countries,id'
             ], $message);
@@ -62,7 +59,7 @@ class BankController extends Controller
                 $request->image->move(public_path('images'), $imageName);
                 $validatedData['img'] = asset('images/'.$imageName);
             }
-            $validatedData['config'] = json_encode([
+            $validatedData['meta_data'] = json_encode([
                 'styles' =>[]
             ]);
             print_r($validatedData);

@@ -11,7 +11,7 @@ class Bank extends Model
     protected $fillable = [
         'name',
         'img',
-        'amount',
+        'meta_data',
         'country_id'
     ];
 

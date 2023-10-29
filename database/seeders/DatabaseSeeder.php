@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call(BankSeeder::class);
         User::factory(50)->create();
         Store::factory(20)->create();
+        $this->call(BankAccountSeeder::class);
         Report::factory(100)->create();
         /* $this->call(UserSeeder::class); */
     }
