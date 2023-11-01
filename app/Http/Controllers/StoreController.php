@@ -27,7 +27,7 @@ class StoreController extends Controller
                 });
             });
 
-        return response()->json($store->paginate(10), 200);  
+        return response()->json($store->where('delete', false)->paginate(10), 200);  
     }
     public function create(){
     }
@@ -85,14 +85,11 @@ class StoreController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $Store = Store::find($id);
-
-            if ($Store) {
-                $Store->delete();
-                return response()->json(['message' => 'exito'], 200);
-            }
-            else{
-                return response()->json(['message' => 'error'], 404);
-            }
+            
+            $Store->delete = true;
+            $Store->save();
+    
+            return response()->json(['message'=> 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }

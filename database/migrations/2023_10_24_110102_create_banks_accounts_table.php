@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->double('balance');
+            $table->string('identifier');
             $table->unsignedBigInteger('bank_id');
             $table->foreign('bank_id')->references('id')->on('banks');
-            $table->json('meta_data');
+            $table->json('meta_data')->default(json_encode([]));
+            
+            $table->boolean('delete')->default(false);
             $table->timestamps();
         });
     }

@@ -8,7 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Country extends Model
 {
     use HasFactory;
-
+    protected $fillable = [
+        "name",
+        "shortcode",
+        "currency_id",
+        "config"
+    ];
     public function banks(){
         return $this->hasMany('\App\Models\Bank', 'country_id');
     }

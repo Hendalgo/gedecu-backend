@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->string('type');
             $table->json('config');
+            $table->boolean('delete')->default(false);
             $table->timestamps();
         });
     }

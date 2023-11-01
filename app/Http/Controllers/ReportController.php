@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bank;
+use App\Models\BankAccount;
 use App\Models\Movement;
 use App\Models\Report;
+use App\Models\ReportType;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -39,13 +41,16 @@ class ReportController extends Controller
         // Apply filters
         
         if ($search) {
-            $query = $query->join('banks', 'reports.bank_id', "=", "banks.id"  )
+            $query = $query->join('banks_accounts', 'reports.bank_account_id', "=", "banks_accounts.id"  )
+                ->join('banks', 'banks_accounts.bank_id', "=", "banks.id")
+                ->join('users', 'reports.user_id', "=", 'users.id')
                 ->select('reports.*', 'banks.name as bank_name');
             $query = $query->where('reports.amount', 'LIKE',  "%{$search}%")
                 ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
-                ->orWhere('meta_data', 'LIKE',  "%{$search}%")
+                ->orWhere('reports.meta_data', 'LIKE',  "%{$search}%")
                 ->orWhere('notes', 'LIKE',  "%{$search}%")
-                ->orWhere('banks.name', 'LIKE',  "%{$search}%");
+                ->orWhere('banks.name', 'LIKE',  "%{$search}%")
+                ->orWhere('users.name', 'LIKE',  "%{$search}%");
         }
         if ($order) {
             $query = $query->orderBy($order, $orderBy);
@@ -81,18 +86,21 @@ class ReportController extends Controller
                 $days = 7;
                 $now = Carbon::now();
                 $results = [];
-
                 $daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                 if ($currentUser->role->id === 1) {
                     for ($i = 0; $i < $days; $i++) {
                         $date = $now->copy()->subDays($i);
                         $incomes = Movement::whereDate('created_at', $date)
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $expenses =  Movement::whereDate('created_at', $date)
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $dayOfWeek = $daysOfWeek[$date->dayOfWeek]; // Get week day in spanish
                         $results[$dayOfWeek] = [
@@ -106,14 +114,18 @@ class ReportController extends Controller
                         $date = $now->copy()->subDays($i);
                         $incomes = Movement::whereDate('created_at', $date)
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         $expenses =  Movement::whereDate('created_at', $date)
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
@@ -126,6 +138,7 @@ class ReportController extends Controller
                     }
                 }
                 return response()->json($results);
+
             }
             else if ($period === 'week'){
                 $weeks = 8;
@@ -407,9 +420,9 @@ class ReportController extends Controller
             if ($inconsistence === 'check'){
                 $query = $query->where('inconsistence_check', true);
             }
-            $query = $query->with('bank.country.currency', 'type', 'store', 'user')->paginate(10);
+            $query = $query->with('bank_account.bank.country.currency', 'type', 'store', 'user')->paginate(10);
             foreach ($query as $e) {
-                if ($e->type_id === 1) {
+                if (json_decode($e->meta_data)->bank_income !== null) {
                     $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
                 }
             }
@@ -417,9 +430,9 @@ class ReportController extends Controller
         }
         $query = $query->where('user_id', auth()->user()->id);
         
-        $query = $query->with('bank.country.currency', 'type', 'store', 'user')->paginate(10);
+        $query = $query->with('bank_account.bank.country.currency', 'type', 'store', 'user')->paginate(10);
         foreach ($query as $e) {
-            if ($e->type_id === 1) {
+            if (json_decode($e->meta_data)->bank_income !== null) {
                 $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
             }
         }
@@ -451,108 +464,86 @@ class ReportController extends Controller
             'duplicated' => 'required|boolean',
             'rate' => [
                 'numeric',
-                Rule::requiredIf(($request->type === 1 )|| ($request->type === 2 ))
+                Rule::requiredIf(
+                    function () use ($request){
+                        $reportType = ReportType::find($request->type);
+                        if ($reportType) {
+                            if (($reportType->type === 'income') || ($reportType->type === 'expense')) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                )
             ],
             'bank_income' => [
-                Rule::requiredIf($request->type === 1),
-                'exists:banks,id'
+                Rule::requiredIf(function () use ($request){
+                    $reportType = ReportType::find($request->type);
+                    if ($reportType) {
+                        if (($reportType->type === 'income') || ($reportType->type === 'expense')) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }),
+                'exists:banks_accounts,id'
             ], 
             'store' => 'required|exists:stores,id',
             'received_from' => 'string',
             'payment_reference' => 'string',
-            'notes' => 'string',
             'type' => 'required|exists:reports_types,id',
-            'bank' => 'required|exists:banks,id'
+            'bank' => 'required|exists:banks_accounts,id'
         ], $message);
         $validateRequest['inconsistence_check'] = false;
         $report = false;
-        if ($request->type === 1) {
-            $report =  Report::create([
-                'amount'=> $request->amount,
-                'duplicated' => $request->duplicated,
-                'store_id' => $request->store,
-                'notes' => $request->notes,
-                'type_id' => $request->type,
-                'bank_id' => $request->bank,
-                'inconsistence_check' => false,
-                'user_id' => $currentUser->id,
-                'meta_data' => json_encode([
-                    'rate'  => $request->rate,
-                    'bank_income' => $request->bank_income
-                ])
-            ], $message);
-        }
-        else if($request->type === 2){
-            $report =  Report::create([
-                'amount'=> $request->amount,
-                'duplicated' => $request->duplicated,
-                'store_id' => $request->store,
-                'notes' => $request->notes,
-                'type_id' => $request->type,
-                'bank_id' => $request->bank,
-                'payment_reference' => $request->payment_reference,
-                'inconsistence_check' => false,
-                'user_id' => $currentUser->id,
-                'meta_data' => json_encode([
-                    'rate'  => $request->rate
-                ])
-            ], $message);
-        }
-        else{
-            $report =  Report::create([
-                'amount'=> $request->amount,
-                'duplicated' => $request->duplicated,
-                'store_id' => $request->store,
-                'notes' => $request->notes,
-                'type_id' => $request->type,
-                'bank_id' => $request->bank,
-                'inconsistence_check' => false,
-                'user_id' => $currentUser->id,
-                'meta_data' => json_encode([])
-            ]);
-        }
+        $report =  Report::create([
+            'amount'=> $request->amount,
+            'duplicated' => $request->duplicated,
+            'store_id' => $request->store,
+            'notes' => $request->notes,
+            'type_id' => $request->type,
+            'bank_account_id' => $request->bank,
+            'inconsistence_check' => false,
+            'user_id' => $currentUser->id,
+            'meta_data' => json_encode([
+                'rate'  => $request->rate,
+                'bank_income' => $request->bank_income
+            ])
+        ]);
         
         if ($report) {
-            if ($request->type === 1) {
-                $bank = Bank::find($request->bank_income);
+            $reportType = ReportType::find($request->type);
+            if ($reportType->type === "income") {
+                $bank = BankAccount::find($request->bank);
 
                 Movement::create([
                     'amount' => $request->amount,
-                    'bank_amount' => $bank->amount,
-                    'bank_id' => $bank->id,
+                    'bank_account_amount' => $bank->balance,
+                    'bank_account_id' => $bank->id,
                     'report_id' => $report->id,
                     'type' => 'income'
                 ]);
-                $bank->amount = $bank->amount + abs($request->amount);
-                
+                $bank->balance = $bank->balance + abs($request->amount);
+                if ($request->duplicated) {
+                    $bank->balance = $bank->balance + abs($request->amount);
+                }
                 $bank->save(); 
             }
-            else if ($request->type === 2 || $request->type === 7 || $request->type === 8){
-                $bank = Bank::find($request->bank);
+            else if ($reportType->type === "expense"){
+                $bank = BankAccount::find($request->bank);
 
                 Movement::create([
                     'amount' => $request->amount,
-                    'bank_amount' => $bank->amount,
-                    'bank_id' => $bank->id,
+                    'bank_account_amount' => $bank->balance,
+                    'bank_account_id' => $bank->id,
                     'report_id' => $report->id,
                     'type' => 'expense'
                 ]);
-                $bank->amount = $bank->amount - abs($request->amount);
+                $bank->balance = $bank->balance - abs($request->amount);
                 
-                $bank->save(); 
-            }
-            else if ($request->type === 6){
-                $bank = Bank::find($request->bank);
-
-                Movement::create([
-                    'amount' => $request->amount,
-                    'bank_amount' => $bank->amount,
-                    'bank_id' => $bank->id,
-                    'report_id' => $report->id,
-                    'type' => 'income'
-                ]);
-                $bank->amount = $bank->amount + abs($request->amount);
-                
+                if ($request->duplicated) {
+                    $bank->balance = $bank->balance - abs($request->amount);
+                }
                 $bank->save(); 
             }
             return response()->json(['message' => 'exito'], 201);
@@ -611,18 +602,13 @@ class ReportController extends Controller
             $until = $request->get('until');
             $review = $request->get('reviewed');
             //Reports Expense to group in the same array report  Depositante (id 4) and Transferencia Enviada (id 2)
-            $reportsE = Report::query();
+            $reportsE = Report::query()
+                ->join('reports_types', 'reports.type_id', '=', 'reports_types.id')
+                ->select('reports.*', 'reports_types.name as report_name', 'reports_types.type as operation_type');
             //Reports Income to group in the same array report Caja fuerte (id 3) and Peticion de transferencia (id 1)
-            $reportsI = Report::query();
-            $reportsE = $reportsE->where(function ($query) {
-                $query->where('type_id', '=', '4')
-                      ->orWhere('type_id', '=', '2');
-            });
-            
-            $reportsI = $reportsI->where(function ($query) {
-                $query->where('type_id', '=', '3')
-                      ->orWhere('type_id', '=', '1');
-            });
+            $reportsI = Report::query()
+                ->join('reports_types', 'reports.type_id', '=', 'reports_types.id')
+                ->select('reports.*', 'reports_types.name as report_name', 'reports_types.type as operation_type');
             
             $reportsE = $reportsE->orderBy($order_by, $order);
             $reportsI = $reportsI->orderBy($order_by, $order);
@@ -639,13 +625,12 @@ class ReportController extends Controller
                 $reportsE = $reportsE->where('inconsistence_check', false);
                 $reportsI = $reportsI->where('inconsistence_check', false);
             }
-            $reportsE = $reportsE->with('bank.country.currency', 'type', 'user', 'store')->paginate(2);
-            $reportsI = $reportsI->with('bank.country.currency', 'type', 'user', 'store')->paginate(2);
-            foreach ($reportsI as $e) {
-                if ($e->type->id == 1) {
-                    $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
-                }
-            }
+            $reportsE = $reportsE
+                ->havingRaw('operation_type LIKE ?', ["expense"])
+                ->with('bank_account.bank.country.currency', 'type', 'user', 'store')->paginate(2);
+            $reportsI = $reportsI
+                ->havingRaw('operation_type LIKE ?', ["income"])
+                ->with('bank_account.bank.country.currency', 'type', 'user', 'store')->paginate(2);
             return response()->json([
                 'income' => $reportsI,
                 'expense' => $reportsE

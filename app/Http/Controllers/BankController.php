@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bank;
+use App\Models\BankAccount;
 use App\Models\Movement;
 use App\Models\User;
 use Carbon\Carbon;
@@ -14,28 +15,32 @@ class BankController extends Controller
     public function index(Request $request){
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
-            $bank = Bank::query();
-            
-            $search = $request->get('search');
-            $country = $request->get('country');
 
-            $bank = $bank->join('countries', 'banks.country_id', '=', 'countries.id')
-                ->select('banks.*', 'countries.name as country_name');
+            $search = $request->get("search"); 
+            $country = $request->get("country");
+            
+            $bank = Bank::query()
+                ->select("banks.id", "banks.name", "banks.meta_data", "banks.country_id")
+                ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as amount"))
+                ->leftJoin("banks_accounts", function($join) {
+                    $join->on("banks.id", "=", "banks_accounts.bank_id")
+                        ->where('banks_accounts.delete', false);
+                })
+                ->groupBy("banks.id", "banks.name", "banks.meta_data", "banks.country_id");
 
             if ($search) {
-                $bank = $bank->where(function ($query) use ($search) {
-                    $query->where('banks.name', 'LIKE', "%{$search}%")
-                        ->orWhere('banks.amount', 'LIKE', "%{$search}%");
-                });
+                $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
             }
 
             if ($country) {
-                $bank = $bank->where('banks.country_id', '=', $country);
+                $bank = $bank->where("banks.country_id", "=", $country);
             }
-            return response()->json($bank->with('country.currency')->paginate(10), 200);
+
+            $bank = $bank->with("country.currency");
+
+            return response()->json($bank->paginate(10), 200);
         }
         else{
-                                                    //->select('id', 'name', 'img', 'country_id', 'created_at', 'updated_at')
             return response()->json(Bank::with('country.currency')->paginate(10), 200);
         }
     }
@@ -93,7 +98,6 @@ class BankController extends Controller
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'amount'=> 'required|numeric',
                 'img'=> 'image',
                 'country_id' => 'required|exists:countries,id'
             ], $message);
@@ -126,20 +130,15 @@ class BankController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $today = Carbon::today();
-            $yesterday = Carbon::yesterday();
         
-            $countries = Bank::join('countries', 'banks.country_id', '=', 'countries.id')
-            ->select('countries.name as country_name', 'countries.id as id_country', 'countries.shortcode', 'currencies.symbol', DB::raw('sum(banks.amount) as total'))
-            ->join('currencies', 'countries.currency_id', '=', 'currencies.id')
-            ->groupBy('country_name', 'id_country', 'shortcode', 'symbol')
-            ->get();
+            $countries = Bank::join("countries", "banks.country_id", "=", "countries.id") ->join("banks_accounts", "banks.id", "=", "banks_accounts.bank_id") ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.symbol", DB::raw("sum(banks_accounts.balance) as total")) ->join("currencies", "countries.currency_id", "=", "currencies.id") ->groupBy("country_name", "id_country", "shortcode", "symbol") ->get();
                 
             foreach ($countries as $country) {
                 $sum = 0;
-                
-                $banks = Bank::where('country_id', $country->id_country)->get();
-                foreach($banks as $bank){
-                    $lastMovement = Movement::where('bank_id', $bank->id)
+
+                $bankIds = Bank::where("country_id", $country->id_country)->pluck("id"); $bankAccounts = BankAccount::whereIn("bank_id", $bankIds)->get();
+                foreach($bankAccounts as $bankAccount){
+                    $lastMovement = Movement::where('bank_account_id', $bankAccount->id)
                         ->whereDate('created_at', '=', $today)
                         ->orderBy('created_at', 'asc')
                         ->first();

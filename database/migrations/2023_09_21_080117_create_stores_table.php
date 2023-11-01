@@ -22,6 +22,8 @@ return new class extends Migration
             
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
+            
+            $table->boolean('delete')->default(false);
             $table->timestamps();
         });
     }

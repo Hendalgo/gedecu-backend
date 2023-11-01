@@ -11,8 +11,8 @@ class Movement extends Model
     protected $fillable = [
         'amount',
         'type',
-        'bank_id',
-        'bank_amount', 
+        'bank_account_id',
+        'bank_account_amount', 
         'report_id'
     ];
     public function report(){

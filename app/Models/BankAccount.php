@@ -15,11 +15,12 @@ class BankAccount extends Model
         "account_number",
         "balance",
         "bank_id",
-        "meta_data"
+        "meta_data",
+        "identifier"
     ];
 
     
-    public function report(){
+    public function bank(){
         return $this->belongsTo('\App\Models\Bank', 'bank_id', 'id');
     }
 }

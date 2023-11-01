@@ -18,6 +18,7 @@ class BankAccountSeeder extends Seeder
         $cash->name = 'Efectivo';
         $cash->balance = 0;
         $cash->bank_id = 1;
+        $cash->identifier = 158481878718718718;
         $cash->meta_data = json_encode([]);
         $cash->save();
         
@@ -26,6 +27,7 @@ class BankAccountSeeder extends Seeder
         $cash2->name = 'Efectivo';
         $cash2->balance = 0;
         $cash2->bank_id = 2;
+        $cash2->identifier = 158481878718718718;
         $cash2->meta_data = json_encode([]);
 
         $cash2->save();

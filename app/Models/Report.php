@@ -21,7 +21,7 @@ class Report extends Model
         'user_id',
         'store_id',
         'type_id',
-        'bank_id'
+        'bank_account_id'
     ];
 
     public function user(){
@@ -30,8 +30,8 @@ class Report extends Model
     public function type(){
         return $this->belongsTo('App\Models\ReportType', 'type_id', 'id');
     }
-    public function bank(){
-        return $this->belongsTo('App\Models\Bank', 'bank_id', 'id');
+    public function bank_account(){
+        return $this->belongsTo('App\Models\BankAccount', 'bank_account_id', 'id');
     }
     public function store(){
         return $this->belongsTo('App\Models\Store', 'store_id', 'id');

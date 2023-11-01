@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CurrencyController;
@@ -44,6 +45,13 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::get('banks/{id}', [BankController::class, 'show']);
     Route::put('banks/{id}', [BankController::class, 'update']);
     Route::delete('banks/{id}', [BankController::class, 'destroy']);
+    /**
+     * Banks Accounts Routes
+     */
+    Route::get('bank-accounts', [BankAccountController::class, 'index']);
+    Route::post('bank-accounts', [BankAccountController::class, 'store']);
+    Route::put('bank-accounts/{id}', [BankAccountController::class, 'update']);
+    Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy']);
     /*
         Users routes
     */ 

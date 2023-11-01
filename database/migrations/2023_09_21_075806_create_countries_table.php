@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('currency_id');
             $table->json('config');
             $table->foreign('currency_id')->references('id')->on('currencies');
+            $table->boolean('delete')->default(false);
             $table->timestamps();
         });
     }

@@ -38,6 +38,7 @@ return new class extends Migration
             $table->unsignedBigInteger('bank_account_id');
             $table->foreign('bank_account_id')->references('id')->on('banks_accounts');
             
+            $table->boolean('delete')->default(false);
             $table->timestamps();
         });
     }
