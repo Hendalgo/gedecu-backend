@@ -21,12 +21,12 @@ class CountryController extends Controller
         if ($user->role->id === 1) {
             
             $search = $request->get("search"); 
-            $countries = Bank::query()
-                ->join("countries", "banks.country_id", "=", "countries.id")
+            $countries = Country::query()
+                ->leftJoin("banks as b1", "b1.country_id", "=", "countries.id") // Cambia 'banks' por 'b1'
                 ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.symbol", 'currencies.name as currency_name', "currencies.shortcode as currency_shortcode")
                 ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as total"))
                 ->leftJoin("banks_accounts", function($join) {
-                    $join->on("banks.id", "=", "banks_accounts.bank_id");
+                    $join->on("b1.id", "=", "banks_accounts.bank_id"); // Cambia 'banks.id' por 'b1.id'
                 })
                 ->join("currencies", "countries.currency_id", "=", "currencies.id")
                 ->groupBy("country_name", "id_country", "shortcode", "symbol", "currency_name", "currency_shortcode")->where("countries.delete", false);
@@ -36,8 +36,9 @@ class CountryController extends Controller
                     ->orWhere("currencies.name", "LIKE", "%{$search}%")
                     ->orWhere("currencies.shortcode", "LIKE", "%{$search}%");
             }
-            $countries = $countries->paginate(10);
+            $countries = $countries->where("countries.delete", false)->paginate(10);
             return response()->json([$countries], 200);
+
         }
     }
     public function store(Request $request){
@@ -149,6 +150,6 @@ class CountryController extends Controller
         return response()->json(['message' => 'forbiden', 401]);
     }
     public function getBanksCount(){
-        return response()->json(Country::withCount(['banks as count'])->get(), 200);
+        return response()->json(Country::where('delete', false)->withCount(['banks as count'])->get(), 200);
     }
 }

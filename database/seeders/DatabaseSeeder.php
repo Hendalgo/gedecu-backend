@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Models\Movement;
 use App\Models\Report;
 use App\Models\Store;
 use App\Models\User;
@@ -32,6 +33,7 @@ class DatabaseSeeder extends Seeder
         Store::factory(20)->create();
         $this->call(BankAccountSeeder::class);
         Report::factory(100)->create();
+        Movement::factory(100)->create();
         /* $this->call(UserSeeder::class); */
     }
 }

@@ -131,7 +131,7 @@ class BankController extends Controller
         if ($user->role->id === 1) {
             $today = Carbon::today();
         
-            $countries = Bank::join("countries", "banks.country_id", "=", "countries.id") ->join("banks_accounts", "banks.id", "=", "banks_accounts.bank_id") ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.symbol", DB::raw("sum(banks_accounts.balance) as total")) ->join("currencies", "countries.currency_id", "=", "currencies.id") ->groupBy("country_name", "id_country", "shortcode", "symbol") ->get();
+            $countries = Bank::join("countries", "banks.country_id", "=", "countries.id") ->join("banks_accounts", "banks.id", "=", "banks_accounts.bank_id") ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.symbol", DB::raw("sum(banks_accounts.balance) as total")) ->join("currencies", "countries.currency_id", "=", "currencies.id") ->groupBy("country_name", "id_country", "shortcode", "symbol")->where('banks_accounts.delete',false) ->get();
                 
             foreach ($countries as $country) {
                 $sum = 0;

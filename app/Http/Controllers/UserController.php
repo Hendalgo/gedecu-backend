@@ -12,25 +12,23 @@ class UserController extends Controller
     public function index(Request $request){
         $currentUser = User::find(auth()->user()->id);
         if ($currentUser->role->id === 1) {
-            $order = $request->get('order');
+            $order = $request->get('order', 'created_at');
             $orderBy = $request->get('order_by', 'desc');
             $role = $request->get('role');
             $since = $request->get('since');
             $until = $request->get('until');
             $search = $request->get('search');
-
-            $users = User::when($search, function ($query, $search){
-                $query->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhereHas('country', function($query) use ($search){
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    });
-            });
-            
+            $users = User::query();
+            if ($search) {
+                $users = $users->join("countries", "users.country_id", "=", "countries.id")
+                    ->select("users.*", "countries.name as country_name")
+                    ->where('users.name', 'LIKE', "%{$search}%")
+                    ->orWhere('users.email', 'LIKE', "%{$search}%")
+                    ->orWhere('countries.name', 'LIKE', "%{$search}%");
+            }
             if($role){
                 $users = $users->where('role_id', "=", $role);
             }
-            
             if ($order) {
                 $users = $users->orderBy($order, $orderBy);
             }

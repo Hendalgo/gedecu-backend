@@ -20,23 +20,35 @@ class ReportFactory extends Factory
      * @return array<string, mixed>
      */
     public function definition(): array
-    {
+    {   
+        $bank = BankAccount::inRandomOrder()->first();
+        $type =  ReportType::inRandomOrder()->first();
+        $amount = fake()->randomFloat(2, 5000000, 1000000000000);
+        if ($type->type === 'income') {
+            $bank->balance = $bank->balance + abs($amount);
+            $bank->save();
+        }
+        elseif($type->type === 'expense'){
+            $bank->balance = $bank->balance - abs($amount);
+            $bank->save();
+        }
+
         return [
-            'amount' => fake()->randomFloat(2, 500000),
+            'amount' => $amount,
             'duplicated' => fake()->boolean(),
             'payment_reference' => fake()->sentence(),
             'duplicated_status' => fake()->randomElement(['done', 'cancel']),
             'meta_data' => json_encode([
                 'rate' => fake()->optional()->randomFloat(2, 5, 100),
-                'bank_income' => Bank::inRandomOrder()->first()->id,
+                'bank_income' => $bank->id,
             ]),
             'inconsistence_check' => fake()->boolean(),
             'notes' => fake()->paragraph(),
             'user_id' => User::inRandomOrder()->first()->id,
-            'type_id' => ReportType::inRandomOrder()->first()->id,
-            'bank_account_id' => BankAccount::inRandomOrder()->first()->id,
+            'type_id' => $type->id,
+            'bank_account_id' =>  BankAccount::inRandomOrder()->first()->id,
             'store_id' => Store::inRandomOrder()->first()->id,
-            'created_at' => fake()->date()
+            'created_at' => fake()->dateTimeBetween('-7 days', 'now')
         ];
     }
 }

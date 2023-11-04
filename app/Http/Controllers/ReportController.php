@@ -44,13 +44,17 @@ class ReportController extends Controller
             $query = $query->join('banks_accounts', 'reports.bank_account_id', "=", "banks_accounts.id"  )
                 ->join('banks', 'banks_accounts.bank_id', "=", "banks.id")
                 ->join('users', 'reports.user_id', "=", 'users.id')
+                ->join('stores', 'reports.store_id', "=", "stores.id")
                 ->select('reports.*', 'banks.name as bank_name');
-            $query = $query->where('reports.amount', 'LIKE',  "%{$search}%")
-                ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
-                ->orWhere('reports.meta_data', 'LIKE',  "%{$search}%")
-                ->orWhere('notes', 'LIKE',  "%{$search}%")
-                ->orWhere('banks.name', 'LIKE',  "%{$search}%")
-                ->orWhere('users.name', 'LIKE',  "%{$search}%");
+            $query = $query->where(function ($query) use ($search) {
+                $query->where('reports.amount', 'LIKE',  "%{$search}%")
+                    ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
+                    ->orWhere('reports.meta_data', 'LIKE',  "%{$search}%")
+                    ->orWhere('notes', 'LIKE',  "%{$search}%")
+                    ->orWhere('banks.name', 'LIKE',  "%{$search}%")
+                    ->orWhere('users.name', 'LIKE',  "%{$search}%")
+                    ->orWhere('stores.name', 'LIKE',  "%{$search}%");
+            });
         }
         if ($order) {
             $query = $query->orderBy($order, $orderBy);
@@ -150,11 +154,15 @@ class ReportController extends Controller
                         $endOfWeek = $now->copy()->subWeeks($i)->endOfWeek();
                         $incomes = Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $label = $startOfWeek->format('d, M') . ' - ' . $endOfWeek->format('d, M');
                         $results[$label] = [
@@ -169,14 +177,18 @@ class ReportController extends Controller
                         $endOfWeek = $now->copy()->subWeeks($i)->endOfWeek();
                         $incomes = Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
@@ -189,14 +201,11 @@ class ReportController extends Controller
                     }
                 }
                 return response()->json($results);
-
             }
             elseif ($period === 'month'){
                 $months = 12;
                 $now = Carbon::now();
                 $results = [];
-                $monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                
                 if ($currentUser->role->id === 1) {
                     
                     for ($i = 0; $i < $months; $i++) {
@@ -205,13 +214,17 @@ class ReportController extends Controller
                         $endOfMonth = $now->copy()->subMonths($i)->endOfMonth();
                         $incomes = Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
-                        $label = $monthNames[$date->month - 1];
+                        $label = $date->formatLocalized('%b');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -226,19 +239,23 @@ class ReportController extends Controller
                         $endOfMonth = $now->copy()->subMonths($i)->endOfMonth();
                         $incomes = Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
-                        $label = $monthNames[$date->month - 1];
+                        $label = $date->formatLocalized('%b');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -246,14 +263,12 @@ class ReportController extends Controller
                     }
                 }
                 return response()->json($results);
-            }
+            }     
             elseif ($period === 'quarter'){
                 $trimesters = 6;
                 $now = Carbon::now();
                 $results = [];
-
-                $trimesterNames = ['Ene - Mar', 'Abr - Jun', 'Jul - Sep', 'Oct - Dic'];
-
+            
                 if ($currentUser->role->id === 1) {
                     
                     for ($i = 0; $i < $trimesters; $i++) {
@@ -261,15 +276,21 @@ class ReportController extends Controller
                         $endOfTrimester = $startOfTrimester->copy()->addMonths(3)->subDay();
                         $incomes = Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         // Get the trimester name in Spanish and the year
-                        $label = $trimesterNames[$startOfTrimester->month > 9 ? 3 : ($startOfTrimester->month > 6 ? 2 : ($startOfTrimester->month > 3 ? 1 : 0))] . ', ' . $startOfTrimester->year;
+                        $label = $startOfTrimester->formatLocalized('%b') . ' - ' . $endOfTrimester->formatLocalized('%b, %Y');
                         $results[$label] = [
+                            'start' => $startOfTrimester,
+                            'end' => $endOfTrimester,
                             'incomes' => $incomes,
                             'expenses' => $expenses,
                         ];
@@ -281,20 +302,24 @@ class ReportController extends Controller
                         $endOfTrimester = $startOfTrimester->copy()->addMonths(3)->subDay();
                         $incomes = Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         // Get the trimester name in Spanish and the year
-                        $label = $trimesterNames[$startOfTrimester->month > 9 ? 3 : ($startOfTrimester->month > 6 ? 2 : ($startOfTrimester->month > 3 ? 1 : 0))] . ', ' . $startOfTrimester->year;
+                        $label = $startOfTrimester->formatLocalized('%b') . ' - ' . $endOfTrimester->formatLocalized('%b, %Y');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -303,13 +328,11 @@ class ReportController extends Controller
                 }
                 return response()->json($results);
             }
-            elseif ($period === 'semester'){ 
+            elseif ($period === 'semester'){
                 $semesters = 4;
                 $now = Carbon::now();
                 $results = [];
-                $semesterNames = ['Ene - Jun', 'Jul - Dic'];
-                
-                
+            
                 if ($currentUser->role->id === 1) {
                     
                     for ($i = 0; $i < $semesters; $i++) {
@@ -317,13 +340,18 @@ class ReportController extends Controller
                         $endOfSemester = $startOfSemester->copy()->addMonths(6)->subDay();
                         $incomes = Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
-                        $label = $semesterNames[$startOfSemester->month > 6 ? 1 : 0] . ', ' . $startOfSemester->year; // Obtiene el nombre del semestre en español y el año
+                        // Get the semester name in Spanish and the year
+                        $label = $startOfSemester->formatLocalized('%b') . ' - ' . $endOfSemester->formatLocalized('%b, %Y');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -336,19 +364,24 @@ class ReportController extends Controller
                         $endOfSemester = $startOfSemester->copy()->addMonths(6)->subDay();
                         $incomes = Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
-                        $label = $semesterNames[$startOfSemester->month > 6 ? 1 : 0] . ', ' . $startOfSemester->year; // Obtiene el nombre del semestre en español y el año
+                        // Get the semester name in Spanish and the year
+                        $label = $startOfSemester->formatLocalized('%b') . ' - ' . $endOfSemester->formatLocalized('%b, %Y');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -356,27 +389,31 @@ class ReportController extends Controller
                     }
                 }
                 return response()->json($results);
-                
-                
             }
-            elseif ($period === 'year'){$years = 5;
+            elseif ($period === 'year'){
+                $years = 5;
                 $now = Carbon::now();
                 $results = [];
-                
+            
                 if ($currentUser->role->id === 1) {
+                    
                     for ($i = 0; $i < $years; $i++) {
                         $startOfYear = $now->copy()->subYears($i)->startOfYear();
                         $endOfYear = $now->copy()->subYears($i)->endOfYear();
                         $incomes = Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->sum('amount');
                         // Get the year
-                        $label = $startOfYear->year;
+                        $label = $startOfYear->formatLocalized('%Y');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -389,20 +426,24 @@ class ReportController extends Controller
                         $endOfYear = $now->copy()->subYears($i)->endOfYear();
                         $incomes = Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
                             ->where('type', 'income')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         $expenses =  Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
                             ->where('type', 'expense')
-                            ->where('bank_id', $bank)
+                            ->whereIn('bank_account_id', function ($query) use ($bank) {
+                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
+                            })
                             ->whereHas('report', function ($query) use ($currentUser) {
                                 $query->where('user_id', $currentUser->id);
                             })
                             ->sum('amount');
                         // Get the year
-                        $label = $startOfYear->year;
+                        $label = $startOfYear->formatLocalized('%Y');
                         $results[$label] = [
                             'incomes' => $incomes,
                             'expenses' => $expenses,
@@ -410,30 +451,27 @@ class ReportController extends Controller
                     }
                 }
                 return response()->json($results);
-                
             }
+            
             $query = $query->where('type', '=', $movement);
             return response()->json($query->paginate(10), 200);
         }
         
         if ($currentUser->role->id === 1) {
-            if ($inconsistence === 'check'){
-                $query = $query->where('inconsistence_check', true);
-            }
             $query = $query->with('bank_account.bank.country.currency', 'type', 'store', 'user')->paginate(10);
             foreach ($query as $e) {
                 if (json_decode($e->meta_data)->bank_income !== null) {
-                    $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
+                    $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
                 }
             }
             return response()->json($query, 200);
         }
-        $query = $query->where('user_id', auth()->user()->id);
+        $query = $query->where('reports.user_id', auth()->user()->id);
         
         $query = $query->with('bank_account.bank.country.currency', 'type', 'store', 'user')->paginate(10);
         foreach ($query as $e) {
             if (json_decode($e->meta_data)->bank_income !== null) {
-                $e->bank_income = Bank::with('country.currency')->find(json_decode($e->meta_data)->bank_income);
+                $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
             }
         }
         return response()->json($query, 200);
@@ -489,8 +527,6 @@ class ReportController extends Controller
                 'exists:banks_accounts,id'
             ], 
             'store' => 'required|exists:stores,id',
-            'received_from' => 'string',
-            'payment_reference' => 'string',
             'type' => 'required|exists:reports_types,id',
             'bank' => 'required|exists:banks_accounts,id'
         ], $message);
@@ -506,7 +542,7 @@ class ReportController extends Controller
             'inconsistence_check' => false,
             'user_id' => $currentUser->id,
             'meta_data' => json_encode([
-                'rate'  => $request->rate,
+                'rate'  => $request->rate === 0 ? null: $request->rate,
                 'bank_income' => $request->bank_income
             ])
         ]);
@@ -514,7 +550,7 @@ class ReportController extends Controller
         if ($report) {
             $reportType = ReportType::find($request->type);
             if ($reportType->type === "income") {
-                $bank = BankAccount::find($request->bank);
+                $bank = BankAccount::find($request->bank_income);
 
                 Movement::create([
                     'amount' => $request->amount,
@@ -574,7 +610,22 @@ class ReportController extends Controller
             
             $report->duplicated_status = $request->duplicated_status;
     
-            $report->save();
+            if ($report->save()) {
+                
+                $report = Report::with('type')->find($id);
+                if ($request->duplicated_status === 'done') {
+                   if ($report->type->type === 'income') {
+                        $bank = BankAccount::find(json_decode($report->meta_data)->bank_income);
+                        $bank->balance = $bank->balance - $report->amount;
+                        $bank->save();
+                   } 
+                   elseif ($report->type->type === 'expense') {
+                        $bank = BankAccount::find(json_decode($report->meta_data)->bank_income);
+                        $bank->balance = $bank->balance + $report->amount;
+                        $bank->save();
+                   }
+                }
+            }
             
             return response()->json(['message' => 'Exito'], 201);
         }
@@ -613,12 +664,12 @@ class ReportController extends Controller
             $reportsE = $reportsE->orderBy($order_by, $order);
             $reportsI = $reportsI->orderBy($order_by, $order);
             if ($date) {
-                $reportsE = $reportsE->whereDate('created_at', $date);
-                $reportsI = $reportsI->whereDate('created_at', $date);
+                $reportsE = $reportsE->whereDate('reports.created_at', $date);
+                $reportsI = $reportsI->whereDate('reports.created_at', $date);
             }
             if ($review === 'yes') {
-                $reportsE = $reportsE->where('inconsistence_check', true);
-                $reportsI = $reportsI->where('inconsistence_check', true);
+                $reportsE = $reportsE->where('reports.inconsistence_check', true);
+                $reportsI = $reportsI->where('reports.inconsistence_check', true);
             }
             else{
                 
@@ -628,9 +679,19 @@ class ReportController extends Controller
             $reportsE = $reportsE
                 ->havingRaw('operation_type LIKE ?', ["expense"])
                 ->with('bank_account.bank.country.currency', 'type', 'user', 'store')->paginate(2);
+            foreach ($reportsE as $e) {
+                if (json_decode($e->meta_data)->bank_income !== null) {
+                    $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
+                }
+            }
             $reportsI = $reportsI
                 ->havingRaw('operation_type LIKE ?', ["income"])
                 ->with('bank_account.bank.country.currency', 'type', 'user', 'store')->paginate(2);
+            foreach ($reportsI as $e) {
+                if (json_decode($e->meta_data)->bank_income !== null) {
+                    $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
+                }
+            }
             return response()->json([
                 'income' => $reportsI,
                 'expense' => $reportsE
