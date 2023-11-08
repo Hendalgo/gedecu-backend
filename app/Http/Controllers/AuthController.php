@@ -28,6 +28,11 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         
+        if (auth()->user()->delete) {
+            return response()->json([
+                "error" => "El usuario ya no existe"
+            ], 401);
+        }
         return $this->respondWithToken($token);
     }
 

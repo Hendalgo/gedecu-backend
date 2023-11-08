@@ -14,7 +14,8 @@ class StoreController extends Controller
         $since = $request->get('since');
         $until = $request->get('until');
         $search = $request->get('search');
-
+        $per_page = $request->get('per_page', 10);
+        $paginated = $request->get('paginated', 'yes');
         $store = Store::with('country')->with('user')
             ->when($search, function ($query, $search){
                 $query->where('name', 'LIKE', "%{$search}%")
@@ -26,8 +27,10 @@ class StoreController extends Controller
                     $query->where('name', 'LIKE', "%{$search}%");
                 });
             });
-
-        return response()->json($store->where('delete', false)->paginate(10), 200);  
+        if ($paginated === 'no') {
+            return response()->json($store->where('delete', false)->get(), 200);
+        }
+        return response()->json($store->where('delete', false)->paginate($per_page), 200);  
     }
     public function create(){
     }

@@ -18,6 +18,8 @@ class UserController extends Controller
             $since = $request->get('since');
             $until = $request->get('until');
             $search = $request->get('search');
+            $per_page = $request->get('per_page', 10);
+            $paginated = $request->get('paginated', 'yes');
             $users = User::query();
             if ($search) {
                 $users = $users->join("countries", "users.country_id", "=", "countries.id")
@@ -32,8 +34,10 @@ class UserController extends Controller
             if ($order) {
                 $users = $users->orderBy($order, $orderBy);
             }
-            
-            return response()->json($users->with('role', 'country')->paginate(10), 200);
+            if ($paginated === 'no') { 
+                return response()->json($users->where('delete',false)->with('role', 'country')->get(), 200);
+            }
+            return response()->json($users->where('delete',false)->with('role', 'country')->paginate($per_page), 200);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }
@@ -137,11 +141,13 @@ class UserController extends Controller
     }
     public function destroy($id){
         $currentUser = User::find(auth()->user()->id);
+        if (auth()->user()->id == $id) {
+            return response()->json(['message' => 'forbiden'], 401);
+        }
         if ($currentUser->role->id === 1) {
             $user = User::find($id);
-
-            if ($user) {
-                $user->delete();
+            $user->delete = true;
+            if ($user->save()) {
                 return response()->json(['message' => 'exito'], 200);
             }
             else{

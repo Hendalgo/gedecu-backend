@@ -14,6 +14,8 @@ class BankController extends Controller
 {
     public function index(Request $request){
         $user = User::find(auth()->user()->id);
+        $paginated = $request->get('paginated', 'yes');
+        $per_page = $request->get('per_page', 10);
         if ($user->role->id === 1) {
 
             $search = $request->get("search"); 
@@ -38,10 +40,17 @@ class BankController extends Controller
 
             $bank = $bank->with("country.currency");
 
-            return response()->json($bank->paginate(10), 200);
+            if ($paginated === 'no') {
+                return response()->json($bank->get(), 200);
+            }
+            return response()->json($bank->paginate($per_page), 200);
         }
         else{
-            return response()->json(Bank::with('country.currency')->paginate(10), 200);
+            $bank = Bank::with('country.currency');
+            if ($paginated === 'no') {
+                return response()->json($bank->get(), 200);
+            }
+            return response()->json($paginated->paginate($per_page), 200);
         }
     }
     public function create(){
@@ -67,7 +76,6 @@ class BankController extends Controller
             $validatedData['meta_data'] = json_encode([
                 'styles' =>[]
             ]);
-            print_r($validatedData);
 
             $bank = Bank::create($validatedData);
     
