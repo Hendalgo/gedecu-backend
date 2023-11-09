@@ -50,7 +50,7 @@ class BankController extends Controller
             if ($paginated === 'no') {
                 return response()->json($bank->get(), 200);
             }
-            return response()->json($paginated->paginate($per_page), 200);
+            return response()->json($bank->paginate($per_page), 200);
         }
     }
     public function create(){
