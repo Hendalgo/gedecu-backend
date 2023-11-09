@@ -475,6 +475,12 @@ class ReportController extends Controller
                     $e->bank = Bank::find(json_decode($e->meta_data)->bank);
                 }
             }
+            foreach ($query as $e) {
+                if (isset(json_decode($e->meta_data)->account_manager)) {
+                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
+                }
+            }
+            
             return response()->json($query, 200);
         }
         $query = $query->where('reports.user_id', auth()->user()->id);
@@ -488,6 +494,11 @@ class ReportController extends Controller
         foreach ($query as $e) {
             if (isset(json_decode($e->meta_data)->bank)) {
                 $e->bank = Bank::find(json_decode($e->meta_data)->bank);
+            }
+        }
+        foreach ($query as $e) {
+            if (isset(json_decode($e->meta_data)->account_manager)) {
+                $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
             }
         }
         return response()->json($query, 200);
@@ -525,6 +536,8 @@ class ReportController extends Controller
         ], $message);
         $validateRequest['inconsistence_check'] = false;
         $report = false;
+
+        $account_manager = BankAccount::find($request->bank_account)->id;
         $report =  Report::create([
             'amount'=> $request->amount,
             'duplicated' => $request->duplicated,
@@ -537,7 +550,8 @@ class ReportController extends Controller
             'meta_data' => json_encode([
                 'rate'  => $request->rate === 0 ? null: $request->rate,
                 'store' => $request->store ? $request->store: null,
-                'bank' => $request->bank ? $request->bank : null
+                'bank' => $request->bank ? $request->bank : null,
+                'account_manager' => $account_manager
             ])
         ]);
         
@@ -682,12 +696,22 @@ class ReportController extends Controller
                     $e->bank = Bank::find(json_decode($e->meta_data)->bank);
                 }
             }
+            foreach ($reportsE as $e) {
+                if (isset(json_decode($e->meta_data)->account_manager)) {
+                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
+                }
+            }
             $reportsI = $reportsI
                 ->havingRaw('operation_type LIKE ?', ["income"])
                 ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
             foreach ($reportsI as $e) {
                 if (isset(json_decode($e->meta_data)->store)) {
                     $e->store = Store::find(json_decode($e->meta_data)->store);
+                }
+            }
+            foreach ($reportsI as $e) {
+                if (isset(json_decode($e->meta_data)->account_manager)) {
+                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
                 }
             }
             foreach ($reportsI as $e) {

@@ -21,17 +21,19 @@ class BankAccountController extends Controller
         if ($search) {
             $bank_account = $bank_account
                 ->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
-                ->select('banks_accounts.*', 'banks.name as bank_name');
+                ->joint('users', 'user_id', "=", "users.id")
+                ->select('banks_accounts.*', 'banks.name as bank_name', "user.name as user_name");
 
             $bank_account = $bank_account->where("banks.name", "LIKE", "%{$search}%")
                 ->orWhere("banks_accounts.name", "LIKE", "%{$search}%")
-                ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%");
+                ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%")
+                ->orWhere("users.name", "LIKE", "%{$search}%");
         }
         if ($paginated === 'no') {
-            $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency')->get();
+            $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency', 'user')->get();
         }
         else{
-            $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency')->paginate($per_page);
+            $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency', 'user')->paginate($per_page);
         }
         return response()->json($bank_account, 200);
     }
@@ -46,17 +48,20 @@ class BankAccountController extends Controller
                 'bank.required' => 'Banco es requerido',
                 'bank.exist' => 'Banco no existe',
                 'balance.required' => 'Balance de la cuenta requerido',
-                'balance.numeric' => 'Balance debe ser númerico'
+                'balance.numeric' => 'Balance debe ser númerico',
+                "user.required" => 'Usuario es requerido'
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'identifier'=> 'required|string|min:2|max:255',
-                'bank' => 'required|exists:banks,id'
+                'bank' => 'required|exists:banks,id',
+                'user' => 'required|exists:users,id'
             ], $messages);
             $bank_account = BankAccount::create([
                 "name" => $validatedData['name'],
                 "identifier" => $validatedData['identifier'],
                 "bank_id" => $validatedData['bank'],
+                "user_id" => $validatedData['user'],
                 "balance" => 0.00,
                 "meta_data" => json_encode([])
             ]);
@@ -82,17 +87,20 @@ class BankAccountController extends Controller
                 'bank.required' => 'Banco es requerido',
                 'bank.exist' => 'Banco no existe',
                 'balance.required' => 'Balance de la cuenta requerido',
-                'balance.numeric' => 'Balance debe ser númerico'
+                'balance.numeric' => 'Balance debe ser númerico',
+                'user.required' => 'El usuario es requerido'
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'identifier'=> 'required|string|min:2|max:255',
-                'bank' => 'required|exists:banks,id'
+                'bank' => 'required|exists:banks,id',
+                'user' => 'required|exists:users,id'
             ], $messages);
             $validatedData['bank_id'] = $validatedData['bank'];
+            $validatedData['user_id'] = $validatedData['user'];
             $bank = BankAccount::find($id);
             foreach ($validatedData as $field => $value) {
-                if ($field !== 'bank' ) {
+                if ($field !== 'bank' && $field !== "user") {
                     $bank->$field = $value;
                 }
             }

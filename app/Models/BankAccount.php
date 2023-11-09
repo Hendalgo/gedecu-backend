@@ -12,15 +12,18 @@ class BankAccount extends Model
     protected $table = "banks_accounts";
     protected $fillable = [
         "name",
-        "account_number",
         "balance",
         "bank_id",
         "meta_data",
-        "identifier"
+        "identifier",
+        "user_id"
     ];
 
     
     public function bank(){
         return $this->belongsTo('\App\Models\Bank', 'bank_id', 'id');
+    }
+    public function user(){
+        return $this->belongsTo('\App\Models\User', 'user_id', 'id');
     }
 }
