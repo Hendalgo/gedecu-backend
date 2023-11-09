@@ -18,6 +18,8 @@ return new class extends Migration
             $table->json('meta_data')->nullable();
             $table->unsignedBigInteger('country_id');
             $table->foreign('country_id')->references('id')->on('countries');
+            $table->unsignedBigInteger('currency_id');
+            $table->foreign('currency_id')->references('id')->on('currencies');
             $table->boolean('delete')->default(false);
             $table->timestamps();
         });

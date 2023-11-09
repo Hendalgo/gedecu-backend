@@ -25,7 +25,6 @@ class CountriesSeeder extends Seeder
                 'borderColor' => '$FDFDFD'
             ]
             ]);
-        $colombia->currency_id = 1;
         
         $colombia->save();
 
@@ -42,7 +41,6 @@ class CountriesSeeder extends Seeder
             ]
             ]);
         $venezuela->shortcode = 'VE';
-        $venezuela->currency_id = 2;
 
         $venezuela->save();
     }

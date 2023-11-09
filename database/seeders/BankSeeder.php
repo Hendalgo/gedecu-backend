@@ -15,8 +15,8 @@ class BankSeeder extends Seeder
     {
         $venezuela = new Bank();
 
-        $venezuela->name = 'Efectivo venezuela';
-        $venezuela->country_id = 2;
+        $venezuela->name = 'Bancolombia';
+        $venezuela->country_id = 1;
         $venezuela->meta_data = json_encode([
             'styles' => [
                 'color' => '#FFFFFF',
@@ -24,12 +24,14 @@ class BankSeeder extends Seeder
                 'borderColor' => '#FDFDFD'
             ]
             ]);
+            
+        $venezuela->currency_id = 1;
         $venezuela->save();
 
         $santander = new Bank();
 
-        $santander->name = 'Efectivo Colombia';
-        $santander->country_id = 1;
+        $santander->name = 'Banco de venezuela';
+        $santander->country_id = 2;
         $santander->meta_data = json_encode([
             'styles' => [
                 'color' => '#FFFFFF',
@@ -37,6 +39,7 @@ class BankSeeder extends Seeder
                 'borderColor' => '#FDFDFD'
             ]
             ]);
+        $santander->currency_id = 2;
         $santander->save();
     }
 }

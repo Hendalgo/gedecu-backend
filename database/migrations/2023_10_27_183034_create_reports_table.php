@@ -28,9 +28,6 @@ return new class extends Migration
 
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
-            
-            $table->unsignedBigInteger('store_id');
-            $table->foreign('store_id')->references('id')->on('stores');
 
             $table->unsignedBigInteger('type_id');
             $table->foreign('type_id')->references('id')->on('reports_types');

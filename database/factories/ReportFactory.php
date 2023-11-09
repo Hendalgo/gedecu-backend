@@ -21,16 +21,17 @@ class ReportFactory extends Factory
      */
     public function definition(): array
     {   
-        $bank = BankAccount::inRandomOrder()->first();
+        $bankAccount= BankAccount::inRandomOrder()->first();
+        $bank = Bank::inRandomOrder()->first();
         $type =  ReportType::inRandomOrder()->first();
         $amount = fake()->randomFloat(2, 5000000, 1000000000000);
         if ($type->type === 'income') {
-            $bank->balance = $bank->balance + abs($amount);
-            $bank->save();
+            $bankAccount->balance = $bankAccount->balance + abs($amount);
+            $bankAccount->save();
         }
         elseif($type->type === 'expense'){
-            $bank->balance = $bank->balance - abs($amount);
-            $bank->save();
+            $bankAccount->balance = $bankAccount->balance - abs($amount);
+            $bankAccount->save();
         }
 
         return [
@@ -40,14 +41,14 @@ class ReportFactory extends Factory
             'duplicated_status' => fake()->randomElement(['done', 'cancel']),
             'meta_data' => json_encode([
                 'rate' => fake()->optional()->randomFloat(2, 5, 100),
-                'bank_income' => $bank->id,
+                'petition_bank' => $bank->id,
+                'store' => Store::inRandomOrder()->first()->id,
             ]),
             'inconsistence_check' => fake()->boolean(),
             'notes' => fake()->paragraph(),
             'user_id' => User::inRandomOrder()->first()->id,
             'type_id' => $type->id,
-            'bank_account_id' =>  BankAccount::inRandomOrder()->first()->id,
-            'store_id' => Store::inRandomOrder()->first()->id,
+            'bank_account_id' =>  $bankAccount->id,
             'created_at' => fake()->dateTimeBetween('-7 days', 'now')
         ];
     }
