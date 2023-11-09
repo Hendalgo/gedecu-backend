@@ -23,18 +23,15 @@ class CountryController extends Controller
             $search = $request->get("search"); 
             $countries = Country::query()
                 ->leftJoin("banks as b1", "b1.country_id", "=", "countries.id") // Cambia 'banks' por 'b1'
-                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.symbol", 'currencies.name as currency_name', "currencies.shortcode as currency_shortcode")
+                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode")
                 ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as total"))
                 ->leftJoin("banks_accounts", function($join) {
                     $join->on("b1.id", "=", "banks_accounts.bank_id"); // Cambia 'banks.id' por 'b1.id'
                 })
-                ->join("currencies", "countries.currency_id", "=", "currencies.id")
-                ->groupBy("country_name", "id_country", "shortcode", "symbol", "currency_name", "currency_shortcode")->where("countries.delete", false);
+                ->groupBy("country_name", "id_country", "shortcode")->where("countries.delete", false);
 
             if ($search) {
-                $countries = $countries->where('countries.name', 'LIKE', "%{$search}%") 
-                    ->orWhere("currencies.name", "LIKE", "%{$search}%")
-                    ->orWhere("currencies.shortcode", "LIKE", "%{$search}%");
+                $countries = $countries->where('countries.name', 'LIKE', "%{$search}%");
             }
             $countries = $countries->where("countries.delete", false)->paginate(10);
             return response()->json([$countries], 200);
@@ -47,46 +44,23 @@ class CountryController extends Controller
             $message = [
                 'country_name.required' => 'El nombre del país es requerido',
                 'country_shortcode.required' => 'El código de país es requerido',
-                'currency_symbol.numeric' => 'El símbolo de la moneda es requerido',
-                'currency_shortcode.required' => 'El código de la moneda es requerido',
-                "currency_name.required" => "Nombre de la moneda es requerido"
             ];
             $validatedData = $request->validate([
-                'currency_name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'currency_shortcode'=> 'required|string|min:2|max:4',
-                'currency_symbol' => 'required',
-                "country_name" => "required",
-                "country_shortcode"=> "required"
+                "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
+                "country_shortcode"=> "required|string|min:2|max:4"
             ], $message);
-            $currency = Currency::create([
-                "name"=> $validatedData['currency_name'],
-                "shortcode" => $validatedData["currency_shortcode"],
-                "symbol" => $validatedData["currency_symbol"]
+            $country = Country::create([
+                "name"=> $validatedData['country_name'],
+                "shortcode" => $validatedData["country_shortcode"],
+                "config" => json_encode([])
             ]);
-            if($currency){
-                $country = Country::create([
-                    "name"=> $validatedData['country_name'],
-                    "shortcode" => $validatedData["country_shortcode"],
-                    "currency_id" => $currency->id ,
-                    "config" => json_encode([])
-                ]);
-        
-                if ($country) {
-                    return response()->json(['message' => 'exito'], 201);
-                }
-                else{
-                    return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
-                }
+    
+            if ($country) {
+                return response()->json(['message' => 'exito'], 201);
             }
-            else
-            {
+            else{
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
             }
-            /* if ($validatedData['image']) {
-                $imageName = time().'.'.$request->image->extension();  
-                $request->image->move(public_path('images'), $imageName);
-                $validatedData['img'] = asset('images/'.$imageName);
-            } */
 
         }
         return response()->json(['message' => 'forbiden', 401]);
@@ -99,35 +73,18 @@ class CountryController extends Controller
         if ($user->role->id === 1) {
             $message = [
                 'country_name.required' => 'El nombre del país es requerido',
-                'country_shortcode.required' => 'El código de país es requerido',
-                'currency_symbol.numeric' => 'El símbolo de la moneda es requerido',
-                'currency_shortcode.required' => 'El código de la moneda es requerido',
-                "currency_name.required" => "Nombre de la moneda es requerido"
+                'country_shortcode.required' => 'El código de país es requerido'
             ];
             $validatedData = $request->validate([
-                'currency_name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'currency_shortcode'=> 'required|string|min:2|max:4',
-                'currency_symbol' => 'required',
-                "country_name" => "required",
-                "country_shortcode"=> "required"
+                "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
+                "country_shortcode"=> "required|string|min:2|max:4"
             ], $message);
             
             $country = Country::find($id);
             $country->name = $validatedData['country_name'];
             $country->shortcode = $validatedData["country_shortcode"];
-            if($country->save()){
-        
-                $currency = Currency::find($country->currency_id);
-                $currency->name =  $validatedData['currency_name'];
-                $currency->shortcode = $validatedData["currency_shortcode"];
-                $currency->symbol = $validatedData["currency_symbol"];
-    
-                if ($currency->save()) {
-                    return response()->json(['message' => 'exito'], 201);
-                }
-                else{
-                    return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
-                }
+            if ($country->save()) {
+                return response()->json(['message' => 'exito'], 201);
             }
             else
             {
@@ -142,6 +99,18 @@ class CountryController extends Controller
             $country = Country::find($id);
             $country->delete = true;
             if($country->save()){
+                // Obtén todos los bancos asociados a este país
+                $banks = Bank::where('country_id', $id)->get();
+                foreach ($banks as $bank) {
+                    $bank->delete = true;
+                    $bank->save();
+                    // Obtén todas las cuentas bancarias asociadas a este banco
+                    $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
+                    foreach ($bankAccounts as $bankAccount) {
+                        $bankAccount->delete = true;
+                        $bankAccount->save();
+                    }
+                }
                 return response()->json(['message' => 'exito'], 201);
             }
             

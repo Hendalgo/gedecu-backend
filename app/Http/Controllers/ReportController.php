@@ -7,6 +7,7 @@ use App\Models\BankAccount;
 use App\Models\Movement;
 use App\Models\Report;
 use App\Models\ReportType;
+use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -41,11 +42,16 @@ class ReportController extends Controller
         // Apply filters
         
         if ($search) {
-            $query = $query->join('banks_accounts', 'reports.bank_account_id', "=", "banks_accounts.id"  )
-                ->join('banks', 'banks_accounts.bank_id', "=", "banks.id")
-                ->join('users', 'reports.user_id', "=", 'users.id')
-                ->join('stores', 'reports.store_id', "=", "stores.id")
-                ->select('reports.*', 'banks.name as bank_name');
+            $query = $query->join('banks_accounts', 'reports.bank_account_id', "=", "banks_accounts.id")
+               ->join('banks', 'banks_accounts.bank_id', "=", "banks.id")
+               ->join('users', 'reports.user_id', "=", 'users.id')
+               ->whereNotNull('reports.meta_data->store')
+               ->join('stores', function ($join) {
+                   $join->on('stores.id', '=', DB::raw("CAST(JSON_EXTRACT(reports.meta_data, '$.store') AS UNSIGNED)"));
+               })
+               ->select('reports.*', 'banks.name as bank_name');
+
+
             $query = $query->where(function ($query) use ($search) {
                 $query->where('reports.amount', 'LIKE',  "%{$search}%")
                     ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
@@ -458,20 +464,30 @@ class ReportController extends Controller
         }
         
         if ($currentUser->role->id === 1) {
-            $query = $query->with('bank_account.bank.country.currency', 'type', 'store', 'user')->paginate(10);
+            $query = $query->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(10);
             foreach ($query as $e) {
-                if (json_decode($e->meta_data)->bank_income !== null) {
-                    $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
+                if (isset(json_decode($e->meta_data)->store)) {
+                    $e->store = Store::find(json_decode($e->meta_data)->store);
+                }
+            }
+            foreach ($query as $e) {
+                if (isset(json_decode($e->meta_data)->bank)) {
+                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
                 }
             }
             return response()->json($query, 200);
         }
         $query = $query->where('reports.user_id', auth()->user()->id);
         
-        $query = $query->with('bank_account.bank.country.currency', 'type', 'store', 'user')->paginate(10);
+        $query = $query->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(10);
         foreach ($query as $e) {
-            if (json_decode($e->meta_data)->bank_income !== null) {
-                $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
+            if (json_decode($e->meta_data)->store !== null) {
+                $e->store = Store::find(json_decode($e->meta_data)->store);
+            }
+        }
+        foreach ($query as $e) {
+            if (isset(json_decode($e->meta_data)->bank)) {
+                $e->bank = Bank::find(json_decode($e->meta_data)->bank);
             }
         }
         return response()->json($query, 200);
@@ -494,41 +510,18 @@ class ReportController extends Controller
             'notes.string' => 'Las notas deben ser una cadena de texto.',
             'type.required' => 'El campo tipo es obligatorio.',
             'type.exists' => 'El es inválido informes.',
-            'bank.required' => 'El campo banco es obligatorio.',
-            'bank.exists' => 'El banco es inválido'
+            'bank_account.required' => 'El campo banco es obligatorio.',
+            'bank_account.exists' => 'El banco es inválido'
         ];
         $validateRequest = $request->validate([
-            'amount' => 'numeric|required',
-            'duplicated' => 'required|boolean',
-            'rate' => [
-                'numeric',
-                Rule::requiredIf(
-                    function () use ($request){
-                        $reportType = ReportType::find($request->type);
-                        if ($reportType) {
-                            if (($reportType->type === 'income') || ($reportType->type === 'expense')) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                )
-            ],
-            'bank_income' => [
-                Rule::requiredIf(function () use ($request){
-                    $reportType = ReportType::find($request->type);
-                    if ($reportType) {
-                        if (($reportType->type === 'income') || ($reportType->type === 'expense')) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }),
-                'exists:banks_accounts,id'
-            ], 
-            'store' => 'required|exists:stores,id',
             'type' => 'required|exists:reports_types,id',
-            'bank' => 'required|exists:banks_accounts,id'
+            'bank_account' => 'required|exists:banks_accounts,id',
+            'amount' => 'numeric|required',
+            'rate' => 'numeric',
+            'duplicated' => 'required|boolean',
+            'bank' => 'exists:banks,id'
+            , 
+            'store' => 'exists:stores,id',
         ], $message);
         $validateRequest['inconsistence_check'] = false;
         $report = false;
@@ -538,19 +531,20 @@ class ReportController extends Controller
             'store_id' => $request->store,
             'notes' => $request->notes,
             'type_id' => $request->type,
-            'bank_account_id' => $request->bank,
+            'bank_account_id' => $request->bank_account,
             'inconsistence_check' => false,
             'user_id' => $currentUser->id,
             'meta_data' => json_encode([
                 'rate'  => $request->rate === 0 ? null: $request->rate,
-                'bank_income' => $request->bank_income
+                'store' => $request->store ? $request->store: null,
+                'bank' => $request->bank ? $request->bank : null
             ])
         ]);
         
         if ($report) {
             $reportType = ReportType::find($request->type);
             if ($reportType->type === "income") {
-                $bank = BankAccount::find($request->bank_income);
+                $bank = BankAccount::find($request->bank_account);
 
                 Movement::create([
                     'amount' => $request->amount,
@@ -566,7 +560,7 @@ class ReportController extends Controller
                 $bank->save(); 
             }
             else if ($reportType->type === "expense"){
-                $bank = BankAccount::find($request->bank);
+                $bank = BankAccount::find($request->bank_account);
 
                 Movement::create([
                     'amount' => $request->amount,
@@ -613,14 +607,13 @@ class ReportController extends Controller
             if ($report->save()) {
                 
                 $report = Report::with('type')->find($id);
+                $bank = BankAccount::find($report->bank_account_id);
                 if ($request->duplicated_status === 'done') {
                    if ($report->type->type === 'income') {
-                        $bank = BankAccount::find(json_decode($report->meta_data)->bank_income);
                         $bank->balance = $bank->balance - $report->amount;
                         $bank->save();
                    } 
                    elseif ($report->type->type === 'expense') {
-                        $bank = BankAccount::find(json_decode($report->meta_data)->bank_income);
                         $bank->balance = $bank->balance + $report->amount;
                         $bank->save();
                    }
@@ -678,18 +671,28 @@ class ReportController extends Controller
             }
             $reportsE = $reportsE
                 ->havingRaw('operation_type LIKE ?', ["expense"])
-                ->with('bank_account.bank.country.currency', 'type', 'user', 'store')->paginate(2);
+                ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
             foreach ($reportsE as $e) {
-                if (json_decode($e->meta_data)->bank_income !== null) {
-                    $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
+                if (isset(json_decode($e->meta_data)->store)) {
+                    $e->store = Store::find(json_decode($e->meta_data)->store);
+                }
+            }
+            foreach ($reportsE as $e) {
+                if (isset(json_decode($e->meta_data)->bank)) {
+                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
                 }
             }
             $reportsI = $reportsI
                 ->havingRaw('operation_type LIKE ?', ["income"])
-                ->with('bank_account.bank.country.currency', 'type', 'user', 'store')->paginate(2);
+                ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
             foreach ($reportsI as $e) {
-                if (json_decode($e->meta_data)->bank_income !== null) {
-                    $e->bank_income = BankAccount::with('bank.country.currency')->find(json_decode($e->meta_data)->bank_income);
+                if (isset(json_decode($e->meta_data)->store)) {
+                    $e->store = Store::find(json_decode($e->meta_data)->store);
+                }
+            }
+            foreach ($reportsI as $e) {
+                if (isset(json_decode($e->meta_data)->bank)) {
+                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
                 }
             }
             return response()->json([

@@ -32,11 +32,9 @@ class ReportTypeController extends Controller
                 'name.required' => 'El nombre es un campo requerido',
                 'type.required' => 'Tipo es requerido',
                 'type.in' => 'Tipo invalido',
-                'description.required' => 'Coloque una descripción'
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'description'=> 'required|string',
                 'type' => 'required|in:income,expense,neutro'
             ], $messages);
 

@@ -35,9 +35,9 @@ class UserController extends Controller
                 $users = $users->orderBy($order, $orderBy);
             }
             if ($paginated === 'no') { 
-                return response()->json($users->where('delete',false)->with('role', 'country')->get(), 200);
+                return response()->json($users->where('users.delete',false)->with('role', 'country')->get(), 200);
             }
-            return response()->json($users->where('delete',false)->with('role', 'country')->paginate($per_page), 200);
+            return response()->json($users->where('users.delete',false)->with('role', 'country')->paginate($per_page), 200);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }

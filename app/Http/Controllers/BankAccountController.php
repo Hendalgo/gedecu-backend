@@ -28,10 +28,10 @@ class BankAccountController extends Controller
                 ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%");
         }
         if ($paginated === 'no') {
-            $bank_account = $bank_account->with('bank.country.currency')->get();
+            $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency')->get();
         }
         else{
-            $bank_account = $bank_account->with('bank.country.currency')->paginate($per_page);
+            $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency')->paginate($per_page);
         }
         return response()->json($bank_account, 200);
     }
