@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-Route::get('/{any?}', function ($any = null) {
+/* Route::get('/{any?}', function ($any = null) {
     $path = $any ? public_path('react-app/' . $any) : public_path('index.html');
 
     if (file_exists($path)) {
@@ -20,4 +20,4 @@ Route::get('/{any?}', function ($any = null) {
     }
 
     return file_get_contents(public_path('index.html'));
-})->where('any', '.*');
+})->where('any', '.*'); */

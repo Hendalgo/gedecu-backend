@@ -16,6 +16,7 @@ class BankAccountController extends Controller
         $search = $request->get('search');
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
+        $bank = $request->get('bank');
         $bank_account = BankAccount::query()->where('banks_accounts.delete', false);
         
         if ($search) {
@@ -29,11 +30,18 @@ class BankAccountController extends Controller
                 ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%")
                 ->orWhere("users.name", "LIKE", "%{$search}%");
         }
+        if ($bank) {
+            $bank_account = $bank_account->where('bank_id', $bank);
+        }
         if ($paginated === 'no') {
             $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency', 'user')->get();
         }
         else{
             $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency', 'user')->paginate($per_page);
+        }
+
+        if ($bank_account->isEmpty()) {
+            return response()->json(['message' => 'No se encontraron resultados'], 404);
         }
         return response()->json($bank_account, 200);
     }
