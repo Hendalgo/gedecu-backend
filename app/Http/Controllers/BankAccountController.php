@@ -39,10 +39,6 @@ class BankAccountController extends Controller
         else{
             $bank_account = $bank_account->where('delete', false)->with('bank.country', 'bank.currency', 'user')->paginate($per_page);
         }
-
-        if ($bank_account->isEmpty()) {
-            return response()->json(['message' => 'No se encontraron resultados'], 404);
-        }
         return response()->json($bank_account, 200);
     }
     public function create(){
