@@ -560,7 +560,7 @@ class ReportController extends Controller
                 $reportType = ReportType::find($request->type_id);
                 if ($reportType->type === 'income') {
                    if (!$reportType->country) {
-                        foreach ($subreports as $subreport) {
+                        foreach ($validatedSubreports as $subreport) {
                             $bankAccount = BankAccount::find($subreport['bank_account_id']);
                             if ($subreport['rate']) {
                                 $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
@@ -578,7 +578,7 @@ class ReportController extends Controller
                 }
                 else if ($reportType->type === 'expense') {
                     if (!$reportType->country) {
-                        foreach ($subreports as $subreport) {
+                        foreach ($validatedSubreports as $subreport) {
                             $bankAccount = BankAccount::find($subreport['bank_account_id']);
                             if ($subreport['rate']) {
                                 $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
