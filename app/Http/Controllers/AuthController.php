@@ -18,10 +18,15 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Faltan campos requeridos'], 422);
+        }
+    
         $credentials = request(['email', 'password']);
 
         if (! $token = auth()->attempt($credentials)) {

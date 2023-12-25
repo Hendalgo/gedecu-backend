@@ -34,8 +34,9 @@ class ReportTypeController extends Controller
                 'type.in' => 'Tipo invalido',
             ];
             $validatedData = $request->validate([
-                'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'type' => 'required|in:income,expense,neutro'
+                'name'=> 'required|string|max:255',
+                'type' => 'required|in:income,expense,neutro',
+                'country' => 'required|boolean'
             ], $messages);
 
             $report_type_config = ReportType::inRandomOrder()->first()->config;
@@ -45,7 +46,7 @@ class ReportTypeController extends Controller
             $report_type = ReportType::create($validatedData);
             
             if ($report_type) {
-                return response()->json(['message' => 'exito'], 201);
+                return response()->json($report_type, 201);
             }
             else{
                 return response()->json(['error'=> 'Hubo un problema al crear el tipo reporte'], 500);
