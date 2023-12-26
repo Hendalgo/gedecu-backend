@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
+use App\Models\Country;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -42,19 +44,37 @@ class StoreController extends Controller
                 'location.required' => 'Dirección requerida',
                 'user.required' => 'Usuario requerido',
                 'user.exist' => 'Usuario no existe',
-                'country.required' => 'País requerido'
+                'country.required' => 'País requerido',
+                'country.exist' => 'País no existe',
+                'balance.required' => 'Balance requerido',
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'location'=> 'required|string|min:2|max:255',
                 'user_id' => 'required|exists:users,id',
-                'country_id' => 'required|exists:countries,id'
+                'country_id' => 'required|exists:countries,id',
+                'balance' => 'required|numeric'
             ], $messages);
+            $store = Store::create([
+                'name' => $validatedData['name'],
+                'location' => $validatedData['location'],
+                'user_id' => $validatedData['user_id'],
+                'country_id' => $validatedData['country_id'],
+                'balance' => $validatedData['balance']
+            ]);
 
-            $Store = Store::create($validatedData);
+            $country = Country::where("id", "=", $validatedData['country_id'])->with('currency')->first();
+            $bank_account = BankAccount::create([
+                'name' => "Efectivo",
+                'identifier' => "Efectivo",
+                "balance" => $validatedData['balance'],
+                "currency_id" => $country->currency_id,
+                "store_id" => $store->id,
+                "account_type_id" => 3,
+            ]);
     
-            if ($Store) {
-                return response()->json(['message' => 'exito'], 201);
+            if ($store && $bank_account) {
+                return response()->json([$store, $bank_account], 201);
             }
             else{
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
