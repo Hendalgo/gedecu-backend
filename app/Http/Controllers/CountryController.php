@@ -22,13 +22,14 @@ class CountryController extends Controller
             
             $search = $request->get("search"); 
             $countries = Country::query()
-                ->leftJoin("banks as b1", "b1.country_id", "=", "countries.id") // Cambia 'banks' por 'b1'
-                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode")
+                ->leftJoin("banks as b1", "b1.country_id", "=", "countries.id")
+                ->leftJoin("currencies", "currencies.id", "countries.currency_id") // Cambia 'banks' por 'b1'
+                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.name as currency_name", "currencies.symbol as currency_symbol", "currencies.shortcode as currency_shortcode")
                 ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as total"))
                 ->leftJoin("banks_accounts", function($join) {
                     $join->on("b1.id", "=", "banks_accounts.bank_id"); // Cambia 'banks.id' por 'b1.id'
                 })
-                ->groupBy("country_name", "id_country", "shortcode")->where("countries.delete", false);
+                ->groupBy("country_name", "id_country", "shortcode", "currency_name", "currency_symbol", "currency_shortcode")->where("countries.delete", false);
 
             if ($search) {
                 $countries = $countries->where('countries.name', 'LIKE', "%{$search}%");
@@ -47,12 +48,14 @@ class CountryController extends Controller
             ];
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
-                "country_shortcode"=> "required|string|min:2|max:4"
+                "country_shortcode"=> "required|string|min:2|max:4",
+                "currency_id" => "required|integer|exists:currencies,id"
             ], $message);
             $country = Country::create([
                 "name"=> $validatedData['country_name'],
                 "shortcode" => $validatedData["country_shortcode"],
-                "config" => json_encode([])
+                "config" => json_encode([]),
+                "currency_id" => $validatedData["currency_id"]
             ]);
     
             if ($country) {
@@ -77,7 +80,7 @@ class CountryController extends Controller
             ];
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
-                "country_shortcode"=> "required|string|min:2|max:4"
+                "country_shortcode"=> "required|string|min:2|max:4",
             ], $message);
             
             $country = Country::find($id);
