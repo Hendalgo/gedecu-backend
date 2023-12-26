@@ -528,7 +528,8 @@ class ReportController extends Controller
                         $validator->setData([$validation['name'] => $subreport[$validation['name']]]);
                         $validator->setRules([$validation['name'] => $validation['validation']]);
                         if ($validator->fails()) {
-                            return response()->json(['error' => 'Error de validación en el subreporte'], 422);
+                            $errorMessages = $validator->errors()->all();
+                            return response()->json(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages], 422);
                         }
                     } else {
                         return response()->json(['error' => 'Campo requerido no encontrado en el subreporte'], 422);
@@ -590,9 +591,6 @@ class ReportController extends Controller
                             }
                             else if(array_key_exists('store_id', $subreport)){
                                 $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
-                                if(!$bankAccount){
-                                    return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
-                                }
                                 if (array_key_exists('rate', $subreport)) {
                                     $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
                                     $bankAccount->save();
@@ -602,9 +600,6 @@ class ReportController extends Controller
                                     $bankAccount->save();
                                 }
 
-                            }
-                            else{
-                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
                             }
                         }
                    }

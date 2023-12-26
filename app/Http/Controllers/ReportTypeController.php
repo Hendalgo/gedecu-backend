@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 class ReportTypeController extends Controller
 {
     public function index(Request $request){
+        $user = User::find(auth()->user()->id);
         $search = $request->get('search');
         $paginated = $request->get('paginated');
         $reports = ReportType::withCount(['reports as count'])->where('delete', false);
@@ -17,6 +18,10 @@ class ReportTypeController extends Controller
             $query->where('name', "LIKE", "%{$search}%")
                 ->orWhere('description', "LIKE", "%{$search}%");
         });
+        if ($user->role->id !== 1) {
+           $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
+                ->where('roles_reports_permissions.role_id', $user->role->id);
+        }
         if($paginated){
             if ($paginated === 'no') {
                 return response()->json($reports->get(), 200);

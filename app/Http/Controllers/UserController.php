@@ -19,6 +19,7 @@ class UserController extends Controller
         $search = $request->get('search');
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
+        $country = $request->get('country');
         $users = User::query();
         if ($search) {
             $users = $users->join("countries", "users.country_id", "=", "countries.id")
@@ -29,6 +30,9 @@ class UserController extends Controller
         }
         if($role){
             $users = $users->where('role_id', "=", $role);
+        }
+        if($country){
+            $users = $users->where('country_id', "=", $country);
         }
         if ($order) {
             $users = $users->orderBy($order, $orderBy);

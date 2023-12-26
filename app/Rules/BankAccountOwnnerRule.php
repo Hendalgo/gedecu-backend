@@ -2,7 +2,7 @@
 
 namespace App\Rules;
 
-use App\Models\Bank;
+use App\Models\BankAccount;
 use Illuminate\Contracts\Validation\Rule;
 
 class BankAccountOwnnerRule implements Rule
@@ -15,7 +15,7 @@ class BankAccountOwnnerRule implements Rule
     public function passes($attribute, $value)
     {
         $user = auth()->user();
-        $bankAccount = Bank::find($value);
+        $bankAccount = BankAccount::find($value);
         if ($bankAccount->user_id !== $user->id) {
             if ($user->role->id !== 1) {
                 return false;
