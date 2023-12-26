@@ -18,32 +18,59 @@ class BankAccountController extends Controller
         $per_page = $request->get('per_page', 10);
         $bank = $request->get('bank');
         $bank_account = BankAccount::query()->where('banks_accounts.delete', false);
-        
-        if ($search) {
-            $bank_account = $bank_account
-                ->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
-                ->joint('users', 'user_id', "=", "users.id")
-                ->select('banks_accounts.*', 'banks.name as bank_name', "user.name as user_name");
+        if (auth()->user()->role->id === 1) {
+            
+            if ($search) {
+                $bank_account = $bank_account
+                    ->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
+                    ->joint('users', 'user_id', "=", "users.id")
+                    ->select('banks_accounts.*', 'banks.name as bank_name', "user.name as user_name");
 
-            $bank_account = $bank_account->where("banks.name", "LIKE", "%{$search}%")
-                ->orWhere("banks_accounts.name", "LIKE", "%{$search}%")
-                ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%")
-                ->orWhere("users.name", "LIKE", "%{$search}%");
-        }
-        if ($bank) {
-            $bank_account = $bank_account->where('bank_id', $bank);
-        }
-        if ($paginated === 'no') {
-            $bank_account = $bank_account->where('delete', false)->where(function($bank_account){
-                $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
-            })->with('bank.country', 'currency', 'user', "account_type")->get();
+                $bank_account = $bank_account->where("banks.name", "LIKE", "%{$search}%")
+                    ->orWhere("banks_accounts.name", "LIKE", "%{$search}%")
+                    ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%")
+                    ->orWhere("users.name", "LIKE", "%{$search}%");
+            }
+            if ($bank) {
+                $bank_account = $bank_account->where('bank_id', $bank);
+            }
+            if ($paginated === 'no') {
+                $bank_account = $bank_account->where('delete', false)->where(function($bank_account){
+                    $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
+                })->with('bank.country', 'currency', 'user', "account_type")->get();
+            }
+            else{
+                $bank_account = $bank_account->where('delete', false)->where(function($bank_account){
+                    $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
+                })->with('bank.country', 'currency', 'user', 'account_type')->paginate($per_page);
+            }
+            return response()->json($bank_account, 200);
         }
         else{
-            $bank_account = $bank_account->where('delete', false)->where(function($bank_account){
-                $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
-            })->with('bank.country', 'currency', 'user', 'account_type')->paginate($per_page);
+            if ($search) {
+                $bank_account = $bank_account
+                    ->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
+                    ->select('banks_accounts.*', 'banks.name as bank_name');
+
+                $bank_account = $bank_account->where("banks.name", "LIKE", "%{$search}%")
+                    ->orWhere("banks_accounts.name", "LIKE", "%{$search}%")
+                    ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%");
+            }
+            if ($bank) {
+                $bank_account = $bank_account->where('bank_id', $bank);
+            }
+            if ($paginated === 'no') {
+                $bank_account = $bank_account->where('delete', false)->where("user_id", auth()->user()->id)->where(function($bank_account){
+                    $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
+                })->with('bank.country', 'currency', 'user', "account_type")->get();
+            }
+            else{
+                $bank_account = $bank_account->where('delete', false)->where("user_id", auth()->user()->id) ->where(function($bank_account){
+                    $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
+                })->with('bank.country', 'currency', 'user', 'account_type')->paginate($per_page);
+            }
+            return response()->json($bank_account, 200);
         }
-        return response()->json($bank_account, 200);
     }
     public function create(){
     }

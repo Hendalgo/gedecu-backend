@@ -18,7 +18,7 @@ class StoreController extends Controller
         $search = $request->get('search');
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
-        $store = Store::with('country')->with('user')
+        $store = Store::with('country.currency')->with('user')
             ->when($search, function ($query, $search){
                 $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('location', 'LIKE', "%{$search}%")
