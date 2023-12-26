@@ -30,11 +30,9 @@ class AppServiceProvider extends ServiceProvider
             $rule = new UserRoleRule($parameters[0]);
             return $rule->passes($attribute, $value);
         });
-        Validator::extend('bank_account_ownner', function ($attribute, $value, $parameters, $validator) {
-            $rule = new BankAccountOwnnerRule($parameters[0]);
-            return $rule->validate($attribute, $value, function ($message) use ($attribute) {
-                throw new \Illuminate\Validation\ValidationException([$attribute => $message]);
-            });
+        Validator::extend('bank_account_owner', function ($attribute, $value, $parameters, $validator) {
+            $rule = new BankAccountOwnnerRule($parameters);
+            return $rule->passes($attribute, $value);
         });
     }
 }

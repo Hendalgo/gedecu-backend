@@ -561,8 +561,11 @@ class ReportController extends Controller
                 if ($reportType->type === 'income') {
                    if (!$reportType->country) {
                         foreach ($validatedSubreports as $subreport) {
-                            $bankAccount = BankAccount::find($subreport['bank_account_id']);
-                            if ($subreport['rate']) {
+                            if (!array_key_exists('account_id', $subreport)) {
+                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                            }
+                            $bankAccount = BankAccount::find($subreport['account_id']);
+                            if (array_key_exists('rate', $subreport)) {
                                 $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
                                 $bankAccount->save();
                             }
@@ -573,13 +576,46 @@ class ReportController extends Controller
                         }   
                    }
                    else{
-                    
+                        foreach ($validatedSubreports as $subreport) {
+                            if (array_key_exists('account_id', $subreport)) {
+                                $bankAccount = BankAccount::find($subreport['account_id']);
+                                if (array_key_exists('rate', $subreport)) {
+                                    $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                    $bankAccount->save();
+                                }
+                                else{
+                                    $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
+                                    $bankAccount->save();
+                                }
+                            }
+                            else if(array_key_exists('store_id', $subreport)){
+                                $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
+                                if(!$bankAccount){
+                                    return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                                }
+                                if (array_key_exists('rate', $subreport)) {
+                                    $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                    $bankAccount->save();
+                                }
+                                else{
+                                    $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
+                                    $bankAccount->save();
+                                }
+
+                            }
+                            else{
+                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                            }
+                        }
                    }
                 }
                 else if ($reportType->type === 'expense') {
                     if (!$reportType->country) {
                         foreach ($validatedSubreports as $subreport) {
-                            $bankAccount = BankAccount::find($subreport['bank_account_id']);
+                            if (!array_key_exists('account_id', $subreport)) {
+                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                            }
+                            $bankAccount = BankAccount::find($subreport['account_id']);
                             if ($subreport['rate']) {
                                 $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
                                 $bankAccount->save();
@@ -587,6 +623,39 @@ class ReportController extends Controller
                             else{
                                 $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
                                 $bankAccount->save();
+                            }
+                        }
+                    }
+                    else{
+                        foreach ($validatedSubreports as $subreport) {
+                            if (array_key_exists('account_id', $subreport)) {
+                                $bankAccount = BankAccount::find($subreport['account_id']);
+                                if ($subreport['rate']) {
+                                    $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                    $bankAccount->save();
+                                }
+                                else{
+                                    $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
+                                    $bankAccount->save();
+                                }
+                            }
+                            else if(array_key_exists('store_id', $subreport)){
+                                $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
+                                if(!$bankAccount){
+                                    return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                                }
+                                if ($subreport['rate']) {
+                                    $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                    $bankAccount->save();
+                                }
+                                else{
+                                    $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
+                                    $bankAccount->save();
+                                }
+
+                            }
+                            else{
+                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
                             }
                         }
                     }

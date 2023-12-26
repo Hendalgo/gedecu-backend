@@ -3,24 +3,28 @@
 namespace App\Rules;
 
 use App\Models\Bank;
-use Closure;
-use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Rule;
 
-class BankAccountOwnnerRule implements ValidationRule
+class BankAccountOwnnerRule implements Rule
 {
     /**
      * Run the validation rule.
      *
      * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
      */
-    public function validate(string $attribute, mixed $value, Closure $fail): void
+    public function passes($attribute, $value)
     {
         $user = auth()->user();
         $bankAccount = Bank::find($value);
         if ($bankAccount->user_id !== $user->id) {
             if ($user->role->id !== 1) {
-                $fail('No tienes permiso para realizar esta accion');
+                return false;
             }
         }
+        return true;
+    }
+    public function message()
+    {
+        return 'No tienes permiso para realizar esta accion';
     }
 }
