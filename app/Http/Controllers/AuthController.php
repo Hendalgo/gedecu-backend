@@ -49,7 +49,7 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        $user->load('country');
+        $user->load('country.currency');
         $user->load('role');
         return response()->json($user);
     }

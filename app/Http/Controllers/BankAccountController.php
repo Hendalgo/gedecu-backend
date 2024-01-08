@@ -18,6 +18,8 @@ class BankAccountController extends Controller
         $per_page = $request->get('per_page', 10);
         $bank = $request->get('bank');
         $bank_account = BankAccount::query()->where('banks_accounts.delete', false);
+        $country = $request->get('country');
+        $type = $request->get('type');
         if (auth()->user()->role->id === 1) {
             
             if ($search) {
@@ -34,13 +36,21 @@ class BankAccountController extends Controller
             if ($bank) {
                 $bank_account = $bank_account->where('bank_id', $bank);
             }
+            if($type){
+                $bank_account = $bank_account->where('account_type_id', $type);
+            }
+            if ($country) {
+                $bank_account = $bank_account->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
+                    ->join('countries', 'banks.country_id', '=', "countries.id")
+                    ->where('countries.id', $country);
+            }
             if ($paginated === 'no') {
-                $bank_account = $bank_account->where('delete', false)->where(function($bank_account){
+                $bank_account = $bank_account->where('banks_accounts.delete', false)->where(function($bank_account){
                     $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
                 })->with('bank.country', 'currency', 'user', "account_type")->get();
             }
             else{
-                $bank_account = $bank_account->where('delete', false)->where(function($bank_account){
+                $bank_account = $bank_account->where('banks_accounts.delete', false)->where(function($bank_account){
                     $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
                 })->with('bank.country', 'currency', 'user', 'account_type')->paginate($per_page);
             }
@@ -59,13 +69,22 @@ class BankAccountController extends Controller
             if ($bank) {
                 $bank_account = $bank_account->where('bank_id', $bank);
             }
+            
+            if($type){
+                $bank_account = $bank_account->where('account_type_id', $type);
+            }
+            if ($country) {
+                $bank_account = $bank_account->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
+                    ->join('countries', 'banks.country_id', '=', "countries.id")
+                    ->where('countries.id', $country);
+            }
             if ($paginated === 'no') {
-                $bank_account = $bank_account->where('delete', false)->where("user_id", auth()->user()->id)->where(function($bank_account){
+                $bank_account = $bank_account->where('banks_accounts.delete', false)->where("user_id", auth()->user()->id)->where(function($bank_account){
                     $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
                 })->with('bank.country', 'currency', 'user', "account_type")->get();
             }
             else{
-                $bank_account = $bank_account->where('delete', false)->where("user_id", auth()->user()->id) ->where(function($bank_account){
+                $bank_account = $bank_account->where('banks_accounts.delete', false)->where("user_id", auth()->user()->id) ->where(function($bank_account){
                     $bank_account->where('account_type_id', 1)->orWhere('account_type_id', 2);
                 })->with('bank.country', 'currency', 'user', 'account_type')->paginate($per_page);
             }

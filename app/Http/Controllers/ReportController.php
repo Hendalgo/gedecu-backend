@@ -11,11 +11,10 @@ use App\Models\RoleReportPermission;
 use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
+use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Validation\Rule;
-use Whoops\Run;
 use Illuminate\Support\Facades\Validator;
 
 class ReportController extends Controller
@@ -557,107 +556,194 @@ class ReportController extends Controller
                 'meta_data' => json_encode($validatedSubreports),
                 'amount' => 0,
             ]);
-            if ($report) {
-                $reportType = ReportType::find($request->type_id);
-                if ($reportType->type === 'income') {
-                   if (!$reportType->country) {
-                        foreach ($validatedSubreports as $subreport) {
-                            if (!array_key_exists('account_id', $subreport)) {
-                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
-                            }
-                            $bankAccount = BankAccount::find($subreport['account_id']);
-                            if (array_key_exists('rate', $subreport)) {
-                                $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
-                                $bankAccount->save();
-                            }
-                            else{
-                                $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
-                                $bankAccount->save();
-                            }
-                        }   
-                   }
-                   else{
-                        foreach ($validatedSubreports as $subreport) {
-                            if (array_key_exists('account_id', $subreport)) {
-                                $bankAccount = BankAccount::find($subreport['account_id']);
-                                if (array_key_exists('rate', $subreport)) {
-                                    $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
-                                    $bankAccount->save();
-                                }
-                                else{
-                                    $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
-                                    $bankAccount->save();
-                                }
-                            }
-                            else if(array_key_exists('store_id', $subreport)){
-                                $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
-                                if (array_key_exists('rate', $subreport)) {
-                                    $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
-                                    $bankAccount->save();
-                                }
-                                else{
-                                    $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
-                                    $bankAccount->save();
-                                }
-
-                            }
-                        }
-                   }
-                }
-                else if ($reportType->type === 'expense') {
+            try {
+                if ($report) {
+                    $reportType = ReportType::find($request->type_id);
+                    if ($reportType->type === 'income') {
                     if (!$reportType->country) {
-                        foreach ($validatedSubreports as $subreport) {
-                            if (!array_key_exists('account_id', $subreport)) {
-                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
-                            }
-                            $bankAccount = BankAccount::find($subreport['account_id']);
-                            if ($subreport['rate']) {
-                                $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
-                                $bankAccount->save();
-                            }
-                            else{
-                                $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
-                                $bankAccount->save();
-                            }
-                        }
-                    }
-                    else{
-                        foreach ($validatedSubreports as $subreport) {
-                            if (array_key_exists('account_id', $subreport)) {
-                                $bankAccount = BankAccount::find($subreport['account_id']);
-                                if ($subreport['rate']) {
-                                    $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
-                                    $bankAccount->save();
+                            foreach ($validatedSubreports as $subreport) {
+                                if (array_key_exists('account_id', $subreport)) {
+                                    $bankAccount = BankAccount::find($subreport['account_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
+                                else if(array_key_exists("senderAccount_id", $subreport) && array_key_exists('receiverAccount_id', $subreport)){
+                                    $senderBankAccount = BankAccount::find($subreport['senderAccount_id']);
+                                    $receiverBankAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $senderBankAccount->balance = $senderBankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $senderBankAccount->save();
+                                        $receiverBankAccount->balance = $receiverBankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $receiverBankAccount->save();
+                                    }
+                                    else{
+                                        $senderBankAccount->balance = $senderBankAccount->balance - $subreport['amount'];
+                                        $senderBankAccount->save();
+                                        $receiverBankAccount->balance = $receiverBankAccount->balance + $subreport['amount'];
+                                        $receiverBankAccount->save();
+                                    }
                                 }
                                 else{
-                                    $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
-                                    $bankAccount->save();
-                                }
-                            }
-                            else if(array_key_exists('store_id', $subreport)){
-                                $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
-                                if(!$bankAccount){
+                                    $report->delete();
                                     return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
                                 }
-                                if ($subreport['rate']) {
-                                    $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
-                                    $bankAccount->save();
+                            }   
+                    }
+                    else{
+                            foreach ($validatedSubreports as $subreport) {
+                                if (array_key_exists('account_id', $subreport)) {
+                                    $bankAccount = BankAccount::find($subreport['account_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
+                                else if(array_key_exists('senderAccount_id', $subreport) && array_key_exists('receiverAccount_id', $subreport)){
+                                    $senderBankAccount = BankAccount::find($subreport['senderAccount_id']);
+                                    $receiverBankAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $senderBankAccount->balance = $senderBankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $senderBankAccount->save();
+                                        $receiverBankAccount->balance = $receiverBankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $receiverBankAccount->save();
+                                    }
+                                    else{
+                                        $senderBankAccount->balance = $senderBankAccount->balance - $subreport['amount'];
+                                        $senderBankAccount->save();
+                                        $receiverBankAccount->balance = $receiverBankAccount->balance + $subreport['amount'];
+                                        $receiverBankAccount->save();
+                                    }
+                                }
+                                else if(array_key_exists('store_id', $subreport)){
+                                    $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+
+                                }
+                                else {
+                                    $userStore = Store::where('user_id', auth()->user()->id)->first();
+
+                                    $bankAccount = BankAccount::where('store_id', $userStore->id)->first();
+                                    if(!$bankAccount){
+                                        $report->delete();
+                                        return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                                    }
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance + $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
+                            }
+                    }
+                    }
+                    else if ($reportType->type === 'expense') {
+                        if (!$reportType->country) {
+                            foreach ($validatedSubreports as $subreport) {
+                                if (array_key_exists('account_id', $subreport)) {
+                                    $bankAccount = BankAccount::find($subreport['account_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
+                                else if(array_key_exists("senderAccount_id", $subreport) && array_key_exists('receiverAccount_id', $subreport)){
+                                    $senderBankAccount = BankAccount::find($subreport['senderAccount_id']);
+                                    $receiverBankAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $senderBankAccount->balance = $senderBankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $senderBankAccount->save();
+                                        $receiverBankAccount->balance = $receiverBankAccount->balance + ($subreport['amount'] * $subreport['rate']);
+                                        $receiverBankAccount->save();
+                                    }
+                                    else{
+                                        $senderBankAccount->balance = $senderBankAccount->balance - $subreport['amount'];
+                                        $senderBankAccount->save();
+                                        $receiverBankAccount->balance = $receiverBankAccount->balance + $subreport['amount'];
+                                        $receiverBankAccount->save();
+                                    }
                                 }
                                 else{
-                                    $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
-                                    $bankAccount->save();
+                                    $report->delete();
+                                    return response()->json(['error' => 'No se encontró una fuente a la cual restar los fondos'], 422);
                                 }
-
                             }
-                            else{
-                                return response()->json(['error' => 'No se encontró una fuente a la cual ingresar los fondos'], 422);
+                        }
+                        else{
+                            foreach ($validatedSubreports as $subreport) {
+                                if (array_key_exists('account_id', $subreport)) {
+                                    $bankAccount = BankAccount::find($subreport['account_id']);
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
+                                else if(array_key_exists('store_id', $subreport)){
+                                    $bankAccount = BankAccount::where('store_id', $subreport['store_id'])->first();
+                                    if ($subreport['rate']) {
+                                        $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
+                                else {
+                                    $userStore = Store::where('user_id', auth()->user()->id)->first();
+
+                                    $bankAccount = BankAccount::where('store_id', $userStore->id)->first();
+                                    if(!$bankAccount){
+                                        $report->delete();
+                                        return response()->json(['error' => 'No se encontró una fuente a la cual restar los fondos'], 422);
+                                    }
+                                    if (array_key_exists('rate', $subreport)) {
+                                        $bankAccount->balance = $bankAccount->balance - ($subreport['amount'] * $subreport['rate']);
+                                        $bankAccount->save();
+                                    }
+                                    else{
+                                        $bankAccount->balance = $bankAccount->balance - $subreport['amount'];
+                                        $bankAccount->save();
+                                    }
+                                }
                             }
                         }
                     }
+                    return response()->json($report, 201);
+                } else {
+                    $report->delete();
+                    return response()->json(['error' => 'Hubo un problema al crear el reporte'], 500);
                 }
-                return response()->json($report, 201);
-            } else {
-                return response()->json(['error' => 'Hubo un problema al crear el reporte'], 500);
+            } catch (Error $th) {
+                $report->delete();
+                return response()->json(['error' => $th], 500);
             }
         } else {
             return response()->json(['error' => 'No tienes permiso para crear este tipo de reporte'], 401);

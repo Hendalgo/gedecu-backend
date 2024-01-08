@@ -24,12 +24,12 @@ class CountryController extends Controller
             $countries = Country::query()
                 ->leftJoin("banks as b1", "b1.country_id", "=", "countries.id")
                 ->leftJoin("currencies", "currencies.id", "countries.currency_id") // Cambia 'banks' por 'b1'
-                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.name as currency_name", "currencies.symbol as currency_symbol", "currencies.shortcode as currency_shortcode")
+                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.id as currency_id","currencies.name as currency_name", "currencies.symbol as currency_symbol", "currencies.shortcode as currency_shortcode")
                 ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as total"))
                 ->leftJoin("banks_accounts", function($join) {
                     $join->on("b1.id", "=", "banks_accounts.bank_id"); // Cambia 'banks.id' por 'b1.id'
                 })
-                ->groupBy("country_name", "id_country", "shortcode", "currency_name", "currency_symbol", "currency_shortcode")->where("countries.delete", false);
+                ->groupBy("country_name", "id_country", "shortcode", "currency_name", "currency_symbol", "currency_shortcode", "currency_id")->where("countries.delete", false);
 
             if ($search) {
                 $countries = $countries->where('countries.name', 'LIKE', "%{$search}%");

@@ -18,10 +18,8 @@ class ReportTypeController extends Controller
             $query->where('name', "LIKE", "%{$search}%")
                 ->orWhere('description', "LIKE", "%{$search}%");
         });
-        if ($user->role->id !== 1) {
-           $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
-                ->where('roles_reports_permissions.role_id', $user->role->id);
-        }
+        $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
+            ->where('roles_reports_permissions.role_id', $user->role->id);
         if($paginated){
             if ($paginated === 'no') {
                 return response()->json($reports->get(), 200);
@@ -41,7 +39,8 @@ class ReportTypeController extends Controller
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255',
                 'type' => 'required|in:income,expense,neutro',
-                'country' => 'required|boolean'
+                'country' => 'required|boolean',
+                'meta_data' => 'required|JSON',
             ], $messages);
 
             $report_type_config = ReportType::inRandomOrder()->first()->config;
