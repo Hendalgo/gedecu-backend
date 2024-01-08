@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 class ReportTypeController extends Controller
 {
     public function index(Request $request){
+        $user = User::find(auth()->user()->id);
         $search = $request->get('search');
         $paginated = $request->get('paginated');
         $reports = ReportType::withCount(['reports as count'])->where('delete', false);
@@ -17,6 +18,8 @@ class ReportTypeController extends Controller
             $query->where('name', "LIKE", "%{$search}%")
                 ->orWhere('description', "LIKE", "%{$search}%");
         });
+        $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
+            ->where('roles_reports_permissions.role_id', $user->role->id);
         if($paginated){
             if ($paginated === 'no') {
                 return response()->json($reports->get(), 200);
@@ -34,8 +37,10 @@ class ReportTypeController extends Controller
                 'type.in' => 'Tipo invalido',
             ];
             $validatedData = $request->validate([
-                'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'type' => 'required|in:income,expense,neutro'
+                'name'=> 'required|string|max:255',
+                'type' => 'required|in:income,expense,neutro',
+                'country' => 'required|boolean',
+                'meta_data' => 'required|JSON',
             ], $messages);
 
             $report_type_config = ReportType::inRandomOrder()->first()->config;
@@ -45,7 +50,7 @@ class ReportTypeController extends Controller
             $report_type = ReportType::create($validatedData);
             
             if ($report_type) {
-                return response()->json(['message' => 'exito'], 201);
+                return response()->json($report_type, 201);
             }
             else{
                 return response()->json(['error'=> 'Hubo un problema al crear el tipo reporte'], 500);

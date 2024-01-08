@@ -20,7 +20,8 @@ class Report extends Model
         'meta_data',
         'user_id',
         'type_id',
-        'bank_account_id'
+        'bank_account_id',
+        'store_id',
     ];
 
     public function user(){
@@ -31,5 +32,8 @@ class Report extends Model
     }
     public function bank_account(){
         return $this->belongsTo('App\Models\BankAccount', 'bank_account_id', 'id');
+    }
+    public function store(){
+        return $this->belongsTo('App\Models\Store', 'store_id', 'id');
     }
 }

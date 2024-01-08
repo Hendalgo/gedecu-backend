@@ -11,35 +11,49 @@ class UserController extends Controller
 {
     public function index(Request $request){
         $currentUser = User::find(auth()->user()->id);
-        if ($currentUser->role->id === 1) {
-            $order = $request->get('order', 'created_at');
-            $orderBy = $request->get('order_by', 'desc');
-            $role = $request->get('role');
-            $since = $request->get('since');
-            $until = $request->get('until');
-            $search = $request->get('search');
-            $per_page = $request->get('per_page', 10);
-            $paginated = $request->get('paginated', 'yes');
-            $users = User::query();
-            if ($search) {
-                $users = $users->join("countries", "users.country_id", "=", "countries.id")
-                    ->select("users.*", "countries.name as country_name")
-                    ->where('users.name', 'LIKE', "%{$search}%")
-                    ->orWhere('users.email', 'LIKE', "%{$search}%")
-                    ->orWhere('countries.name', 'LIKE', "%{$search}%");
-            }
-            if($role){
-                $users = $users->where('role_id', "=", $role);
-            }
-            if ($order) {
-                $users = $users->orderBy($order, $orderBy);
-            }
-            if ($paginated === 'no') { 
-                return response()->json($users->where('users.delete',false)->with('role', 'country')->get(), 200);
-            }
-            return response()->json($users->where('users.delete',false)->with('role', 'country')->paginate($per_page), 200);
+        $order = $request->get('order', 'created_at');
+        $orderBy = $request->get('order_by', 'desc');
+        $role = $request->get('role');
+        $since = $request->get('since');
+        $until = $request->get('until');
+        $search = $request->get('search');
+        $per_page = $request->get('per_page', 10);
+        $paginated = $request->get('paginated', 'yes');
+        $country = $request->get('country');
+        $users = User::query();
+        $bank = $request->get('bank');
+        if ($search) {
+            $users = $users->join("countries", "users.country_id", "=", "countries.id")
+                ->select("users.*", "countries.name as country_name")
+                ->where('users.name', 'LIKE', "%{$search}%")
+                ->orWhere('users.email', 'LIKE', "%{$search}%")
+                ->orWhere('countries.name', 'LIKE', "%{$search}%");
         }
-        return response()->json(['message' => 'forbiden'], 401);
+        if ($since) {
+            $users = $users->where('users.created_at', '>=', $since);
+        }
+        if ($until) {
+            $users = $users->where('users.created_at', '<=', $until);
+        }
+        //Filtrate users if that users has a bank account in the bank
+        if ($bank) {
+            $users = $users->join('banks_accounts', 'users.id', '=', 'banks_accounts.user_id')
+                ->where('banks_accounts.bank_id', $bank);
+        }
+        if($role){
+            $users = $users->where('role_id', "=", $role);
+        }
+        if($country){
+            $users = $users->where('country_id', "=", $country);
+        }
+        if ($order) {
+            $users = $users->orderBy("users.$order", "$orderBy");
+        }
+        $users = $users->where('users.id', '!=', auth()->user()->id); // Exclude current user
+        if ($paginated === 'no') { 
+            return response()->json($users->where('users.delete',false)->with('role', 'country')->get(), 200);
+        }
+        return response()->json($users->where('users.delete',false)->with('role', 'country')->paginate($per_page), 200);
     }
     public function create(){
     }

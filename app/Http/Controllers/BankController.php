@@ -16,42 +16,32 @@ class BankController extends Controller
         $user = User::find(auth()->user()->id);
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
-        if ($user->role->id === 1) {
+        $search = $request->get("search"); 
+        $country = $request->get("country");
+        
+        $bank = Bank::query()
+            ->select("banks.id", "banks.name", "banks.meta_data", "banks.country_id")
+            ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as amount"))
+            ->leftJoin("banks_accounts", function($join) {
+                $join->on("banks.id", "=", "banks_accounts.bank_id")
+                    ->where('banks_accounts.delete', false);
+            })
+            ->groupBy("banks.id", "banks.name", "banks.meta_data", "banks.country_id");
 
-            $search = $request->get("search"); 
-            $country = $request->get("country");
-            
-            $bank = Bank::query()
-                ->select("banks.id", "banks.name", "banks.meta_data", "banks.country_id", 'banks.currency_id')
-                ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as amount"))
-                ->leftJoin("banks_accounts", function($join) {
-                    $join->on("banks.id", "=", "banks_accounts.bank_id")
-                        ->where('banks_accounts.delete', false);
-                })
-                ->groupBy("banks.id", "banks.name", "banks.meta_data", "banks.country_id", 'banks.currency_id');
-
-            if ($search) {
-                $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
-            }
-
-            if ($country) {
-                $bank = $bank->where("banks.country_id", "=", $country);
-            }
-
-            $bank = $bank->where('banks.delete', false)->with("country", "currency");
-
-            if ($paginated === 'no') {
-                return response()->json($bank->get(), 200);
-            }
-            return response()->json($bank->paginate($per_page), 200);
+        if ($search) {
+            $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
         }
-        else{
-            $bank = Bank::where('banks.delete', false)->with('country', 'currency');
-            if ($paginated === 'no') {
-                return response()->json($bank->get(), 200);
-            }
-            return response()->json($bank->paginate($per_page), 200);
+
+        if ($country) {
+            $bank = $bank->where("banks.country_id", "=", $country);
         }
+
+        $bank = $bank->where('banks.delete', false)->with("country");
+
+        if ($paginated === 'no') {
+            return response()->json($bank->get(), 200);
+        }
+        return response()->json($bank->paginate($per_page), 200);
     }
     public function create(){
     }
@@ -61,13 +51,11 @@ class BankController extends Controller
             $message = [
                 'name.required' => 'El nombre es requerido',
                 'country.required' => 'El país es requerido',
-                'currency.required' => 'La moneda es requerida',
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'image'=> 'image',
                 'country' => 'required|exists:countries,id',
-                'currency' => 'required|exists:currencies,id'
             ], $message);
             $validatedData['meta_data'] = json_encode([
                 'styles' =>[]
@@ -76,7 +64,6 @@ class BankController extends Controller
             $bank = Bank::create([
                 'name' => $validatedData['name'],
                 'country_id' => $validatedData['country'],
-                'currency_id' => $validatedData['currency'],
                 'meta_data' => $validatedData['meta_data']
             ]);
     
@@ -92,7 +79,7 @@ class BankController extends Controller
     public function show(Request $request, $id){
         
         $user = User::find(auth()->user()->id);
-        $bank = Bank::with('country', 'currency')->find($id);
+        $bank = Bank::with('country')->find($id);
 
         return response()->json($bank, 200);
     }
