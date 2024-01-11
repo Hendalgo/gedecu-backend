@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
@@ -36,6 +37,10 @@ Route::group([
 });
 Route::middleware('auth.veryfied')->group(function (){
     Route::get('user', [AuthController::class, 'me']);
+    /*
+        Bank types 
+    */
+    Route::get('banks/types', [AccountTypeController::class, 'index']);
 
     /*
      * Banks Routes
@@ -46,6 +51,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::get('banks/{id}', [BankController::class, 'show']);
     Route::put('banks/{id}', [BankController::class, 'update']);
     Route::delete('banks/{id}', [BankController::class, 'destroy']);
+    
     /**
      * Banks Accounts Routes
      */

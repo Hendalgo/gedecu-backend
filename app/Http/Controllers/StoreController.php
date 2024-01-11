@@ -92,7 +92,6 @@ class StoreController extends Controller
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'location'=> 'required|string|min:2|max:255',
                 'user_id' => 'required|exists:users,id',
-                'country_id' => 'required|exists:countries,id'
             ]);
             $Store = Store::find($id);
             foreach ($validatedData as $field => $value) {

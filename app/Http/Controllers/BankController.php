@@ -36,7 +36,7 @@ class BankController extends Controller
             $bank = $bank->where("banks.country_id", "=", $country);
         }
 
-        $bank = $bank->where('banks.delete', false)->with("country");
+        $bank = $bank->where('banks.delete', false)->with("country", "type");
 
         if ($paginated === 'no') {
             return response()->json($bank->get(), 200);
@@ -51,11 +51,13 @@ class BankController extends Controller
             $message = [
                 'name.required' => 'El nombre es requerido',
                 'country.required' => 'El país es requerido',
+                'type_id.required' => 'El tipo de cuenta es requerido',
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'image'=> 'image',
                 'country' => 'required|exists:countries,id',
+                'type_id' => 'required|exists:accounts_types,id'
             ], $message);
             $validatedData['meta_data'] = json_encode([
                 'styles' =>[]
@@ -64,7 +66,8 @@ class BankController extends Controller
             $bank = Bank::create([
                 'name' => $validatedData['name'],
                 'country_id' => $validatedData['country'],
-                'meta_data' => $validatedData['meta_data']
+                'meta_data' => $validatedData['meta_data'],
+                'type_id' => $validatedData['type_id']
             ]);
     
             if ($bank) {
@@ -95,8 +98,7 @@ class BankController extends Controller
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'country' => 'required|exists:countries,id',
-                'currency' => 'required|exists:currencies,id'
+                'country' => 'required|exists:countries,id'
             ], $message);
             $bank = Bank::find($id);
             /* foreach ($validatedData as $field => $value) {
@@ -104,7 +106,6 @@ class BankController extends Controller
             } */
             $bank->name = $validatedData['name'];
             $bank->country_id = $validatedData['country'];
-            $bank->currency_id = $validatedData['currency'];
 
             $bank->save();
     

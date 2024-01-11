@@ -10,22 +10,19 @@ class CurrencyController extends Controller
 {
     public function index(Request $request){
         $user = User::find(auth()->user()->id);
-        if ($user->role->id === 1) {
-            $search = $request->get('search');
-            $paginated = $request->get('paginated', 'yes');
-            $per_page = $request->get('per_page', 10);
+        $search = $request->get('search');
+        $paginated = $request->get('paginated', 'yes');
+        $per_page = $request->get('per_page', 10);
 
-            $currency = Currency::where('delete', false)->where(function($query) use($search){
-                $query = $query->where('name', "LIKE", "%{$search}%")
-                ->orWhere("shortcode", 'LIKE', "%{$search}%")
-                ->orWhere("symbol", 'LIKE', "%{$search}%");
-            });
-            if ($paginated === 'no') {
-                return response()->json($currency->get(), 200);  
-            }
-            return response()->json($currency->paginate(10), 200);  
+        $currency = Currency::where('delete', false)->where(function($query) use($search){
+            $query = $query->where('name', "LIKE", "%{$search}%")
+            ->orWhere("shortcode", 'LIKE', "%{$search}%")
+            ->orWhere("symbol", 'LIKE', "%{$search}%");
+        });
+        if ($paginated === 'no') {
+            return response()->json($currency->get(), 200);  
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json($currency->paginate(10), 200);  
     }
     public function create(){
     }

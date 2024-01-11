@@ -13,14 +13,14 @@ class Bank extends Model
         'img',
         'meta_data',
         'country_id',
-        'currency_id'
+        'type_id'
     ];
 
 
     public function country(){
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }
-    public function currency(){
-        return $this->belongsTo('App\Models\Currency', 'currency_id', 'id');
+    public function type(){
+        return $this->belongsTo('App\Models\AccountType', 'type_id', 'id');
     }
 }

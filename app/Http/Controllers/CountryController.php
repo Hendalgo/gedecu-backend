@@ -81,11 +81,13 @@ class CountryController extends Controller
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
                 "country_shortcode"=> "required|string|min:2|max:4",
+                "currency_id" => "required|integer|exists:currencies,id"
             ], $message);
             
             $country = Country::find($id);
             $country->name = $validatedData['country_name'];
             $country->shortcode = $validatedData["country_shortcode"];
+            $country->currency_id = $validatedData["currency_id"];
             if ($country->save()) {
                 return response()->json(['message' => 'exito'], 201);
             }
