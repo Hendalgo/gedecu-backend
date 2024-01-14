@@ -13,122 +13,46 @@ class RolesSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = new Role();
-        $admin->name = "administrador";
-        $admin->description = "Super admin, acceso a todas las funcionalidades de la aplicación";
-        $admin->permissions = json_encode(
-            array(
-                "banks" =>[
-                    "read" => true, 
-                    "create"=> true, 
-                    "update"=> true, 
-                    "delete" =>true
-                ],
-                "countries" => [
-                    "read" => true, 
-                    "create"=> true, 
-                    "update"=> true, 
-                    "delete" =>true
-                ],
-                "reports" =>[
-                    "read" => true, 
-                    "create"=> true, 
-                    "update"=> true, 
-                    "delete" =>true
-                ],
-                "currencies"=>[
-                    "read" => true, 
-                    "create"=> true, 
-                    "update"=> true, 
-                    "delete" =>true
-                ],
-                "roles"=>[
-                    "read" => true, 
-                    "create"=> true, 
-                    "update"=> true, 
-                    "delete" =>true
-                ],
-                "users"=>[
-                    "read" => true, 
-                    "create"=> true, 
-                    "update"=> true, 
-                    "delete" =>true
-                ]
-            )
-        );
+        $user = new Role();
+        $user->name = "Administrador";
+        $user->description = "Super admin, acceso a todas las funcionalidades de la aplicación";
+        $user->permissions = json_encode(array());
 
-        $admin->save();
+        $user->save();
 
-        $gestor = new Role();
-        $gestor->name = 'gestor';
-        $gestor->description = '';
-        $gestor->permissions = json_encode([
-            "banks" =>[
-                "read" => true, 
-                "create"=> false, 
-                "update"=> false, 
-                "delete" =>false
-            ],
-            "countries" => [
-                "read" => true, 
-                "create"=> false, 
-                "update"=> false, 
-                "delete" => false
-            ],
-            "reports" =>[
-                "read" => true, 
-                "create"=> true, 
-                "update"=> false, 
-                "delete" => false
-            ],
-            "currencies"=>[
-                "read" => true, 
-                "create"=> false, 
-                "update"=> false, 
-                "delete" => false
-            ],
-            "roles"=>[
-                "read" => true, 
-                "create"=> false, 
-                "update"=> false, 
-                "delete" => false
-            ],
-            "users"=>[
-                "read" => false, 
-                "create"=> false, 
-                "update"=> false, 
-                "delete" =>false
-            ]
-        ]);
+        $user = new Role();
+        $user->name = 'Gestor';
+        $user->description = '';
+        $user->permissions = json_encode(array());
 
-        $gestor->save();
+        $user->save();
 
-        $depositante = new Role();
-        $depositante->name = 'depositante';
-        $depositante->description = '';
-        $depositante->permissions = json_encode([]);
+        $user = new Role();
+        $user->name = 'Encargado de local';
+        $user->description = '';
+        $user->permissions = json_encode([]);
         
-        $depositante->save();
+        $user->save();
 
-        $corresponsal = new Role();
-        $corresponsal->name = 'corresponsal';
-        $corresponsal->description = '';
-        $corresponsal->permissions = json_encode([]);
+        $user = new Role();
+        $user->name = 'Proveedor';
+        $user->description = '';
+        $user->permissions = json_encode([]);
         
-        $corresponsal->save();
+        $user->save();
 
-        $caja = new Role();
-        $caja->name = 'caja fuerte';
-        $caja->description = '';
-        $caja->permissions = json_encode([]);
+        $user = new Role();
+        $user->name = 'Depositante';
+        $user->description = '';
+        $user->permissions = json_encode([]);
 
-        $caja->save();
+        $user->save();
         
-        $encargado = new Role();
-        $encargado->name = 'encargado de tienda';
-        $encargado->description = '';
-        $encargado->permissions = json_encode([]);
+        $user = new Role();
+        $user->name = 'Caja Fuerte';
+        $user->description = '';
+        $user->permissions = json_encode([]);
 
-        $encargado->save();
+        $user->save();
     }
 }

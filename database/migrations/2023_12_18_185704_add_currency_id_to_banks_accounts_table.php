@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('banks_accounts', function (Blueprint $table) {
-            $table->unsignedBigInteger('currency_id')->after('user_id')->default(1); // Agrega la columna
+            $table->unsignedBigInteger('currency_id')->after('user_id'); // Agrega la columna
 
             $table->foreign('currency_id') // Establece la columna como clave foránea
                 ->references('id')

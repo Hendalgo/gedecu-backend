@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('countries', function (Blueprint $table) {
+        Schema::create('subreports', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('img')->nullable();
-            $table->string('locale')->nullable();
-            $table->string('shortcode');
-            $table->json('config');
-            $table->boolean('delete')->default(false);
+            $table->double('amount');
+            $table->boolean('duplicate');
+            $table->json('data');
+            $table->foreignId('report_id')->references('id')->on('reports')->cascadeOnDelete();
+            $table->foreignId('currency_id')->references('id')->on('currencies')->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('countries');
+        Schema::dropIfExists('subreports');
     }
 };

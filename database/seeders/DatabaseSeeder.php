@@ -4,10 +4,6 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-use App\Models\Movement;
-use App\Models\Report;
-use App\Models\Store;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -25,15 +21,9 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call(RolesSeeder::class);
-        $this->call(CurrencySeeder::class);
         $this->call(CountriesSeeder::class);
-        $this->call(ReportsTypesSeeder::class);
-        $this->call(BankSeeder::class);
-        User::factory(50)->create();
-        Store::factory(20)->create();
-        $this->call(BankAccountSeeder::class);
-        Report::factory(100)->create();
-        Movement::factory(100)->create();
-        /* $this->call(UserSeeder::class); */
+        $this->call(CurrencySeeder::class);
+        $this->call(UserSeeder::class);
+        $this->call(AccountTypeSeeder::class);
     }
 }

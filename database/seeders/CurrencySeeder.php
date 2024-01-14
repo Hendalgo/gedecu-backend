@@ -18,7 +18,7 @@ class CurrencySeeder extends Seeder
         $peso->name = 'Peso Colombiano';
         $peso->shortcode = 'COP';
         $peso->symbol = '$';
-
+        $peso->country_id = 1;
         $peso->save();
 
         $bolivar = new Currency();
@@ -26,7 +26,7 @@ class CurrencySeeder extends Seeder
         $bolivar->name = "Bolivar Digital";
         $bolivar->shortcode = 'VES';
         $bolivar->symbol = 'Bs.';
-
+        $bolivar->country_id = 2;
         $bolivar->save();
     }
 }

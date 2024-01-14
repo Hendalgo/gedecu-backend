@@ -18,6 +18,7 @@ class CountriesSeeder extends Seeder
         $colombia->name = 'Colombia';
         $colombia->img = '';
         $colombia->shortcode = 'CO';
+        $colombia->locale = 'es_CO';
         $colombia->config = json_encode([
             'styles' => [
                 'color' => '#FFFFFF',
@@ -40,6 +41,7 @@ class CountriesSeeder extends Seeder
                 'borderColor' => '$FDFDFD'
             ]
             ]);
+        $venezuela->locale = 'es_VE';
         $venezuela->shortcode = 'VE';
 
         $venezuela->save();

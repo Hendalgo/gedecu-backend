@@ -13,12 +13,7 @@ return new class extends Migration
     {
         Schema::table('banks_accounts', function (Blueprint $table) {
             $table->unsignedBigInteger('bank_id')->nullable()->change(); 
-            $table->unsignedBigInteger('account_type_id')->nullable();
-            $table->foreign('account_type_id')
-                ->references('id')
-                ->on('accounts_types')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
+            $table->unsignedBigInteger('user_id')->nullable()->change();
         });
     }
 
@@ -29,8 +24,7 @@ return new class extends Migration
     {
         Schema::table('banks_accounts', function (Blueprint $table) {
             $table->unsignedBigInteger('bank_id')->change(); 
-            $table->dropForeign(['account_type_id']);
-            $table->dropColumn('account_type_id');
+            $table->unsignedBigInteger('user_id')->change();
         });
     }
 };
