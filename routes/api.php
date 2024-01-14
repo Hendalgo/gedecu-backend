@@ -47,7 +47,6 @@ Route::middleware('auth.veryfied')->group(function (){
      */
     Route::post('banks', [BankController::class, 'store']);
     Route::get('banks', [BankController::class, 'index']);
-    Route::get('banks/total', [BankController::class, 'getBanksTotal']);
     Route::get('banks/{id}', [BankController::class, 'show']);
     Route::put('banks/{id}', [BankController::class, 'update']);
     Route::delete('banks/{id}', [BankController::class, 'destroy']);

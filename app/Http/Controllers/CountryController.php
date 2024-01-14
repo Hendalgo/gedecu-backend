@@ -21,23 +21,15 @@ class CountryController extends Controller
         if ($user->role->id === 1) {
             
             $search = $request->get("search"); 
-            $countries = Country::query()
-                ->leftJoin("banks as b1", "b1.country_id", "=", "countries.id")
-                ->leftJoin("currencies", "currencies.id", "countries.currency_id") // Cambia 'banks' por 'b1'
-                ->select("countries.name as country_name", "countries.id as id_country", "countries.shortcode", "currencies.id as currency_id","currencies.name as currency_name", "currencies.symbol as currency_symbol", "currencies.shortcode as currency_shortcode")
-                ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as total"))
-                ->leftJoin("banks_accounts", function($join) {
-                    $join->on("b1.id", "=", "banks_accounts.bank_id"); // Cambia 'banks.id' por 'b1.id'
-                })
-                ->groupBy("country_name", "id_country", "shortcode", "currency_name", "currency_symbol", "currency_shortcode", "currency_id")->where("countries.delete", false);
-
+            $countries = Country::query();
             if ($search) {
-                $countries = $countries->where('countries.name', 'LIKE', "%{$search}%");
+                $countries = $countries->where("countries.name", "LIKE", "%$search%");
             }
-            $countries = $countries->where("countries.delete", false)->paginate(10);
-            return response()->json([$countries], 200);
 
+            $countries = $countries->where("countries.delete", false)->with('banks', 'currencies')->paginate(10);
+            return response()->json($countries, 200);
         }
+        return response()->json(['message' => 'forbiden', 401]);
     }
     public function store(Request $request){
         $user = User::find(auth()->user()->id);
@@ -49,13 +41,15 @@ class CountryController extends Controller
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
                 "country_shortcode"=> "required|string|min:2|max:4",
-                "currency_id" => "required|integer|exists:currencies,id"
+                "currency_id" => "required|integer|exists:currencies,id",
+                "locale" => "string|max:20"
             ], $message);
             $country = Country::create([
                 "name"=> $validatedData['country_name'],
                 "shortcode" => $validatedData["country_shortcode"],
                 "config" => json_encode([]),
-                "currency_id" => $validatedData["currency_id"]
+                "currency_id" => $validatedData["currency_id"],
+                "locale" => $validatedData["locale"],
             ]);
     
             if ($country) {
@@ -81,13 +75,17 @@ class CountryController extends Controller
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
                 "country_shortcode"=> "required|string|min:2|max:4",
-                "currency_id" => "required|integer|exists:currencies,id"
+                "currency_id" => "required|integer|exists:currencies,id",
+                "locale" => "string|max:20"
             ], $message);
             
             $country = Country::find($id);
             $country->name = $validatedData['country_name'];
             $country->shortcode = $validatedData["country_shortcode"];
             $country->currency_id = $validatedData["currency_id"];
+            if ($validatedData["locale"]) {
+                $country->locale = $validatedData["locale"];
+            }
             if ($country->save()) {
                 return response()->json(['message' => 'exito'], 201);
             }

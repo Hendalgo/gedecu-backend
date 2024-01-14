@@ -17,9 +17,9 @@ class BankAccount extends Model
         "meta_data",
         "identifier",
         "user_id",
-        "account_type_id",
         "currency_id",
-        "store_id"
+        "store_id",
+        "delete"
     ];
 
     
@@ -28,9 +28,6 @@ class BankAccount extends Model
     }
     public function user(){
         return $this->belongsTo('\App\Models\User', 'user_id', 'id');
-    }
-    public function account_type(){
-        return $this->belongsTo('\App\Models\AccountType', 'account_type_id', 'id');
     }
     public function currency(){
         return $this->belongsTo('\App\Models\Currency', 'currency_id', 'id');

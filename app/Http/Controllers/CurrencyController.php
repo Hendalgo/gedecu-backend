@@ -20,9 +20,9 @@ class CurrencyController extends Controller
             ->orWhere("symbol", 'LIKE', "%{$search}%");
         });
         if ($paginated === 'no') {
-            return response()->json($currency->get(), 200);  
+            return response()->json($currency->with("country")->get(), 200);  
         }
-        return response()->json($currency->paginate(10), 200);  
+        return response()->json($currency->with("country")->paginate(10), 200);  
     }
     public function create(){
     }
@@ -32,7 +32,8 @@ class CurrencyController extends Controller
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255',
                 'shortcode'=> 'required|string|min:2|max:4',
-                'symbol' => 'required|string'
+                'symbol' => 'required|string',
+                'country_id' => 'required|integer|exists:countries,id|unique:currencies,country_id'
             ]);
 
             $currency = Currency::create($validatedData);
@@ -47,7 +48,7 @@ class CurrencyController extends Controller
         return response()->json(['message' => 'forbiden', 401]);
     }
     public function show($id){
-        return response()->json(Currency::find($id), 200);
+        return response()->json(Currency::with('country')->find($id), 200);
     }
     public function update(Request $request, $id){
         $user = User::find(auth()->user()->id);
@@ -55,7 +56,8 @@ class CurrencyController extends Controller
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255',
                 'shortcode'=> 'required|string|min:2|max:4',
-                'symbol' => 'required|string'
+                'symbol' => 'required|string',
+                'country_id' => 'required|integer|exists:countries,id|unique:currencies,country_id'
             ]);
             $Currency = Currency::find($id);
             foreach ($validatedData as $field => $value) {

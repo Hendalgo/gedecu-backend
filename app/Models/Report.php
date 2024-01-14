@@ -10,18 +10,10 @@ class Report extends Model
     use HasFactory;
 
     protected $fillable = [
-        'amount',
-        'payment_reference',
-        'inconsistence_check',
-        'duplicated',
-        'duplicated_status',
-        'notes',
-        'bank_amount',
         'meta_data',
         'user_id',
         'type_id',
-        'bank_account_id',
-        'store_id',
+        'delete'
     ];
 
     public function user(){
@@ -30,10 +22,7 @@ class Report extends Model
     public function type(){
         return $this->belongsTo('App\Models\ReportType', 'type_id', 'id');
     }
-    public function bank_account(){
-        return $this->belongsTo('App\Models\BankAccount', 'bank_account_id', 'id');
-    }
-    public function store(){
-        return $this->belongsTo('App\Models\Store', 'store_id', 'id');
+    public function subreport(){
+        return $this->hasMany('App\Models\Subreport', 'report_id', 'id');
     }
 }

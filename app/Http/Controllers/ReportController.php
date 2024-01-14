@@ -142,6 +142,7 @@ class ReportController extends Controller
                     }
                 }
                 // Save the subreport as a validated subreport
+                $subreport['id'] = uuid_create();
                 $validatedSubreports[] = $subreport;
             }
             // Create the report
@@ -149,7 +150,7 @@ class ReportController extends Controller
                 
                 'type_id' => $request->type_id,
                 'user_id' => auth()->user()->id,
-                'meta_data' => json_encode(["id"=> uuid_create(),$validatedSubreports]),
+                'meta_data' => json_encode($validatedSubreports),
                 'amount' => 0,
             ]);
             try {
@@ -332,15 +333,38 @@ class ReportController extends Controller
                             }
                         }
                     }
+                    $data = [];
                     foreach(json_decode($report->meta_data) as $subreport){
+                        $bankAccount = [];
                         /*Patch this later, this need consider that is not necessary than a currency is bein determinated by a bank account */
-                        $movement = Movement::create([
-                            'amount' => $subreport['amount'],
-                            'report_id' => $report->id,
-                            'type' => $reportType->type,
-                            'sub_report_id' => $subreport['id'],
-                            'currency_id' => $subreport['currency_id'],
-                        ]);
+                        if (array_key_exists('account_id', $subreport)) {
+                            $bankAccount = BankAccount::find($subreport->account_id);
+                        }
+                        else if(array_key_exists('senderAccount_id', $subreport) && array_key_exists('receiverAccount_id', $subreport)){
+                            $bankAccount = BankAccount::find($subreport->senderAccount_id);
+                            $receiverBankAccount = BankAccount::find($subreport->receiverAccount_id);
+                        }
+                        else if(array_key_exists('store_id', $subreport)){
+                            $bankAccount = BankAccount::where('store_id', $subreport->store_id)->first();
+                        }
+                        else {
+                            $userStore = Store::where('user_id', auth()->user()->id)->first();
+                            $bankAccount = BankAccount::where('store_id', $userStore->id)->first();
+                        }
+                        if ($bankAccount) {
+                            $data[] = [
+                                'report_id' => $report->id,
+                                'bank_account_id' => $bankAccount->id,
+                                'amount' => $subreport->amount,
+                                'currency_id' => $bankAccount->currency_id,
+                                'rate' => $subreport->rate,
+                                'created_at' => Carbon::now(),
+                                'updated_at' => Carbon::now(),
+                            ];
+                        }
+                    }
+                    if(sizeof($data) > 0){ 
+                        Movement::insert($data);
                     }
                     return response()->json($report, 201);
                 } else {

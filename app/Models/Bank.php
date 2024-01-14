@@ -13,7 +13,8 @@ class Bank extends Model
         'img',
         'meta_data',
         'country_id',
-        'type_id'
+        'type_id',
+        'delete'
     ];
 
 
@@ -22,5 +23,8 @@ class Bank extends Model
     }
     public function type(){
         return $this->belongsTo('App\Models\AccountType', 'type_id', 'id');
+    }
+    public function accounts(){
+        return $this->hasMany('App\Models\Account', 'bank_id', 'id');
     }
 }

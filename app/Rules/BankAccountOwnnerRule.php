@@ -15,7 +15,7 @@ class BankAccountOwnnerRule implements Rule
     public function passes($attribute, $value)
     {
         $user = auth()->user();
-        $bankAccount = BankAccount::find($value);
+        $bankAccount = BankAccount::findOrFail($value);
         if ($bankAccount->user_id !== $user->id) {
             if ($user->role->id !== 1) {
                 return false;

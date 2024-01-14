@@ -11,6 +11,10 @@ class Currency extends Model
     protected $fillable = [
         "name",
         "shortcode",
-        "symbol"
+        "symbol",
+        "country_id",
     ];
+    public function country(){
+        return $this->belongsTo('\App\Models\Country', 'country_id');
+    }
 }
