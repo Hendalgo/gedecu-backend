@@ -30,11 +30,5 @@ class AccountTypeSeeder extends Seeder
         $AccountType->description = 'Cuenta de efectivo de los locales';
 
         $AccountType->save();
-
-        $AccountType = new AccountType();
-        $AccountType->name = 'Depositante';
-        $AccountType->description = 'Cuenta de depositante';
-
-        $AccountType->save();
     }
 }

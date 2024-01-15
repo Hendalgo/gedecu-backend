@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountType;
 use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\Movement;
@@ -19,25 +20,15 @@ class BankController extends Controller
         $search = $request->get("search"); 
         $country = $request->get("country");
         
-        $bank = Bank::where('banks.delete', false)
-            ->select("banks.id", "banks.name", "banks.meta_data", "banks.country_id")
-            ->addSelect(DB::raw("IFNULL(sum(banks_accounts.balance), 0) as amount"))
-            ->leftJoin("banks_accounts", function($join) {
-                $join->on("banks.id", "=", "banks_accounts.bank_id")
-                    ->where('banks_accounts.delete', false);
-            })
-            ->groupBy("banks.id", "banks.name", "banks.meta_data", "banks.country_id");
-
-        if ($search) {
+        $bank = Bank::where('banks.delete', false);
+        /* if ($search) {
             $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
-        }
-
+        } */
         if ($country) {
             $bank = $bank->where("banks.country_id", "=", $country);
         }
 
         $bank = $bank->with("country", "type");
-
         if ($paginated === 'no') {
             return response()->json($bank->get(), 200);
         }
@@ -111,8 +102,6 @@ class BankController extends Controller
             $bank->country_id = $validatedData['country'];
             $bank->type_id = $validatedData['type_id'];
             $bank->save();
-            
-            BankAccount::where('bank_id', $bank->id)->update(['account_type_id' => $bank->type_id]);
             return response()->json(['message'=> 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);

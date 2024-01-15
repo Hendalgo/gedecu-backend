@@ -56,8 +56,7 @@ class CurrencyController extends Controller
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255',
                 'shortcode'=> 'required|string|min:2|max:4',
-                'symbol' => 'required|string',
-                'country_id' => 'required|integer|exists:countries,id|unique:currencies,country_id'
+                'symbol' => 'required|string'
             ]);
             $Currency = Currency::find($id);
             foreach ($validatedData as $field => $value) {
@@ -73,6 +72,7 @@ class CurrencyController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $currency = Currency::find($id);
+            $currency->country_id = null;
             $currency->delete = true;
             if ( $currency->save()) {
                 return response()->json(['message' => 'exito'], 201);

@@ -19,7 +19,7 @@ class Country extends Model
     public function banks(){
         return $this->hasMany('\App\Models\Bank', 'country_id');
     }
-    public function currencies(){
-        return $this->hasMany('\App\Models\Currency', 'country_id');
+    public function currency(){
+        return $this->hasOne('\App\Models\Currency', 'country_id');
     }
 }

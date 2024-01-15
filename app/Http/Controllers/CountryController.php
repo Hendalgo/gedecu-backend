@@ -41,14 +41,12 @@ class CountryController extends Controller
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
                 "country_shortcode"=> "required|string|min:2|max:4",
-                "currency_id" => "required|integer|exists:currencies,id",
                 "locale" => "string|max:20"
             ], $message);
             $country = Country::create([
                 "name"=> $validatedData['country_name'],
                 "shortcode" => $validatedData["country_shortcode"],
                 "config" => json_encode([]),
-                "currency_id" => $validatedData["currency_id"],
                 "locale" => $validatedData["locale"],
             ]);
     
@@ -75,14 +73,12 @@ class CountryController extends Controller
             $validatedData = $request->validate([
                 "country_name" => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
                 "country_shortcode"=> "required|string|min:2|max:4",
-                "currency_id" => "required|integer|exists:currencies,id",
                 "locale" => "string|max:20"
             ], $message);
             
             $country = Country::find($id);
             $country->name = $validatedData['country_name'];
             $country->shortcode = $validatedData["country_shortcode"];
-            $country->currency_id = $validatedData["currency_id"];
             if ($validatedData["locale"]) {
                 $country->locale = $validatedData["locale"];
             }

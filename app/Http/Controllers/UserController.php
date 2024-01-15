@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Country;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\UserBalance;
+use Error;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -93,8 +96,20 @@ class UserController extends Controller
                 'country_id' => $request->country,
                 'role_id'=> $request->role
             ]);
-    
+            
             if ($user) {
+                if ($user->role_id == 5) {
+                    try {
+                        $currency = Country::with("currency")->find($user->country_id);
+                        UserBalance::create([
+                            "user_id" => $user->id,
+                            "currency_id" => $currency->currency->id,
+                        ]);
+                    } catch (Error $th) {
+                        $user->delete();
+                        return response()->json(['error'=> $th], 500);
+                    }
+                }
                 return response()->json(['message' => 'exito'], 201);
             }
             else{

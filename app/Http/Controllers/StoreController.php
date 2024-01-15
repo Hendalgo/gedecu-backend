@@ -57,6 +57,11 @@ class StoreController extends Controller
                     'country_id' => 'required|exists:countries,id',
                     'balance' => 'required|numeric'
                 ], $messages);
+                $exist_user = Store::where('user_id', '=', $validatedData['user_id'])->first();
+                if ($exist_user) {
+                    $exist_user->user_id = null;
+                    $exist_user->save();
+                }
                 $store = Store::create([
                     'name' => $validatedData['name'],
                     'location' => $validatedData['location'],
@@ -65,15 +70,19 @@ class StoreController extends Controller
                     'balance' => $validatedData['balance']
                 ]);
                 //Get currency from store country
-                $country = Country::where("id", "=", $validatedData['country_id'])->with('currency')->first();
-                $bank_account = BankAccount::create([
-                    'name' => "Efectivo",
-                    'identifier' => "Efectivo",
-                    "balance" => $validatedData['balance'],
-                    "currency_id" => $country->currency_id,
-                    "store_id" => $store->id,
-                    "account_type_id" => 3,
-                ]);    
+                try {
+                    $country = Country::where("id", "=", $validatedData['country_id'])->with('currency')->first();
+                    $bank_account = BankAccount::create([
+                        'name' => "Efectivo",
+                        'identifier' => "Efectivo",
+                        "balance" => $validatedData['balance'],
+                        "currency_id" => $country->currency->id,
+                        "store_id" => $store->id
+                    ]); 
+                } catch (\Throwable $th) {
+                    $store->delete();
+                    return response()->json(['error'=> $th->getMessage()], 500);
+                }   
             } catch (Error $th) {
                 return response()->json(['error'=> $th->getMessage()], 500);
             }
@@ -98,6 +107,12 @@ class StoreController extends Controller
                 'user_id' => 'required|exists:users,id',
             ]);
             $Store = Store::find($id);
+            
+            $exist_user = Store::where('user_id', '=', $validatedData['user_id'])->where('id', '!=', $id)->first();
+            if ($exist_user) {
+                $exist_user->user_id = null;
+                $exist_user->save();
+            }
             foreach ($validatedData as $field => $value) {
                 $Store->$field = $value;
             }

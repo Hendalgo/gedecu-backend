@@ -22,7 +22,7 @@ class Bank extends Model
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }
     public function type(){
-        return $this->belongsTo('App\Models\AccountType', 'type_id', 'id');
+        return $this->belongsTo(AccountType::class, 'type_id', 'id');
     }
     public function accounts(){
         return $this->hasMany('App\Models\Account', 'bank_id', 'id');

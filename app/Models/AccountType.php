@@ -15,7 +15,7 @@ class AccountType extends Model
         "description",
     ];
 
-    public function bank_accounts(){
-        return $this->hasMany('\App\Models\BankAccount', 'account_type_id', 'id');
+    public function banks(){
+        return $this->hasMany(Bank::class, "type_id", "id");
     }
 }
