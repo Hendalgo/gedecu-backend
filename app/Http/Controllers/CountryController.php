@@ -26,7 +26,7 @@ class CountryController extends Controller
                 $countries = $countries->where("countries.name", "LIKE", "%$search%");
             }
 
-            $countries = $countries->where("countries.delete", false)->with('banks', 'currencies')->paginate(10);
+            $countries = $countries->where("countries.delete", false)->with('banks', 'currency')->paginate(10);
             return response()->json($countries, 200);
         }
         return response()->json(['message' => 'forbiden', 401]);
