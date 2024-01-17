@@ -10,6 +10,7 @@ use App\Models\ReportType;
 use App\Models\RoleReportPermission;
 use App\Models\Store;
 use App\Models\User;
+use App\Models\UserBalance;
 use Carbon\Carbon;
 use Error;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
+use PhpParser\Node\Expr\Throw_;
 
 class ReportController extends Controller
 {
@@ -59,16 +61,6 @@ class ReportController extends Controller
             }
             return response()->json($query->with('user.role')->paginate(10), 200);
         }
-        if ($search) {
-            $query = $query->join('banks_accounts', 'reports.bank_account_id', "=", "banks_accounts.id")
-               ->join('banks', 'banks_accounts.bank_id', "=", "banks.id")
-               ->join('users', 'reports.user_id', "=", 'users.id')
-               ->whereNotNull('reports.meta_data->store')
-               ->join('stores', function ($join) {
-                   $join->on('stores.id', '=', DB::raw("CAST(JSON_EXTRACT(reports.meta_data, '$.store') AS UNSIGNED)"));
-               })
-               ->select('reports.*', 'banks.name as bank_name');
-        }
         if($type){
             $query = $query->where('reports.type_id', $type);
         }
@@ -84,14 +76,14 @@ class ReportController extends Controller
         if ($order && $orderBy) {
             $query = $query->orderBy($order, $orderBy);
         }
+        //If the user is admin and the request has a user id, get all reports from that user with subreports
+        //else get the reports, with the subreport from current user
         if ($currentUser->role->id === 1) {
-            if($user){
-                $query = $query->where('reports.user_id', $user)->with('type');
-            }
+            $query = $query->where('reports.user_id', $user)->with('type', 'subreports');
             return response()->json($query->paginate(10), 200);
         }
         else{
-            $query = $query->where('reports.user_id', $currentUser->id)->with('type');
+            $query = $query->where('reports.user_id', $currentUser->id)->with('type', 'subreports');
             return response()->json($query->paginate(10), 200);
         }
         return response()->json(['error' => 'Ocurrio un error al intentar visualizar los reportes'], 500);
@@ -145,45 +137,108 @@ class ReportController extends Controller
                 // Save the subreport as a validated subreport
                 $validatedSubreports[] = $subreport;
             }
+            try{
+                $report = [];
             // Create the report
-            $report = Report::create([
-                'type_id' => $request->type_id,
-                'user_id' => auth()->user()->id,
-                'meta_data' => json_encode([])
-            ]);
-            try {
-                if ($report) {
+                DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type){
+                    $report = Report::create([
+                        'type_id' => $request->type_id,
+                        'user_id' => auth()->user()->id,
+                        'meta_data' => json_encode([])
+                    ]); 
+                    
+                    // Create the subreports
+                    $this->create_subreport($validatedSubreports, $report);
+                    
+                    //Add or substract the amount to the bank account
                     if ($report_type->type === 'income') {
                         foreach ($validatedSubreports as $subreport) {
                             $amount = $subreport['amount'];
                             if(array_key_exists('rate', $subreport)){
                                 $amount = $subreport['amount'] * $subreport['rate'];
                             }
-                            if(array_key_exists('receiverAccount_id
-                            ', $subreport) && array_key_exists('senderAccount_id', $subreport)){
+                            if(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
                                 //This is a traspaso
+                                $senderAccount = BankAccount::find($subreport['senderAccount_id']);
+                                $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                $senderAccount->balance = $senderAccount->balance - $amount;
+                                $receiverAccount->balance = $receiverAccount->balance + $amount;
+                                $senderAccount->save();
+                                $receiverAccount->save();
+                            }
+                            else if(array_key_exists('account_id', $subreport)){
+                                //Update bank account
+                                $bankAccount = BankAccount::find($subreport['account_id']);
+                                $bankAccount->balance = $bankAccount->balance + $amount;
+                                $bankAccount->save();
                             }
                             else if(!array_key_exists('account_id', $subreport)){
-                                //Update store account
-                                //Update all reports type cash to add new rule
-                            }
-                            else{
-                                //Update bank account
+                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                if(!$store){
+                                    throw new \Exception("No se encontró el local del usuario");   
+                                }
+                                $store->account->balance += $amount;
+                                $store->account->save();
                             }
                         }
                     }
                     if ($report_type->type === 'expense') {
+                        foreach ($validatedSubreports as $subreport) {
+                            $amount = $subreport['amount'];
+                            if(array_key_exists('rate', $subreport)){
+                                $amount = $subreport['amount'] * $subreport['rate'];
+                            }
+                            if(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
+                                //This is a traspaso
+                                $senderAccount = BankAccount::find($subreport['senderAccount_id']);
+                                $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                $senderAccount->balance = $senderAccount->balance - $amount;
+                                $receiverAccount->balance = $receiverAccount->balance + $amount;
+                                $senderAccount->save();
+                                $receiverAccount->save();
+                            }
+                            else if(array_key_exists('account_id', $subreport)){
+                                //Update bank account
+                                $bankAccount = BankAccount::find($subreport['account_id']);
+                                $bankAccount->balance = $bankAccount->balance - $amount;
+                                $bankAccount->save();
+                            }
+                            else if(!array_key_exists('account_id', $subreport)){
+                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                if(!$store){
+                                    throw new \Exception("No se encontró el local del usuario");   
+                                }
+                                $store->account->balance -= $amount;
+                                $store->account->save();
+                            }
+                        }
                     }
                     if($report_type->type === 'neutro'){
-
+                        //Get report type meta data to validate type and operation
+                        /* $meta_data = json_decode($report->meta_data, true);
+                        if ($meta_data['type'] === 4) {
+                            if($meta_data['operation'] === 'income'){
+                                if(array_key_exists('rate', $subreport)){
+                                    $meta_data['amount'] = $meta_data['amount'] * $subreport['rate'];
+                                }
+                                $bankAccount = UserBalance::where('user_id', auth()->user()->id);
+                                $bankAccount->amount = $bankAccount->amount + $meta_data['amount'];
+                                $bankAccount->save();
+                            }
+                            else{
+                                if(array_key_exists('rate', $subreport)){
+                                    $meta_data['amount'] = $meta_data['amount'] * $subreport['rate'];
+                                }
+                                $bankAccount = UserBalance::where('user_id', auth()->user()->id);
+                                $bankAccount->amount = $bankAccount->amount - $meta_data['amount'];
+                                $bankAccount->save();
+                            }
+                        } */
                     }
-                    return response()->json($report, 201);
-                } else {
-                    return response()->json(['error' => 'Hubo un problema al crear el reporte'], 500);
-                }
-            } catch (Error $th) {
-                $report->delete();
-                return response()->json(['error' => $th], 500);
+                });
+                return response()->json($report, 201);
+            }catch(\Exception $e){
+                return response()->json(['error' => 'Hubo un problema al crear el reporte'], 422);
             }
         } else {
             return response()->json(['error' => 'No tienes permiso para crear este tipo de reporte'], 401);
@@ -191,48 +246,10 @@ class ReportController extends Controller
     }
     public function update (Request $request, $id){
 
-        $currentUser = User::find(auth()->user()->id);
-        if ($currentUser->role->id === 1) {
-            $validateRequest = $request->validate([
-                'duplicated_status' => [
-                    Rule::in(['done', 'cancel'])
-                ],
-                'inconsistence_check' =>'boolean'
-            ]);
-    
-            $report = Report::find($id);
-            if (isset($request->inconsistence_check)) {
-                $report->inconsistence_check = $request->inconsistence_check;
-    
-                $report->save();
-    
-                return response()->json(['message' => 'Exito'], 201);
-            }
-            
-            $report->duplicated_status = $request->duplicated_status;
-    
-            if ($report->save()) {
-                
-                $report = Report::with('type')->find($id);
-                $bank = BankAccount::find($report->bank_account_id);
-                if ($request->duplicated_status === 'done') {
-                   if ($report->type->type === 'income') {
-                        $bank->balance = $bank->balance - $report->amount;
-                        $bank->save();
-                   } 
-                   elseif ($report->type->type === 'expense') {
-                        $bank->balance = $bank->balance + $report->amount;
-                        $bank->save();
-                   }
-                }
-            }
-            
-            return response()->json(['message' => 'Exito'], 201);
-        }
         return response()->json(['message' => 'forbiden'], 401);
     }
     public function show($id){
-        $report = Report::with('type', 'user.role')->find($id);
+        $report = Report::with('type', 'user.role', 'subreports')->find($id);
         $currentUser = User::find(auth()->user()->id);
         if (!$report) {
            return response()->json(['error' => 'No se encontró el reporte'], 404);
@@ -250,93 +267,21 @@ class ReportController extends Controller
         }
     }
     public function destroy(Request $request, $id){
-        $validateRequest = $request->validate([
-            'id' => 'require|exist:reports,id'
-        ]);
-
-        $report = Report::find($id);
-        if($report->type_id === 1){
-
-        }
-        else{
-            
-        }
+        return response()->json(['message' => 'forbiden'], 401);
     }
     public function getInconsistences(Request $request){
-        $user = User::find(auth()->user()->id);
-        if ($user->role->id === 1) {
-            $order = $request->get('order', 'desc');
-            $order_by = $request->get('order_by', 'created_at');
-            $date = $request->get('date');
-            $until = $request->get('until');
-            $review = $request->get('reviewed');
-            //Reports Expense to group in the same array report  Depositante (id 4) and Transferencia Enviada (id 2)
-            $reportsE = Report::query()
-                ->join('reports_types', 'reports.type_id', '=', 'reports_types.id')
-                ->select('reports.*', 'reports_types.name as report_name', 'reports_types.type as operation_type');
-            //Reports Income to group in the same array report Caja fuerte (id 3) and Peticion de transferencia (id 1)
-            $reportsI = Report::query()
-                ->join('reports_types', 'reports.type_id', '=', 'reports_types.id')
-                ->select('reports.*', 'reports_types.name as report_name', 'reports_types.type as operation_type');
-            
-            $reportsE = $reportsE->orderBy($order_by, $order);
-            $reportsI = $reportsI->orderBy($order_by, $order);
-            if ($date) {
-                $reportsE = $reportsE->whereDate('reports.created_at', $date);
-                $reportsI = $reportsI->whereDate('reports.created_at', $date);
-            }
-            if ($review === 'yes') {
-                $reportsE = $reportsE->where('reports.inconsistence_check', true);
-                $reportsI = $reportsI->where('reports.inconsistence_check', true);
-            }
-            else{
-                
-                $reportsE = $reportsE->where('inconsistence_check', false);
-                $reportsI = $reportsI->where('inconsistence_check', false);
-            }
-            $reportsE = $reportsE
-                ->havingRaw('operation_type LIKE ?', ["expense"])
-                ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
-            foreach ($reportsE as $e) {
-                if (isset(json_decode($e->meta_data)->store)) {
-                    $e->store = Store::find(json_decode($e->meta_data)->store);
-                }
-            }
-            foreach ($reportsE as $e) {
-                if (isset(json_decode($e->meta_data)->bank)) {
-                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
-                }
-            }
-            foreach ($reportsE as $e) {
-                if (isset(json_decode($e->meta_data)->account_manager)) {
-                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
-                }
-            }
-            $reportsI = $reportsI
-                ->havingRaw('operation_type LIKE ?', ["income"])
-                ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
-            foreach ($reportsI as $e) {
-                if (isset(json_decode($e->meta_data)->store)) {
-                    $e->store = Store::find(json_decode($e->meta_data)->store);
-                }
-            }
-            foreach ($reportsI as $e) {
-                if (isset(json_decode($e->meta_data)->account_manager)) {
-                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
-                }
-            }
-            foreach ($reportsI as $e) {
-                if (isset(json_decode($e->meta_data)->bank)) {
-                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
-                }
-            }
-            return response()->json([
-                'income' => $reportsI,
-                'expense' => $reportsE
-            ], 200);
+       
+    }
+    private function create_subreport (Array $subreport, $report){
+        $data = [];
+        foreach ($subreport as $sub) {
+            $data[] = [
+                'duplicate' =>  $sub['isDuplicated'],
+                'amount' => $sub['amount'],
+                'currency_id' => $sub['currency_id'],
+                'data' => json_encode($sub)
+            ];
         }
-        else{
-            return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 422);
-        }
+        $report->subreports()->createMany($data);
     }
 }
