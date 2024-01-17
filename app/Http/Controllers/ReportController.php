@@ -2,23 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bank;
 use App\Models\BankAccount;
-use App\Models\Movement;
 use App\Models\Report;
 use App\Models\ReportType;
 use App\Models\RoleReportPermission;
 use App\Models\Store;
 use App\Models\User;
 use App\Models\UserBalance;
-use Carbon\Carbon;
-use Error;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
-use PhpParser\Node\Expr\Throw_;
 
 class ReportController extends Controller
 {
@@ -106,6 +100,8 @@ class ReportController extends Controller
             $validatedSubreports = [];
             // Validate all fields in the subreports
             foreach ($subreports as $subreport) {
+                $validator->setData(['currency_id' => $subreport['currency_id']]);
+                $validator->setRules(['currency_id' => 'required|exists:currencies,id']);
                 $reportValidations = $report_type_config['all'];
                 foreach ($reportValidations as $validation) {
                     if (array_key_exists($validation['name'], $subreport)) {
@@ -140,7 +136,7 @@ class ReportController extends Controller
             try{
                 $report = [];
             // Create the report
-                DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type){
+                DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type, $report_type_config){
                     $report = Report::create([
                         'type_id' => $request->type_id,
                         'user_id' => auth()->user()->id,
@@ -157,7 +153,15 @@ class ReportController extends Controller
                             if(array_key_exists('rate', $subreport)){
                                 $amount = $subreport['amount'] * $subreport['rate'];
                             }
-                            if(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
+                            if (array_key_exists('user_balance', $report_type_config)) {
+                                $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
+                                if (!$userBalance) {
+                                    throw new \Exception("No se encontró el balance del usuario");
+                                }
+                                $userBalance->balance += $amount;
+                                $userBalance->save();
+                            }
+                            else if(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
                                 //This is a traspaso
                                 $senderAccount = BankAccount::find($subreport['senderAccount_id']);
                                 $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
@@ -188,7 +192,15 @@ class ReportController extends Controller
                             if(array_key_exists('rate', $subreport)){
                                 $amount = $subreport['amount'] * $subreport['rate'];
                             }
-                            if(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
+                            if (array_key_exists('user_balance', $report_type_config)) {
+                                $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
+                                if (!$userBalance) {
+                                    throw new \Exception("No se encontró el balance del usuario");
+                                }
+                                $userBalance->balance -= $amount;
+                                $userBalance->save();
+                            }
+                            elseif(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
                                 //This is a traspaso
                                 $senderAccount = BankAccount::find($subreport['senderAccount_id']);
                                 $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
@@ -213,32 +225,12 @@ class ReportController extends Controller
                             }
                         }
                     }
-                    if($report_type->type === 'neutro'){
-                        //Get report type meta data to validate type and operation
-                        /* $meta_data = json_decode($report->meta_data, true);
-                        if ($meta_data['type'] === 4) {
-                            if($meta_data['operation'] === 'income'){
-                                if(array_key_exists('rate', $subreport)){
-                                    $meta_data['amount'] = $meta_data['amount'] * $subreport['rate'];
-                                }
-                                $bankAccount = UserBalance::where('user_id', auth()->user()->id);
-                                $bankAccount->amount = $bankAccount->amount + $meta_data['amount'];
-                                $bankAccount->save();
-                            }
-                            else{
-                                if(array_key_exists('rate', $subreport)){
-                                    $meta_data['amount'] = $meta_data['amount'] * $subreport['rate'];
-                                }
-                                $bankAccount = UserBalance::where('user_id', auth()->user()->id);
-                                $bankAccount->amount = $bankAccount->amount - $meta_data['amount'];
-                                $bankAccount->save();
-                            }
-                        } */
-                    }
                 });
                 return response()->json($report, 201);
-            }catch(\Exception $e){
-                return response()->json(['error' => 'Hubo un problema al crear el reporte'], 422);
+            }catch(\Error $e){
+                return response()->json(['error' => $e], 422);
+            }catch(QueryException $e){
+                return response()->json(['error' => $e], 422);
             }
         } else {
             return response()->json(['error' => 'No tienes permiso para crear este tipo de reporte'], 401);

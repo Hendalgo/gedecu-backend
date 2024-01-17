@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('user_balances', function (Blueprint $table) {
             $table->id();
-            $table->double('amount')->default(0);
+            $table->double('balance')->default(0);
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('currency_id')->constrained('currencies')->cascadeOnDelete();
             $table->timestamps();
