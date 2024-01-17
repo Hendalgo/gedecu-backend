@@ -6,6 +6,7 @@ use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\DuplicatedReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportTypeController;
 use App\Http\Controllers\RoleController;
@@ -93,6 +94,11 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::post('reports/types', [ReportTypeController::class, 'store']);
     Route::put('reports/types/{id}', [ReportTypeController::class, 'update']);
     Route::delete('reports/types/{id}', [ReportTypeController::class, 'delete']);
+    /**
+     * Duplicate Reports Routes
+     */
+    Route::get('reports/duplicated', [DuplicatedReportController::class, 'index']);
+    Route::put('reports/duplicated/{id}', [DuplicatedReportController::class, 'duplicated_complete']);
     /*
     * Reports Routes 
     */
