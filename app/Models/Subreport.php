@@ -23,7 +23,4 @@ class Subreport extends Model
     public function currency(){
         return $this->belongsTo('\App\Models\Currency', 'currency_id');
     }
-    public function balance(){
-        return $this->hasOne('\App\Models\UserBalance', 'user_id');
-    }
 }
