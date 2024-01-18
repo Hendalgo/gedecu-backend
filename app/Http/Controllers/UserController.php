@@ -57,11 +57,11 @@ class UserController extends Controller
         if ($order) {
             $users = $users->orderBy("users.$order", "$orderBy");
         }
-        $users = $users->where('users.id', '!=', auth()->user()->id); // Exclude current user
+        $users = $users->where('users.id', '!=', auth()->user()->id)->with('role', 'country', 'balance.currency'); // Exclude current user
         if ($paginated === 'no') { 
-            return response()->json($users->where('users.delete',false)->with('role', 'country')->get(), 200);
+            return response()->json($users->get(), 200);
         }
-        return response()->json($users->where('users.delete',false)->with('role', 'country')->paginate($per_page), 200);
+        return response()->json($users->paginate($per_page), 200);
     }
     public function create(){
     }
