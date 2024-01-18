@@ -57,7 +57,11 @@ class UserController extends Controller
         if ($order) {
             $users = $users->orderBy("users.$order", "$orderBy");
         }
-        $users = $users->where('users.id', '!=', auth()->user()->id)->with('role', 'country', 'balance.currency'); // Exclude current user
+        
+        $users = $users->where('users.id', '!=', auth()->user()->id)->with('role', 'country'); // Exclude current user
+        if ($currentUser->role->id === 1) {
+            $users = $users->with('balance.currency'); // Include just admin
+        }
         if ($paginated === 'no') { 
             return response()->json($users->get(), 200);
         }
