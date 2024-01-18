@@ -127,7 +127,11 @@ class UserController extends Controller
     public function show($id){
         $currentUser = User::find(auth()->user()->id);
         if ($currentUser->role->id === 1) {
-            return response()->json(User::find($id), 200);
+            $user = User::with('role', 'country')->find($id);
+            if ($user) {
+                return response()->json($user, 200);
+            }
+            return response()->json(['message' => 'not found'], 404);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }
@@ -196,7 +200,7 @@ class UserController extends Controller
 
         return response()->json($roles, 200);
     }
-    public function getUsersBalances(Request $request){
+    public function getBalances(Request $request){
         $currentUser = User::find(auth()->user()->id);
         $search = $request->get('search');
         $per_page = $request->get('per_page', 10);
