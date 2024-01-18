@@ -196,4 +196,41 @@ class UserController extends Controller
 
         return response()->json($roles, 200);
     }
+    public function getUsersBalances(Request $request){
+        $currentUser = User::find(auth()->user()->id);
+        $search = $request->get('search');
+        $per_page = $request->get('per_page', 10);
+        $paginated = $request->get('paginated', 'yes');
+        $order = $request->get('order', 'created_at');
+        $orderBy = $request->get('order_by', 'desc');
+        $role = $request->get('role');
+        $balances = UserBalance::query()
+            ->leftjoin("users", "users.id", "=", "user_balances.user_id")
+            ->leftjoin("currencies", "currencies.id", "=", "user_balances.currency_id")
+            ->select("user_balances.*", "users.name as user_name", "currencies.name as currency_name")
+            ->groupBy('user_balances.id');
+        
+        if ($search) {
+            $balances = $balances
+                ->select("user_balances.*", "users.name as user_name", "currencies.name as currency_name")
+                ->where(function ($balances) use ($search) {
+                    $balances->where('users.name', 'LIKE', "%{$search}%")
+                        ->orWhere('currencies.name', 'LIKE', "%{$search}%");
+                });
+        }
+        if ($role) {
+            $balances = $balances->where('users.role_id', $role);
+        }
+        if($currentUser->role->id !== 1){
+            $balances = $balances->where('users.id', $currentUser->id);
+        }
+        if ($order) {
+            $balances = $balances->orderBy("user_balances.$order", "$orderBy");
+        }
+        $balances = $balances->with('currency', 'user');
+        if ($paginated === 'no') { 
+            return response()->json($balances->get(), 200);
+        }
+        return response()->json($balances->paginate($per_page), 200);
+    }
 }

@@ -63,7 +63,7 @@ Route::middleware('auth.veryfied')->group(function (){
         Users routes
     */ 
     Route::get('users', [UserController::class, 'index']);
-    
+    Route::get('users/balances', [UserController::class, 'getBalances']);
     Route::get('users/roles', [UserController::class, 'getUserRoles']);
     Route::get('users/{id}', [UserController::class, 'show']);
     Route::post('users', [UserController::class, 'store']);
