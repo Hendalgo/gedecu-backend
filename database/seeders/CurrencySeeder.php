@@ -19,6 +19,7 @@ class CurrencySeeder extends Seeder
         $peso->shortcode = 'COP';
         $peso->symbol = '$';
         $peso->country_id = 1;
+        $peso->is_initial = true;
         $peso->save();
 
         $bolivar = new Currency();
@@ -27,6 +28,16 @@ class CurrencySeeder extends Seeder
         $bolivar->shortcode = 'VES';
         $bolivar->symbol = 'Bs.';
         $bolivar->country_id = 2;
+        $bolivar->is_initial = true;
         $bolivar->save();
+
+        $dolar = new Currency();
+
+        $dolar->name = "Dolar Americano";
+        $dolar->shortcode = 'USD';
+        $dolar->symbol = '$';
+        $dolar->country_id = 3;
+        $dolar->is_initial = true;
+        $dolar->save();
     }
 }
