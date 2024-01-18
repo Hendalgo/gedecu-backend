@@ -66,12 +66,15 @@ class CurrencyController extends Controller
 
             return response()->json(['message'=> 'exito'], 201);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden', 403]);
     }
     public function destroy($id){
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $currency = Currency::find($id);
+            if ($currency->is_initial) {
+                return response()->json(['message' => 'No se puede eliminar la moneda inicial'], 403);
+            }
             $currency->country_id = null;
             $currency->delete = true;
             if ( $currency->save()) {
@@ -81,6 +84,6 @@ class CurrencyController extends Controller
                 return response()->json(['message' => 'error'], 404);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden', 403]);
     }
 }

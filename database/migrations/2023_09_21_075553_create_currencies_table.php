@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('shortcode');
             $table->string('symbol');
+            $table->boolean('is_initial')->default(false);
             $table->timestamps();
         });
     }

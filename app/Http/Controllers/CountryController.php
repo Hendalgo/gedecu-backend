@@ -29,7 +29,7 @@ class CountryController extends Controller
             $countries = $countries->where("countries.delete", false)->with('banks', 'currency')->paginate(10);
             return response()->json($countries, 200);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden', 403]);
     }
     public function store(Request $request){
         $user = User::find(auth()->user()->id);
@@ -58,7 +58,7 @@ class CountryController extends Controller
             }
 
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden', 403]);
     }
     public function show($id){
         return response()->json(Country::find($id), 200);
@@ -90,12 +90,15 @@ class CountryController extends Controller
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
             }
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden', 403]);
     }
     public function destroy($id){
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $country = Country::find($id);
+            if ($country->is_initial) {
+                return response()->json(['error'=> 'No puedes eliminar el país inicial'], 500);
+            }
             $country->delete = true;
             if($country->save()){
                 // Obtén todos los bancos asociados a este país
@@ -115,7 +118,7 @@ class CountryController extends Controller
             
             return response()->json(['error'=> 'Hubo un problema al eliminar el pais'], 500);
         }
-        return response()->json(['message' => 'forbiden', 401]);
+        return response()->json(['message' => 'forbiden', 403]);
     }
     public function getBanksCount(){
         return response()->json(Country::where('delete', false)->withCount(['banks as count'])->get(), 200);

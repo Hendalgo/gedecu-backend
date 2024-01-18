@@ -91,9 +91,6 @@ Route::middleware('auth.veryfied')->group(function (){
      * Reports Types Routes
      * */
     Route::get('reports/types', [ReportTypeController::class, 'index']);
-    Route::post('reports/types', [ReportTypeController::class, 'store']);
-    Route::put('reports/types/{id}', [ReportTypeController::class, 'update']);
-    Route::delete('reports/types/{id}', [ReportTypeController::class, 'delete']);
     /**
      * Duplicate Reports Routes
      */

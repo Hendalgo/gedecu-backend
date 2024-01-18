@@ -103,6 +103,10 @@ class ReportController extends Controller
                 $validator->setData(['currency_id' => $subreport['currency_id']]);
                 $validator->setRules(['currency_id' => 'required|exists:currencies,id']);
                 $reportValidations = $report_type_config['all'];
+                if(array_key_exists('convert_amount', $report_type_config)){
+                    $validator->setData(['conversionCurrency_id' => $subreport['conversionCurrency_id']]);
+                    $validator->setRules(['conversionCurrency_id' => 'required|exists:currencies,id']);
+                }
                 foreach ($reportValidations as $validation) {
                     if (array_key_exists($validation['name'], $subreport)) {
                         $validator->setData([$validation['name'] => $subreport[$validation['name']]]);
@@ -144,13 +148,13 @@ class ReportController extends Controller
                     ]); 
                     
                     // Create the subreports
-                    $this->create_subreport($validatedSubreports, $report);
+                    $this->create_subreport($validatedSubreports, $report, $report_type_config);
                     
                     //Add or substract the amount to the bank account
                     if ($report_type->type === 'income') {
                         foreach ($validatedSubreports as $subreport) {
                             $amount = $subreport['amount'];
-                            if(array_key_exists('rate', $subreport)){
+                            if (array_key_exists('convert_amount', $report_type_config)) {
                                 $amount = $subreport['amount'] * $subreport['rate'];
                             }
                             if (array_key_exists('user_balance', $report_type_config)) {
@@ -189,7 +193,7 @@ class ReportController extends Controller
                     if ($report_type->type === 'expense') {
                         foreach ($validatedSubreports as $subreport) {
                             $amount = $subreport['amount'];
-                            if(array_key_exists('rate', $subreport)){
+                            if (array_key_exists('convert_amount', $report_type_config)) {
                                 $amount = $subreport['amount'] * $subreport['rate'];
                             }
                             if (array_key_exists('user_balance', $report_type_config)) {
@@ -264,13 +268,19 @@ class ReportController extends Controller
     public function getInconsistences(Request $request){
        
     }
-    private function create_subreport (Array $subreport, $report){
+    private function create_subreport (Array $subreport, $report, $report_type_config){
         $data = [];
         foreach ($subreport as $sub) {
+            $currency = $sub['currency_id'];
+            $amount = $sub['amount'];
+            if (array_key_exists('convert_amount', $report_type_config)) {
+                $currency = $sub['conversionCurrency_id'];
+                $amount = $sub['amount'] * $sub['rate'];
+            } 
             $data[] = [
                 'duplicate' =>  $sub['isDuplicated'],
-                'amount' => $sub['amount'],
-                'currency_id' => $sub['currency_id'],
+                'amount' =>$amount,
+                'currency_id' => $currency,
                 'data' => json_encode($sub)
             ];
         }
