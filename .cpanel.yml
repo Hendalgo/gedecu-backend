@@ -1,0 +1,11 @@
+deployment:
+  tasks:
+    - chmod 755 ~/gedecu
+    - chmod 755 ~/gedeccu
+    - chmod 755 ~/gedecu
+    - /opt/cpanel/composer/bin/composer update --optimize-autoloader --no-dev
+    - php artisan migrate
+    - php artisan config:cache
+    - php artisan view:cache
+    - php artisan api:cache
+    - php artisan route:cache
