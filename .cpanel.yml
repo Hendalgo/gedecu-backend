@@ -4,7 +4,7 @@ deployment:
     - chmod 755 ~/gedeccu
     - chmod 755 ~/gedecu
     - /opt/cpanel/composer/bin/composer update --optimize-autoloader --no-dev
-    - /usr/local/bin/php artisan migrate
+    - /usr/local/bin/php artisan migrate --force
     - /usr/local/bin/php artisan config:cache
     - /usr/local/bin/php artisan view:cache
     - /usr/local/bin/php artisan route:cache
