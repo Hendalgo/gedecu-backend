@@ -11,9 +11,15 @@ class Country extends Model
     protected $fillable = [
         "name",
         "shortcode",
-        "config"
+        "config",
+        "locale",
+        "img",
+        "delete"
     ];
     public function banks(){
         return $this->hasMany('\App\Models\Bank', 'country_id');
+    }
+    public function currency(){
+        return $this->hasOne('\App\Models\Currency', 'country_id');
     }
 }

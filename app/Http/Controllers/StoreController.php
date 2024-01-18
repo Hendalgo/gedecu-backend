@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
+use App\Models\Country;
 use App\Models\Store;
 use App\Models\User;
+use Error;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StoreController extends Controller
 {
@@ -16,7 +20,8 @@ class StoreController extends Controller
         $search = $request->get('search');
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
-        $store = Store::with('country')->with('user')
+        $not_owner = $request->get('not_owner', 'no');
+        $store = Store::with('country.currency', 'account', 'user')
             ->when($search, function ($query, $search){
                 $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('location', 'LIKE', "%{$search}%")
@@ -27,6 +32,12 @@ class StoreController extends Controller
                     $query->where('name', 'LIKE', "%{$search}%");
                 });
             });
+        if ($not_owner === 'yes') {
+            $store = $store->where(function ($query) {
+                $query->where('user_id', '!=', auth()->user()->id)
+                    ->orWhereNull('user_id');
+            });
+        }  
         if ($paginated === 'no') {
             return response()->json($store->where('delete', false)->get(), 200);
         }
@@ -40,25 +51,54 @@ class StoreController extends Controller
             $messages = [
                 'name.required' => 'El nombre es un campo requerido',
                 'location.required' => 'Dirección requerida',
-                'user.required' => 'Usuario requerido',
-                'user.exist' => 'Usuario no existe',
-                'country.required' => 'País requerido'
+                'user_id.required' => 'Usuario requerido',
+                'user_id.exist' => 'Usuario no existe',
+                'user_id.user_role' => 'Usuario no es un encargado de tienda',
+                'country.required' => 'País requerido',
+                'country.exist' => 'País no existe',
+                'balance.required' => 'Balance requerido',
+                'balance.numeric' => 'Balance debe ser un número',
             ];
             $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'location'=> 'required|string|min:2|max:255',
-                'user_id' => 'required|exists:users,id',
-                'country_id' => 'required|exists:countries,id'
+                'user_id' => 'required|exists:users,id|user_role:3',
+                'country_id' => 'required|exists:countries,id',
+                'balance' => 'required|numeric'
             ], $messages);
-
-            $Store = Store::create($validatedData);
-    
-            if ($Store) {
-                return response()->json(['message' => 'exito'], 201);
+            $exist_user = Store::where('user_id', '=', $validatedData['user_id'])->first();
+            if ($exist_user) {
+                $exist_user->user_id = null;
+                $exist_user->save();
             }
-            else{
-                return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
-            }
+            $store = null;
+            $bank_account = null;
+            //Get currency from store country
+            try {
+                DB::transaction(function () use ($validatedData, &$store, &$bank_account) {
+                    $user = Store::where('user_id', '=', $validatedData['user_id'])->first();
+                    if ($user) {
+                        $user->user_id = null;
+                        $user->save();
+                    }
+                    $store = Store::create([
+                        'name' => $validatedData['name'],
+                        'location' => $validatedData['location'],
+                        'user_id' => $validatedData['user_id'],
+                        'country_id' => $validatedData['country_id']
+                    ]);
+                    $country = Country::where("id", "=", $validatedData['country_id'])->with('currency')->first();
+                    $bank_account = $store->account()->create([
+                        'name' => "Efectivo",
+                        'identifier' => "Efectivo",
+                        "balance" => $validatedData['balance'],
+                        "currency_id" => $country->currency->id,
+                    ]);
+                });
+                return response()->json([$store, $bank_account], 201);
+            } catch (\Throwable $th) {
+                return response()->json(['error'=> $th->getMessage()], 500);
+            } 
         }
         return response()->json(['message' => 'forbiden'], 401);
     }
@@ -72,9 +112,14 @@ class StoreController extends Controller
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'location'=> 'required|string|min:2|max:255',
                 'user_id' => 'required|exists:users,id',
-                'country_id' => 'required|exists:countries,id'
             ]);
             $Store = Store::find($id);
+            
+            $exist_user = Store::where('user_id', '=', $validatedData['user_id'])->where('id', '!=', $id)->first();
+            if ($exist_user) {
+                $exist_user->user_id = null;
+                $exist_user->save();
+            }
             foreach ($validatedData as $field => $value) {
                 $Store->$field = $value;
             }

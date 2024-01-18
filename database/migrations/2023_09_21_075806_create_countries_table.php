@@ -15,8 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('img')->nullable();
+            $table->string('locale')->nullable();
             $table->string('shortcode');
             $table->json('config');
+            $table->boolean('is_initial')->default(false);
             $table->boolean('delete')->default(false);
             $table->timestamps();
         });

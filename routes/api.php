@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\DuplicatedReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportTypeController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -35,16 +38,20 @@ Route::group([
 });
 Route::middleware('auth.veryfied')->group(function (){
     Route::get('user', [AuthController::class, 'me']);
+    /*
+        Bank types 
+    */
+    Route::get('banks/types', [AccountTypeController::class, 'index']);
 
     /*
      * Banks Routes
      */
     Route::post('banks', [BankController::class, 'store']);
     Route::get('banks', [BankController::class, 'index']);
-    Route::get('banks/total', [BankController::class, 'getBanksTotal']);
     Route::get('banks/{id}', [BankController::class, 'show']);
     Route::put('banks/{id}', [BankController::class, 'update']);
     Route::delete('banks/{id}', [BankController::class, 'destroy']);
+    
     /**
      * Banks Accounts Routes
      */
@@ -84,9 +91,11 @@ Route::middleware('auth.veryfied')->group(function (){
      * Reports Types Routes
      * */
     Route::get('reports/types', [ReportTypeController::class, 'index']);
-    Route::post('reports/types', [ReportTypeController::class, 'store']);
-    Route::put('reports/types/{id}', [ReportTypeController::class, 'update']);
-    Route::delete('reports/types/{id}', [ReportTypeController::class, 'delete']);
+    /**
+     * Duplicate Reports Routes
+     */
+    Route::get('reports/duplicated', [DuplicatedReportController::class, 'index']);
+    Route::put('reports/duplicated/{id}', [DuplicatedReportController::class, 'duplicated_complete']);
     /*
     * Reports Routes 
     */

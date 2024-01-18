@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('banks_accounts', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->after('bank_id');
-            $table->foreign('user_id')->references('id')->on('users');
+        Schema::table('reports_types', function (Blueprint $table) {
+            $table->boolean('country')->default(false);
         });
     }
 
@@ -22,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('banks_accounts', function (Blueprint $table) {
-            $table->dropColumn("user_id");
+        Schema::table('reports_types', function (Blueprint $table) {
+            $table->dropColumn('country');
         });
     }
 };

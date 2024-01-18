@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bank;
 use App\Models\BankAccount;
-use App\Models\Movement;
 use App\Models\Report;
 use App\Models\ReportType;
+use App\Models\RoleReportPermission;
 use App\Models\Store;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Models\UserBalance;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Validation\Rule;
-use Whoops\Run;
+use Illuminate\Support\Facades\Validator;
 
 class ReportController extends Controller
 {
@@ -30,702 +28,262 @@ class ReportController extends Controller
         $date = $request->get('date');
         $since = $request->get('since');
         $until = $request->get('until');
-        $inconsistence = $request->get('inconsistence_check');
         $bank = $request->get('bank');
-        $period = $request->get('period');
         $search = $request->get('search');
-        $movement = $request->get('movement');
+        $user = $request->get('user');
         $type = $request->get('type_id');
         // Start query
         $query = Report::query();
 
         // Apply filters
         
-        if ($search) {
-            $query = $query->join('banks_accounts', 'reports.bank_account_id', "=", "banks_accounts.id")
-               ->join('banks', 'banks_accounts.bank_id', "=", "banks.id")
-               ->join('users', 'reports.user_id', "=", 'users.id')
-               ->whereNotNull('reports.meta_data->store')
-               ->join('stores', function ($join) {
-                   $join->on('stores.id', '=', DB::raw("CAST(JSON_EXTRACT(reports.meta_data, '$.store') AS UNSIGNED)"));
-               })
-               ->select('reports.*', 'banks.name as bank_name');
+        if (!$user && $currentUser->role->id === 1) {
+            $query = $query->leftJoin('users', 'reports.user_id', "=", 'users.id')
+                ->select('users.id as user_id','users.name as user_name', 'users.email', DB::raw('MAX(reports.created_at) as report_date'))
+                ->orderByDesc('report_date')
+                ->groupBy('users.id', 'users.name', 'users.email');
 
+            if ($search) {
+                $query = $query->where(function ($q) use ($search) {
+                    $q->where('users.name', 'LIKE', '%' . $search . '%')
+                        ->orWhere('users.email', 'LIKE', '%' . $search . '%');
+                });
+            }
 
-            $query = $query->where(function ($query) use ($search) {
-                $query->where('reports.amount', 'LIKE',  "%{$search}%")
-                    ->orWhere('payment_reference', 'LIKE',  "%{$search}%")
-                    ->orWhere('reports.meta_data', 'LIKE',  "%{$search}%")
-                    ->orWhere('notes', 'LIKE',  "%{$search}%")
-                    ->orWhere('banks.name', 'LIKE',  "%{$search}%")
-                    ->orWhere('users.name', 'LIKE',  "%{$search}%")
-                    ->orWhere('stores.name', 'LIKE',  "%{$search}%");
-            });
-        }
-        if ($order) {
-            $query = $query->orderBy($order, $orderBy);
-        }
-        if ($duplicated === 'yes') {
-            if ($duplicated_status === 'done') {
-                $query = $query->where('duplicated_status', 'done');
+            if ($date) {
+                $query = $query->whereDate('reports.created_at', $date);
             }
-            else if ($duplicated_status === 'cancel') {
-                $query = $query->where('duplicated_status', 'cancel');
-            }
-            else{
-                $query = $query->where('duplicated', true)->whereNull('duplicated_status');
-            }
+            return response()->json($query->with('user.role')->paginate(10), 200);
         }
-        if ($since) {
+        if($type){
+            $query = $query->where('reports.type_id', $type);
+        }
+        if($since){
             $query = $query->whereDate('reports.created_at', '>=', $since);
         }
-
-        if ($until) {
+        if($until){
             $query = $query->whereDate('reports.created_at', '<=', $until);
         }
-        if ($type) {
-            $query = $query->where('type_id', $type);
+        if($date){
+            $query = $query->whereDate('reports.created_at', $date);
         }
-        if ($date) {
-            $query = $query->whereDate('reports.created_at', "=",$date);
+        if ($order && $orderBy) {
+            $query = $query->orderBy($order, $orderBy);
         }
-        if ($bank) {
-            $query = $query->where('bank_id', $bank);
-
-            if ($period === 'daily') {
-                $days = 7;
-                $now = Carbon::now();
-                $results = [];
-                $daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-                if ($currentUser->role->id === 1) {
-                    for ($i = 0; $i < $days; $i++) {
-                        $date = $now->copy()->subDays($i);
-                        $incomes = Movement::whereDate('created_at', $date)
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereDate('created_at', $date)
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $dayOfWeek = $daysOfWeek[$date->dayOfWeek]; // Get week day in spanish
-                        $results[$dayOfWeek] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                else{
-                    for ($i = 0; $i < $days; $i++) {
-                        $date = $now->copy()->subDays($i);
-                        $incomes = Movement::whereDate('created_at', $date)
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereDate('created_at', $date)
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $dayOfWeek = $daysOfWeek[$date->dayOfWeek]; // Get week day in spanish
-                        $results[$dayOfWeek] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                return response()->json($results);
-
-            }
-            else if ($period === 'week'){
-                $weeks = 8;
-                $now = Carbon::now();
-                $results = [];
-                if ($currentUser->role->id === 1) {
-                    for ($i = 0; $i < $weeks; $i++) {
-                        $startOfWeek = $now->copy()->subWeeks($i)->startOfWeek();
-                        $endOfWeek = $now->copy()->subWeeks($i)->endOfWeek();
-                        $incomes = Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $label = $startOfWeek->format('d, M') . ' - ' . $endOfWeek->format('d, M');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                else{
-                    for ($i = 0; $i < $weeks; $i++) {
-                        $startOfWeek = $now->copy()->subWeeks($i)->startOfWeek();
-                        $endOfWeek = $now->copy()->subWeeks($i)->endOfWeek();
-                        $incomes = Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfWeek, $endOfWeek])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $label = $startOfWeek->format('d, M') . ' - ' . $endOfWeek->format('d, M');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                return response()->json($results);
-            }
-            elseif ($period === 'month'){
-                $months = 12;
-                $now = Carbon::now();
-                $results = [];
-                if ($currentUser->role->id === 1) {
-                    
-                    for ($i = 0; $i < $months; $i++) {
-                        $date = $now->copy()->subMonths($i);
-                        $startOfMonth = $now->copy()->subMonths($i)->startOfMonth();
-                        $endOfMonth = $now->copy()->subMonths($i)->endOfMonth();
-                        $incomes = Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $label = $date->formatLocalized('%b');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                else{
-                    
-                    for ($i = 0; $i < $months; $i++) {
-                        $date = $now->copy()->subMonths($i);
-                        $startOfMonth = $now->copy()->subMonths($i)->startOfMonth();
-                        $endOfMonth = $now->copy()->subMonths($i)->endOfMonth();
-                        $incomes = Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $label = $date->formatLocalized('%b');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                return response()->json($results);
-            }     
-            elseif ($period === 'quarter'){
-                $trimesters = 6;
-                $now = Carbon::now();
-                $results = [];
-            
-                if ($currentUser->role->id === 1) {
-                    
-                    for ($i = 0; $i < $trimesters; $i++) {
-                        $startOfTrimester = $now->copy()->subMonths(3*$i)->startOfMonth();
-                        $endOfTrimester = $startOfTrimester->copy()->addMonths(3)->subDay();
-                        $incomes = Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        // Get the trimester name in Spanish and the year
-                        $label = $startOfTrimester->formatLocalized('%b') . ' - ' . $endOfTrimester->formatLocalized('%b, %Y');
-                        $results[$label] = [
-                            'start' => $startOfTrimester,
-                            'end' => $endOfTrimester,
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                else{
-                    for ($i = 0; $i < $trimesters; $i++) {
-                        $startOfTrimester = $now->copy()->subMonths(3*$i)->startOfMonth();
-                        $endOfTrimester = $startOfTrimester->copy()->addMonths(3)->subDay();
-                        $incomes = Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfTrimester, $endOfTrimester])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        // Get the trimester name in Spanish and the year
-                        $label = $startOfTrimester->formatLocalized('%b') . ' - ' . $endOfTrimester->formatLocalized('%b, %Y');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                return response()->json($results);
-            }
-            elseif ($period === 'semester'){
-                $semesters = 4;
-                $now = Carbon::now();
-                $results = [];
-            
-                if ($currentUser->role->id === 1) {
-                    
-                    for ($i = 0; $i < $semesters; $i++) {
-                        $startOfSemester = $now->copy()->subMonths(6*$i)->startOfMonth();
-                        $endOfSemester = $startOfSemester->copy()->addMonths(6)->subDay();
-                        $incomes = Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        // Get the semester name in Spanish and the year
-                        $label = $startOfSemester->formatLocalized('%b') . ' - ' . $endOfSemester->formatLocalized('%b, %Y');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                else{
-                    for ($i = 0; $i < $semesters; $i++) {
-                        $startOfSemester = $now->copy()->subMonths(6*$i)->startOfMonth();
-                        $endOfSemester = $startOfSemester->copy()->addMonths(6)->subDay();
-                        $incomes = Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfSemester, $endOfSemester])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        // Get the semester name in Spanish and the year
-                        $label = $startOfSemester->formatLocalized('%b') . ' - ' . $endOfSemester->formatLocalized('%b, %Y');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                return response()->json($results);
-            }
-            elseif ($period === 'year'){
-                $years = 5;
-                $now = Carbon::now();
-                $results = [];
-            
-                if ($currentUser->role->id === 1) {
-                    
-                    for ($i = 0; $i < $years; $i++) {
-                        $startOfYear = $now->copy()->subYears($i)->startOfYear();
-                        $endOfYear = $now->copy()->subYears($i)->endOfYear();
-                        $incomes = Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->sum('amount');
-                        // Get the year
-                        $label = $startOfYear->formatLocalized('%Y');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                else{
-                    for ($i = 0; $i < $years; $i++) {
-                        $startOfYear = $now->copy()->subYears($i)->startOfYear();
-                        $endOfYear = $now->copy()->subYears($i)->endOfYear();
-                        $incomes = Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
-                            ->where('type', 'income')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        $expenses =  Movement::whereBetween('created_at', [$startOfYear, $endOfYear])
-                            ->where('type', 'expense')
-                            ->whereIn('bank_account_id', function ($query) use ($bank) {
-                                $query->select('id')->from('banks_accounts')->where('bank_id', $bank);
-                            })
-                            ->whereHas('report', function ($query) use ($currentUser) {
-                                $query->where('user_id', $currentUser->id);
-                            })
-                            ->sum('amount');
-                        // Get the year
-                        $label = $startOfYear->formatLocalized('%Y');
-                        $results[$label] = [
-                            'incomes' => $incomes,
-                            'expenses' => $expenses,
-                        ];
-                    }
-                }
-                return response()->json($results);
-            }
-            
-            $query = $query->where('type', '=', $movement);
+        //If the user is admin and the request has a user id, get all reports from that user with subreports
+        //else get the reports, with the subreport from current user
+        if ($currentUser->role->id === 1) {
+            $query = $query->where('reports.user_id', $user)->with('type', 'subreports');
             return response()->json($query->paginate(10), 200);
         }
-        
-        if ($currentUser->role->id === 1) {
-            $query = $query->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(10);
-            foreach ($query as $e) {
-                if (isset(json_decode($e->meta_data)->store)) {
-                    $e->store = Store::find(json_decode($e->meta_data)->store);
-                }
-            }
-            foreach ($query as $e) {
-                if (isset(json_decode($e->meta_data)->bank)) {
-                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
-                }
-            }
-            foreach ($query as $e) {
-                if (isset(json_decode($e->meta_data)->account_manager)) {
-                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
-                }
-            }
-            
-            return response()->json($query, 200);
+        else{
+            $query = $query->where('reports.user_id', $currentUser->id)->with('type', 'subreports');
+            return response()->json($query->paginate(10), 200);
         }
-        $query = $query->where('reports.user_id', auth()->user()->id);
-        
-        $query = $query->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(10);
-        foreach ($query as $e) {
-            if (json_decode($e->meta_data)->store !== null) {
-                $e->store = Store::find(json_decode($e->meta_data)->store);
-            }
-        }
-        foreach ($query as $e) {
-            if (isset(json_decode($e->meta_data)->bank)) {
-                $e->bank = Bank::find(json_decode($e->meta_data)->bank);
-            }
-        }
-        foreach ($query as $e) {
-            if (isset(json_decode($e->meta_data)->account_manager)) {
-                $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
-            }
-        }
-        return response()->json($query, 200);
+        return response()->json(['error' => 'Ocurrio un error al intentar visualizar los reportes'], 500);
     }
     public function store(Request $request){
-        $currentUser = User::find(auth()->user()->id);
-        $message = [
-            'amount.numeric' => 'El monto debe ser un valor numérico.',
-            'amount.required' => 'El campo monto es obligatorio.',
-            'duplicated.required' => 'El campo duplicado es obligatorio.',
-            'duplicated.boolean' => 'El campo duplicado es inválido',
-            'rate.numeric' => 'La tasa debe ser un valor numérico.',
-            'rate.required' => 'El campo tasa es obligatorio.',
-            'bank_income.required' => 'El banco en el que ingresó el dinero es obligatorio.',
-            'bank_income.exists' => 'El banco en el que ingresó el dinero es inválido.',
-            'store.required' => 'El local es obligatorio.',
-            'store.exists' => 'La local es inválido.',
-            'received_from.string' => 'Recibido de debe ser una cadena de texto.',
-            'payment_reference.string' => 'La referencia de pago debe ser una cadena de texto.',
-            'notes.string' => 'Las notas deben ser una cadena de texto.',
-            'type.required' => 'El campo tipo es obligatorio.',
-            'type.exists' => 'El es inválido informes.',
-            'bank_account.required' => 'El campo banco es obligatorio.',
-            'bank_account.exists' => 'El banco es inválido'
-        ];
-        $validateRequest = $request->validate([
-            'type' => 'required|exists:reports_types,id',
-            'bank_account' => 'required|exists:banks_accounts,id',
-            'amount' => 'numeric|required',
-            'rate' => 'numeric',
-            'duplicated' => 'required|boolean',
-            'bank' => 'exists:banks,id'
-            , 
-            'store' => 'exists:stores,id',
-        ], $message);
-        $validateRequest['inconsistence_check'] = false;
-        $report = false;
-
-        $account_manager = BankAccount::find($request->bank_account)->id;
-        $report =  Report::create([
-            'amount'=> $request->amount,
-            'duplicated' => $request->duplicated,
-            'store_id' => $request->store,
-            'notes' => $request->notes,
-            'type_id' => $request->type,
-            'bank_account_id' => $request->bank_account,
-            'inconsistence_check' => false,
-            'user_id' => $currentUser->id,
-            'meta_data' => json_encode([
-                'rate'  => $request->rate === 0 ? null: $request->rate,
-                'store' => $request->store ? $request->store: null,
-                'bank' => $request->bank ? $request->bank : null,
-                'account_manager' => $account_manager
-            ])
+        $request->validate([
+            'type_id' => 'required|exists:reports_types,id',
         ]);
-        
-        if ($report) {
-            $reportType = ReportType::find($request->type);
-            if ($reportType->type === "income") {
-                $bank = BankAccount::find($request->bank_account);
-
-                Movement::create([
-                    'amount' => $request->amount,
-                    'bank_account_amount' => $bank->balance,
-                    'bank_account_id' => $bank->id,
-                    'report_id' => $report->id,
-                    'type' => 'income'
-                ]);
-                $bank->balance = $bank->balance + abs($request->amount);
-                if ($request->duplicated) {
-                    $bank->balance = $bank->balance + abs($request->amount);
+        $role_report_permission = RoleReportPermission::where('role_id', auth()->user()->role->id)
+            ->where('report_type_id', $request->type_id)
+            ->first();
+        if ($role_report_permission) {
+            $request->validate([
+                'subreports' => 'required|array',
+            ]);
+            $subreports = $request->subreports;
+            $report_type = ReportType::find($request->type_id);
+            $report_type_config = json_decode($report_type->meta_data, true);
+            $validator = Validator::make([], []); // Create a empty intance of validator
+            $validatedSubreports = [];
+            // Validate all fields in the subreports
+            foreach ($subreports as $subreport) {
+                $validator->setData(['currency_id' => $subreport['currency_id']]);
+                $validator->setRules(['currency_id' => 'required|exists:currencies,id']);
+                $reportValidations = $report_type_config['all'];
+                if(array_key_exists('convert_amount', $report_type_config)){
+                    $validator->setData(['conversionCurrency_id' => $subreport['conversionCurrency_id']]);
+                    $validator->setRules(['conversionCurrency_id' => 'required|exists:currencies,id']);
                 }
-                $bank->save(); 
-            }
-            else if ($reportType->type === "expense"){
-                $bank = BankAccount::find($request->bank_account);
-
-                Movement::create([
-                    'amount' => $request->amount,
-                    'bank_account_amount' => $bank->balance,
-                    'bank_account_id' => $bank->id,
-                    'report_id' => $report->id,
-                    'type' => 'expense'
-                ]);
-                $bank->balance = $bank->balance - abs($request->amount);
-                
-                if ($request->duplicated) {
-                    $bank->balance = $bank->balance - abs($request->amount);
+                foreach ($reportValidations as $validation) {
+                    if (array_key_exists($validation['name'], $subreport)) {
+                        $validator->setData([$validation['name'] => $subreport[$validation['name']]]);
+                        $validator->setRules([$validation['name'] => $validation['validation']]);
+                        if ($validator->fails()) {
+                            $errorMessages = $validator->errors()->all();
+                            return response()->json(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages], 422);
+                        }
+                    } else {
+                        return response()->json(['error' => 'Campo requerido no encontrado en el subreporte'], 422);
+                    }
                 }
-                $bank->save(); 
+                // Find if the role need extra validations for create the report
+                if (array_key_exists(auth()->user()->role->id, $report_type_config)) {
+                    $reportValidationsEspecial = $report_type_config[auth()->user()->role->id];
+                    foreach ($reportValidationsEspecial as $validation) {
+                        if (array_key_exists($validation['name'], $subreport)) {
+                            $validator->setData([$validation['name'] => $subreport[$validation['name']]]);
+                            $validator->setRules([$validation['name'] => $validation['validation']]);
+                            if ($validator->fails()) {
+                                return response()->json(['error' => 'Error de validación en el subreporte'], 422);
+                            }
+                        } else {
+                            return response()->json(['error' => 'Campo requerido no encontrado en el subreporte'], 422);
+                        }
+                    }
+                }
+                // Save the subreport as a validated subreport
+                $validatedSubreports[] = $subreport;
             }
-            return response()->json(['message' => 'exito'], 201);
-        }
-        else{
-            return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 422);
+            try{
+                $report = [];
+            // Create the report
+                DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type, $report_type_config){
+                    $report = Report::create([
+                        'type_id' => $request->type_id,
+                        'user_id' => auth()->user()->id,
+                        'meta_data' => json_encode([])
+                    ]); 
+                    
+                    // Create the subreports
+                    $this->create_subreport($validatedSubreports, $report, $report_type_config);
+                    
+                    //Add or substract the amount to the bank account
+                    if ($report_type->type === 'income') {
+                        foreach ($validatedSubreports as $subreport) {
+                            $amount = $subreport['amount'];
+                            if (array_key_exists('convert_amount', $report_type_config)) {
+                                $amount = $subreport['amount'] * $subreport['rate'];
+                            }
+                            if (array_key_exists('user_balance', $report_type_config)) {
+                                $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
+                                if (!$userBalance) {
+                                    throw new \Exception("No se encontró el balance del usuario");
+                                }
+                                $userBalance->balance += $amount;
+                                $userBalance->save();
+                            }
+                            else if(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
+                                //This is a traspaso
+                                $senderAccount = BankAccount::find($subreport['senderAccount_id']);
+                                $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                $senderAccount->balance = $senderAccount->balance - $amount;
+                                $receiverAccount->balance = $receiverAccount->balance + $amount;
+                                $senderAccount->save();
+                                $receiverAccount->save();
+                            }
+                            else if(array_key_exists('account_id', $subreport)){
+                                //Update bank account
+                                $bankAccount = BankAccount::find($subreport['account_id']);
+                                $bankAccount->balance = $bankAccount->balance + $amount;
+                                $bankAccount->save();
+                            }
+                            else if(!array_key_exists('account_id', $subreport)){
+                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                if(!$store){
+                                    throw new \Exception("No se encontró el local del usuario");   
+                                }
+                                $store->account->balance += $amount;
+                                $store->account->save();
+                            }
+                        }
+                    }
+                    if ($report_type->type === 'expense') {
+                        foreach ($validatedSubreports as $subreport) {
+                            $amount = $subreport['amount'];
+                            if (array_key_exists('convert_amount', $report_type_config)) {
+                                $amount = $subreport['amount'] * $subreport['rate'];
+                            }
+                            if (array_key_exists('user_balance', $report_type_config)) {
+                                $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
+                                if (!$userBalance) {
+                                    throw new \Exception("No se encontró el balance del usuario");
+                                }
+                                $userBalance->balance -= $amount;
+                                $userBalance->save();
+                            }
+                            elseif(array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)){
+                                //This is a traspaso
+                                $senderAccount = BankAccount::find($subreport['senderAccount_id']);
+                                $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
+                                $senderAccount->balance = $senderAccount->balance - $amount;
+                                $receiverAccount->balance = $receiverAccount->balance + $amount;
+                                $senderAccount->save();
+                                $receiverAccount->save();
+                            }
+                            else if(array_key_exists('account_id', $subreport)){
+                                //Update bank account
+                                $bankAccount = BankAccount::find($subreport['account_id']);
+                                $bankAccount->balance = $bankAccount->balance - $amount;
+                                $bankAccount->save();
+                            }
+                            else if(!array_key_exists('account_id', $subreport)){
+                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                if(!$store){
+                                    throw new \Exception("No se encontró el local del usuario");   
+                                }
+                                $store->account->balance -= $amount;
+                                $store->account->save();
+                            }
+                        }
+                    }
+                });
+                return response()->json($report, 201);
+            }catch(\Error $e){
+                return response()->json(['error' => $e], 422);
+            }catch(QueryException $e){
+                return response()->json(['error' => $e], 422);
+            }
+        } else {
+            return response()->json(['error' => 'No tienes permiso para crear este tipo de reporte'], 401);
         }
     }
     public function update (Request $request, $id){
 
-        $currentUser = User::find(auth()->user()->id);
-        if ($currentUser->role->id === 1) {
-            $validateRequest = $request->validate([
-                'duplicated_status' => [
-                    Rule::in(['done', 'cancel'])
-                ],
-                'inconsistence_check' =>'boolean'
-            ]);
-    
-            $report = Report::find($id);
-            if (isset($request->inconsistence_check)) {
-                $report->inconsistence_check = $request->inconsistence_check;
-    
-                $report->save();
-    
-                return response()->json(['message' => 'Exito'], 201);
-            }
-            
-            $report->duplicated_status = $request->duplicated_status;
-    
-            if ($report->save()) {
-                
-                $report = Report::with('type')->find($id);
-                $bank = BankAccount::find($report->bank_account_id);
-                if ($request->duplicated_status === 'done') {
-                   if ($report->type->type === 'income') {
-                        $bank->balance = $bank->balance - $report->amount;
-                        $bank->save();
-                   } 
-                   elseif ($report->type->type === 'expense') {
-                        $bank->balance = $bank->balance + $report->amount;
-                        $bank->save();
-                   }
-                }
-            }
-            
-            return response()->json(['message' => 'Exito'], 201);
-        }
         return response()->json(['message' => 'forbiden'], 401);
     }
-    public function destroy(Request $request, $id){
-        $validateRequest = $request->validate([
-            'id' => 'require|exist:reports,id'
-        ]);
-
-        $report = Report::find($id);
-        if($report->type_id === 1){
-
+    public function show($id){
+        $report = Report::with('type', 'user.role', 'subreports')->find($id);
+        $currentUser = User::find(auth()->user()->id);
+        if (!$report) {
+           return response()->json(['error' => 'No se encontró el reporte'], 404);
+        }
+        if($currentUser->role->id === 1){
+            return response()->json($report, 200);
         }
         else{
-            
-        }
-    }
-    public function getInconsistences(Request $request){
-        $user = User::find(auth()->user()->id);
-        if ($user->role->id === 1) {
-            $order = $request->get('order', 'desc');
-            $order_by = $request->get('order_by', 'created_at');
-            $date = $request->get('date');
-            $until = $request->get('until');
-            $review = $request->get('reviewed');
-            //Reports Expense to group in the same array report  Depositante (id 4) and Transferencia Enviada (id 2)
-            $reportsE = Report::query()
-                ->join('reports_types', 'reports.type_id', '=', 'reports_types.id')
-                ->select('reports.*', 'reports_types.name as report_name', 'reports_types.type as operation_type');
-            //Reports Income to group in the same array report Caja fuerte (id 3) and Peticion de transferencia (id 1)
-            $reportsI = Report::query()
-                ->join('reports_types', 'reports.type_id', '=', 'reports_types.id')
-                ->select('reports.*', 'reports_types.name as report_name', 'reports_types.type as operation_type');
-            
-            $reportsE = $reportsE->orderBy($order_by, $order);
-            $reportsI = $reportsI->orderBy($order_by, $order);
-            if ($date) {
-                $reportsE = $reportsE->whereDate('reports.created_at', $date);
-                $reportsI = $reportsI->whereDate('reports.created_at', $date);
-            }
-            if ($review === 'yes') {
-                $reportsE = $reportsE->where('reports.inconsistence_check', true);
-                $reportsI = $reportsI->where('reports.inconsistence_check', true);
+            if($report->user_id === $currentUser->id){
+                return response()->json($report, 200);
             }
             else{
-                
-                $reportsE = $reportsE->where('inconsistence_check', false);
-                $reportsI = $reportsI->where('inconsistence_check', false);
+                return response()->json(['error' => 'No tienes permiso para ver este reporte'], 401);
             }
-            $reportsE = $reportsE
-                ->havingRaw('operation_type LIKE ?', ["expense"])
-                ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
-            foreach ($reportsE as $e) {
-                if (isset(json_decode($e->meta_data)->store)) {
-                    $e->store = Store::find(json_decode($e->meta_data)->store);
-                }
-            }
-            foreach ($reportsE as $e) {
-                if (isset(json_decode($e->meta_data)->bank)) {
-                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
-                }
-            }
-            foreach ($reportsE as $e) {
-                if (isset(json_decode($e->meta_data)->account_manager)) {
-                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
-                }
-            }
-            $reportsI = $reportsI
-                ->havingRaw('operation_type LIKE ?', ["income"])
-                ->with('bank_account.bank.country', 'bank_account.bank.currency', 'type', 'user')->paginate(2);
-            foreach ($reportsI as $e) {
-                if (isset(json_decode($e->meta_data)->store)) {
-                    $e->store = Store::find(json_decode($e->meta_data)->store);
-                }
-            }
-            foreach ($reportsI as $e) {
-                if (isset(json_decode($e->meta_data)->account_manager)) {
-                    $e->account_manager = User::find(json_decode($e->meta_data)->account_manager);
-                }
-            }
-            foreach ($reportsI as $e) {
-                if (isset(json_decode($e->meta_data)->bank)) {
-                    $e->bank = Bank::find(json_decode($e->meta_data)->bank);
-                }
-            }
-            return response()->json([
-                'income' => $reportsI,
-                'expense' => $reportsE
-            ], 200);
         }
-        else{
-            return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 422);
+    }
+    public function destroy(Request $request, $id){
+        return response()->json(['message' => 'forbiden'], 401);
+    }
+    public function getInconsistences(Request $request){
+       
+    }
+    private function create_subreport (Array $subreport, $report, $report_type_config){
+        $data = [];
+        foreach ($subreport as $sub) {
+            $currency = $sub['currency_id'];
+            $amount = $sub['amount'];
+            if (array_key_exists('convert_amount', $report_type_config)) {
+                $currency = $sub['conversionCurrency_id'];
+                $amount = $sub['amount'] * $sub['rate'];
+            } 
+            $data[] = [
+                'duplicate' =>  $sub['isDuplicated'],
+                'amount' =>$amount,
+                'currency_id' => $currency,
+                'data' => json_encode($sub)
+            ];
         }
+        $report->subreports()->createMany($data);
     }
 }

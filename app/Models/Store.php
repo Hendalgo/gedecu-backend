@@ -22,4 +22,7 @@ class Store extends Model
     public function user(){
         return $this->belongsTo('App\Models\User', 'user_id', 'id');
     }
+    public function account(){
+        return $this->hasOne('App\Models\BankAccount', 'store_id', 'id');
+    }
 }

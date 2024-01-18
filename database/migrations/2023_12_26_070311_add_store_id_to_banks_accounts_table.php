@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('banks_accounts', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->after('bank_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            //
+            $table->unsignedBigInteger('store_id')->nullable()->after('user_id');
+            $table->foreign('store_id')->references('id')->on('stores')
+                ->onUpdate('cascade')->onDelete('cascade');
         });
     }
 
@@ -23,7 +25,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('banks_accounts', function (Blueprint $table) {
-            $table->dropColumn("user_id");
+            //
+            $table->dropForeign(['store_id']);
+            $table->dropColumn('store_id');
         });
     }
 };
