@@ -25,7 +25,7 @@ class Store extends Model
         return $this->hasOne('App\Models\BankAccount', 'store_id', 'id');
     }
 
-    /* protected static function booted()
+    protected static function booted()
     {
         static::created(function ($store) {
             $account = new BankAccount();
@@ -36,5 +36,5 @@ class Store extends Model
             $account->balance = fake()->numberBetween(1000, 1000000);
             $account->save();
         });
-    } */
+    }
 }
