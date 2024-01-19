@@ -108,6 +108,13 @@ class UserController extends Controller
                         'country_id' => $request->country,
                         'role_id'=> $request->role
                     ]);
+                    if ($user->role_id == 5 || $user->role_id == 6) {
+                        $currency = Country::with("currency")->find($user->country_id);
+                        UserBalance::create([
+                            "user_id" => $user->id,
+                            "currency_id" => $currency->currency->id,
+                        ]);
+                    }
                 });
                 return response()->json($user, 201);
             }
