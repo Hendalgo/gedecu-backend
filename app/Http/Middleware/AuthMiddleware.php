@@ -26,16 +26,16 @@ class AuthMiddleware
             if ($e instanceof TokenInvalidException) {
                 return response()->json([
                     "error" => "Token Invalido"
-                ], 422);
+                ], 401);
             }
             if ($e instanceof TokenExpiredException) {
                 return response()->json([
                     "error" => "Token Expirado"
-                ], 422);
+                ], 401);
             }
             return response()->json([
                 "error" => "Token no encontrado"
-            ], 422);
+            ], 401);
         }
         return $next($request);
     }

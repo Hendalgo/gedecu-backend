@@ -13,8 +13,8 @@ class StoreControllerTest extends TestCase
      */
     public function test_example(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/api/stores');
 
-        $response->assertStatus(200);
+        $response->assertUnauthorized();
     }
 }
