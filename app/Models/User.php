@@ -60,6 +60,18 @@ class User extends Authenticatable implements JWTSubject
         return $this->getKey();
     }
 
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            if ($user->role_id === 5 || $user->role_id === 6){
+                $user->balance()->create([
+                    'user_id' => $user->id,
+                    'balance' => 0,
+                    'currency_id' => Currency::where('country_id', $user->country_id)->first()->id,
+                ]);
+            }
+        });
+    }
     /**
      * Return a key value array, containing any custom claims to be added to the JWT.
      *
