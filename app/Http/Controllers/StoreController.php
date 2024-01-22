@@ -21,7 +21,7 @@ class StoreController extends Controller
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
         $not_owner = $request->get('not_owner', 'no');
-        $store = Store::with('country.currency', 'account', 'user')
+        $store = Store::with('country.currency', 'accounts', 'user')
             ->when($search, function ($query, $search){
                 $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('location', 'LIKE', "%{$search}%")
@@ -93,6 +93,7 @@ class StoreController extends Controller
                         'identifier' => "Efectivo",
                         "balance" => $validatedData['balance'],
                         "currency_id" => $country->currency->id,
+                        "account_type_id" => 3
                     ]);
                 });
                 return response()->json([$store, $bank_account], 201);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class BankAccountController extends Controller
@@ -81,7 +82,7 @@ class BankAccountController extends Controller
         ];
         
         if ($user->role->id === 1) {
-            $validatedData = $request->validate([
+            /* $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'identifier'=> 'required|string|min:2|max:255',
                 'bank' => 'required|exists:banks,id',
@@ -89,6 +90,7 @@ class BankAccountController extends Controller
                 'balance' => 'required|numeric',
                 'currency_id' => 'required|exists:currencies,id',
             ], $messages);
+            $bank_type = Bank::find($validatedData['bank'])->type_id;
             $bank_account = BankAccount::create([
                 "name" => $validatedData['name'],
                 "identifier" => $validatedData['identifier'],
@@ -97,37 +99,65 @@ class BankAccountController extends Controller
                 "balance" => $validatedData['balance'],
                 "account_type_id" => $validatedData['account_type_id'],
                 "meta_data" => json_encode([]),
-                'currency_id' => $validatedData['currency_id']
+                'currency_id' => $validatedData['currency_id'],
+                'account_type_id' => $bank_type === 1 ? 1 : 2,
             ]);
             if ($bank_account) {
                 return response()->json($bank_account, 201);
             }
             else{
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
-            }
+            } */
+            return response()->json(['message' => 'forbiden'], 403);
         }
         else{
-            $validatedData = $request->validate([
-                'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'identifier'=> 'required|string|min:2|max:255',
-                'bank' => 'required|exists:banks,id',
-                'balance' => 'required|numeric',
-                'currency_id' => 'required|exists:currencies,id',
-            ], $messages);
-            $bank_account = BankAccount::create([
-                "name" => $validatedData['name'],
-                "identifier" => $validatedData['identifier'],
-                "bank_id" => $validatedData['bank'],
-                "user_id" => $user->id,
-                "balance" => $validatedData['balance'],
-                "meta_data" => json_encode([]),
-                "currency_id" => $validatedData['currency_id'],
-            ]);
-            if ($bank_account) {
-                return response()->json(['message' => 'exito'], 201);
+            if ($user->role->id === 3) {
+                $validatedData = $request->validate([
+                    'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                    'identifier'=> 'required|string|min:2|max:255',
+                    'bank' => 'required|exists:banks,id',
+                    'balance' => 'required|numeric',
+                    'currency_id' => 'required|exists:currencies,id',
+                ], $messages);
+                $validator = Validator::make([], []);
+                $validator->setData(['user', $user->id]);
+                $validator->setRules([
+                    'user' => 'required|exists:users,id|user_has_store',
+                ]);
+                $bank_type = Bank::find($validatedData['bank'])->type_id;
+                $bank_account = BankAccount::create([
+                    "name" => $validatedData['name'],
+                    "identifier" => $validatedData['identifier'],
+                    "bank_id" => $validatedData['bank'],
+                    "store_id" => $user->store->id,
+                    "balance" => $validatedData['balance'],
+                    "meta_data" => json_encode([]),
+                    "currency_id" => $validatedData['currency_id'],
+                    'account_type_id' => $bank_type === 1 ? 1 : 2,
+                ]);
+                return response()->json($bank_account, 201);
             }
             else{
-                return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
+                $validatedData = $request->validate([
+                    'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                    'identifier'=> 'required|string|min:2|max:255',
+                    'bank' => 'required|exists:banks,id',
+                    'balance' => 'required|numeric',
+                    'currency_id' => 'required|exists:currencies,id',
+                ], $messages);
+
+                $bank_type = Bank::find($validatedData['bank'])->type_id;
+                $bank_account = BankAccount::create([
+                    "name" => $validatedData['name'],
+                    "identifier" => $validatedData['identifier'],
+                    "bank_id" => $validatedData['bank'],
+                    "user_id" => $user->id,
+                    "balance" => $validatedData['balance'],
+                    "meta_data" => json_encode([]),
+                    "currency_id" => $validatedData['currency_id'],
+                    'account_type_id' => $bank_type === 1 ? 1 : 2,
+                ]);
+                return response()->json($bank_account, 201);
             }
         }
         return response()->json(['message' => 'errors'], 500);

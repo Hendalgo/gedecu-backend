@@ -32,4 +32,7 @@ class BankAccount extends Model
     public function currency(){
         return $this->belongsTo('\App\Models\Currency', 'currency_id', 'id');
     }
+    public function store(){
+        return $this->belongsTo('\App\Models\Store', 'store_id', 'id');
+    }
 }
