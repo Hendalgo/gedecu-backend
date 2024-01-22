@@ -118,4 +118,7 @@ Route::middleware('auth.veryfied')->group(function (){
     */
     Route::get('role', [RoleController::class, 'index']);
 
+    /*Stadistics*/
+    Route::get('stadistics', [ReportController::class, 'getMovementsByPeriods']);
+
 });

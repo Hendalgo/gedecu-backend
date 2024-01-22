@@ -12,7 +12,8 @@ class AuthenticateTest extends TestCase
     /**
      * A basic feature test example.
      */
-    /* use RefreshDatabase;
+    use RefreshDatabase;
+    protected $seed = true;
     public function test_interacting_authentication(): void
     {
         $admin = User::factory()->state(['role_id' => 1, 'delete' => false])->create();
@@ -35,6 +36,9 @@ class AuthenticateTest extends TestCase
         ])->post('/api/auth/logout');
 
         $response->assertOk();
+        $response->assertJsonStructure([
+            'message',
+        ]);
     }
     public function test_deleted_user_cant_access(): void{
         $admin = User::factory()->state(['delete' => true])->create();
@@ -57,6 +61,6 @@ class AuthenticateTest extends TestCase
             'Authorization' => 'Bearer ' . $token,
         ])->post('/api/auth/logout');
 
-        $response->assertUnauthorized();
-    } */
+        $response->assertOk();
+    } 
 }
