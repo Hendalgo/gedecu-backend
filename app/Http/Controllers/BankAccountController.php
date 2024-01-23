@@ -19,7 +19,22 @@ class BankAccountController extends Controller
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
         $bank = $request->get('bank');
-        $bank_account = BankAccount::where('banks_accounts.delete', false)
+        $store = $request->get('store');
+        $currency = $request->get('currency');
+
+        $validatedData = $request->validate([
+            'order' => 'in:balance,created_at',
+            'order_by' => 'in:asc,desc',
+            'since' => 'date',
+            'until' => 'date',
+            'search' => 'string',
+            'paginated' => 'in:yes,no',
+            'per_page' => 'integer',
+            'bank' => 'integer|exists:banks,id',
+            'store' => 'integer|exists:stores,id',
+            'currency' => 'integer|exists:currencies,id',
+        ]);
+        $bank_account = BankAccount::where('banks_accounts.delete', false)-> where('banks_accounts.account_type_id', "!=", 3)
                 ->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
                 ->join('countries', 'banks.country_id', '=', "countries.id")
                 ->join('users', 'user_id', "=", "users.id")
@@ -43,6 +58,12 @@ class BankAccountController extends Controller
         }
         if ($country) {
             $bank_account = $bank_account->where('countries.id', $country);
+        }
+        if ($currency) {
+            $bank_account = $bank_account->where('banks_accounts.currency_id', $currency);
+        }
+        if ($store) {
+            $bank_account = $bank_account->where('banks_accounts.store_id', $store);
         }
         if (auth()->user()->role->id === 1) {
             if ($paginated === 'no') {

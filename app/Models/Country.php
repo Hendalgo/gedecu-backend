@@ -22,4 +22,7 @@ class Country extends Model
     public function currency(){
         return $this->hasOne('\App\Models\Currency', 'country_id');
     }
+    public function stores(){
+        return $this->hasMany('\App\Models\Store', 'country_id');
+    }
 }

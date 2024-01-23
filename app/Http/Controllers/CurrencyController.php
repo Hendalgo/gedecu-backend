@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Currency;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -14,10 +15,10 @@ class CurrencyController extends Controller
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
 
-        $currency = Currency::where('delete', false)->where(function($query) use($search){
-            $query = $query->where('name', "LIKE", "%{$search}%")
-            ->orWhere("shortcode", 'LIKE', "%{$search}%")
-            ->orWhere("symbol", 'LIKE', "%{$search}%");
+        $currency = Currency::where('currencies.delete', false)->where(function($query) use($search){
+            $query = $query->where('currencies.name', "LIKE", "%{$search}%")
+            ->orWhere("currencies.shortcode", 'LIKE', "%{$search}%")
+            ->orWhere("currencies.symbol", 'LIKE', "%{$search}%");
         });
         if ($paginated === 'no') {
             return response()->json($currency->with("country")->get(), 200);  
@@ -47,7 +48,18 @@ class CurrencyController extends Controller
         }
         return response()->json(['message' => 'forbiden', 401]);
     }
-    public function show($id){
+    public function show(Request $request ,$id){
+        $currency = Currency::query();
+        $user = User::find(auth()->user()->id);
+        $stores = $request->get('stores', 'no');
+
+        if ($user->role->id === 1 && $stores === 'yes') {
+            $currency = Store::rightjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
+                        ->where('banks_accounts.currency_id', $id)
+                        ->where('stores.delete', false)
+                        ->where('banks_accounts.account_type_id', 3);
+            return response()->json($currency->get(), 200);
+        }
         return response()->json(Currency::with('country')->find($id), 200);
     }
     public function update(Request $request, $id){
