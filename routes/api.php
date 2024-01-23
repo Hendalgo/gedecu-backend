@@ -96,6 +96,7 @@ Route::middleware('auth.veryfied')->group(function (){
      */
     Route::get('reports/duplicated', [DuplicatedReportController::class, 'index']);
     Route::put('reports/duplicated/{id}', [DuplicatedReportController::class, 'duplicated_complete']);
+    Route::get('reports/duplicated/{id}', [DuplicatedReportController::class, 'show']);
     /*
     * Reports Routes 
     */
