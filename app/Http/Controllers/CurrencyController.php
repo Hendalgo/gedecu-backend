@@ -57,7 +57,8 @@ class CurrencyController extends Controller
             $currency = Store::rightjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
                         ->where('banks_accounts.currency_id', $id)
                         ->where('stores.delete', false)
-                        ->where('banks_accounts.account_type_id', 3);
+                        ->where('banks_accounts.account_type_id', 3)
+                        ->select('stores.*');
             return response()->json($currency->get(), 200);
         }
         return response()->json(Currency::with('country')->find($id), 200);
