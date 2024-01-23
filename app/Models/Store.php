@@ -19,7 +19,7 @@ class Store extends Model
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }
     public function user(){
-        return $this->belongsTo('App\Models\User', 'user_id', 'id');
+        return $this->hasOne('App\Models\User', 'user_id', 'id');
     }
     public function accounts(){
         return $this->hasMany('App\Models\BankAccount', 'store_id', 'id');

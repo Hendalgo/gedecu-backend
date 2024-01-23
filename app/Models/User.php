@@ -55,6 +55,9 @@ class User extends Authenticatable implements JWTSubject
     public function balance(){
         return $this->hasOne('\App\Models\UserBalance', 'user_id');
     }
+    public function store(){
+        return $this->hasOne('\App\Models\Store', 'user_id');
+    }
     public function getJWTIdentifier()
     {
         return $this->getKey();
