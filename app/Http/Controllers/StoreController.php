@@ -22,9 +22,13 @@ class StoreController extends Controller
         $paginated = $request->get('paginated', 'yes');
         $not_owner = $request->get('not_owner', 'no');
         $store = Store::
-            leftjoin('banks_accounts', 'stores.user_id', '=', 'users.id')
-            ->where('account_type_id', 3)
-            ->select('stores.*', 'banks_accounts.balance as balance')
+            leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
+            ->leftjoin('countries', 'stores.country_id', '=', 'countries.id')
+            ->leftjoin('currencies', 'countries.id', '=', 'currencies.country_id')
+            ->leftjoin('users', 'stores.user_id', '=', 'users.id')
+            ->where('banks_accounts.account_type_id', 3)
+            ->select('stores.*', 'banks_accounts.balance as cash_balance')
+            ->groupBy('stores.id', 'stores.name', 'stores.location', 'stores.user_id', 'stores.country_id', 'stores.created_at', 'stores.updated_at', 'stores.delete', 'banks_accounts.balance')
             ->orderBy($order ?? 'stores.id', $orderBy ?? 'desc')
             ->when($since, function ($query, $since){
                 $query->whereDate('stores.created_at', '>=', $since);
@@ -33,27 +37,26 @@ class StoreController extends Controller
                 $query->whereDate('stores.created_at', '<=', $until);
             })
             ->when($search, function ($query, $search){
-                $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('location', 'LIKE', "%{$search}%")
+                $query->where('stores.name', 'LIKE', "%{$search}%")
+                ->orWhere('stores.location', 'LIKE', "%{$search}%")
                 ->orWhereHas('country', function ($query) use ($search){
-                    $query->where('name', 'LIKE', "%{$search}%");
+                    $query->where('countries.name', 'LIKE', "%{$search}%");
                 })
                 ->orWhereHas('user', function ($query) use ($search){
-                    $query->where('name', 'LIKE', "%{$search}%");
+                    $query->where('users.name', 'LIKE', "%{$search}%");
                 });
-            })
-            ->groupBy('stores.id', 'banks_accounts.balance');
+            });
         if ($not_owner === 'yes') {
             $store = $store->where(function ($query) {
-                $query->where('user_id', '!=', auth()->user()->id)
-                    ->orWhereNull('user_id');
+                $query->where('stores.user_id', '!=', auth()->user()->id)
+                    ->orWhereNull('stores.user_id');
             });
         }  
         $store = $store->with('country.currency', 'accounts', 'user');
         if ($paginated === 'no') {
-            return response()->json($store->where('delete', false)->get(), 200);
+            return response()->json($store->where('stores.delete', false)->get(), 200);
         }
-        return response()->json($store->where('delete', false)->paginate($per_page), 200);  
+        return response()->json($store->where('stores.delete', false)->paginate($per_page), 200);  
     }
     public function create(){
     }

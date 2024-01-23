@@ -33,7 +33,7 @@ class Store extends Model
             $account->identifier = "Efectivo";
             $account->store_id = $store->id;
             $account->currency_id = Currency::where('country_id', $store->country_id)->first()->id;
-            $account->accout_type_id = 3;
+            $account->account_type_id = 3;
             $account->balance = fake()->numberBetween(1000, 1000000);
             $account->save();
         });
