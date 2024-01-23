@@ -22,7 +22,7 @@ class BankAccountFactory extends Factory
         $balance = $this->faker->numberBetween(1000, 1000000);
         $identifier = $this->faker->creditCardNumber();
         $bank_id = Bank::where('delete', false)->inRandomOrder()->first()->id;
-        $user_id = User::where('delete', false)->whereIn('role_id', [2, 3])->inRandomOrder()->first()->id;
+        $user_id = User::where('delete', false)->whereIn('role_id', [2])->inRandomOrder()->first()->id;
         $currecy_id = $this->faker->numberBetween(1, 2, 3);
         $delete = $this->faker->boolean();
         return [

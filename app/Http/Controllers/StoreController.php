@@ -21,7 +21,17 @@ class StoreController extends Controller
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
         $not_owner = $request->get('not_owner', 'no');
-        $store = Store::with('country.currency', 'accounts', 'user')
+        $store = Store::
+            leftjoin('banks_accounts', 'stores.user_id', '=', 'users.id')
+            ->where('account_type_id', 3)
+            ->select('stores.*', 'banks_accounts.balance as balance')
+            ->orderBy($order ?? 'stores.id', $orderBy ?? 'desc')
+            ->when($since, function ($query, $since){
+                $query->whereDate('stores.created_at', '>=', $since);
+            })
+            ->when($until, function ($query, $until){
+                $query->whereDate('stores.created_at', '<=', $until);
+            })
             ->when($search, function ($query, $search){
                 $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('location', 'LIKE', "%{$search}%")
@@ -31,13 +41,15 @@ class StoreController extends Controller
                 ->orWhereHas('user', function ($query) use ($search){
                     $query->where('name', 'LIKE', "%{$search}%");
                 });
-            });
+            })
+            ->groupBy('stores.id', 'banks_accounts.balance');
         if ($not_owner === 'yes') {
             $store = $store->where(function ($query) {
                 $query->where('user_id', '!=', auth()->user()->id)
                     ->orWhereNull('user_id');
             });
         }  
+        $store = $store->with('country.currency', 'accounts', 'user');
         if ($paginated === 'no') {
             return response()->json($store->where('delete', false)->get(), 200);
         }

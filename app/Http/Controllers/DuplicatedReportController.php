@@ -34,6 +34,21 @@ class DuplicatedReportController extends Controller
         }
         return response()->json($subreports->with('report.user', 'currency')->paginate($per_page), 200);
     }
+    public function show($id){
+        $currentUser = auth()->user();
+        $subreport = Subreport::query()
+            ->where('subreports.duplicate', true)
+            ->leftjoin('reports', 'subreports.report_id', '=', 'reports.id')
+            ->leftjoin('users', 'reports.user_id', '=', 'users.id')
+            ->select('subreports.*')
+            ->groupBy('subreports.id')
+            ->where('subreports.id', $id);
+        if ($currentUser->role->id !== 1 ){
+            $subreport = $subreport->where('users.id', $currentUser->id);
+        }
+        $subreport = $subreport->with('report.user', 'currency')->firstOrFail();
+        return response()->json($subreport, 200);
+    }
     public function duplicated_complete(Request $request, $id){
         $currentUser = auth()->user();
         // Check if user is admin
@@ -72,7 +87,7 @@ class DuplicatedReportController extends Controller
                         'store_id' => 'required|exists:stores,id',
                     ]);
 
-                    $cashAccount = BankAccount::where('store_id', $validatedData['store_id'])->first();
+                    $cashAccount = BankAccount::where('store_id', $validatedData['store_id'])->where('account_type_id', 3)->first();
                     $cashAccount->balance = $cashAccount->balance + $validatedData['amount'];
                     $cashAccount->save();
                 }
