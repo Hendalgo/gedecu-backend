@@ -20,12 +20,12 @@ class StoreController extends Controller
         $search = $request->get('search');
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
+        // Filter to get stores where user is not owner
         $not_owner = $request->get('not_owner', 'no');
         $store = Store::
             leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
             ->leftjoin('countries', 'stores.country_id', '=', 'countries.id')
             ->leftjoin('currencies', 'countries.id', '=', 'currencies.country_id')
-            ->leftjoin('users', 'stores.user_id', '=', 'users.id')
             ->where('banks_accounts.account_type_id', 3)
             ->select('stores.*', 'banks_accounts.balance as cash_balance')
             ->groupBy('stores.id', 'stores.name', 'stores.location', 'stores.user_id', 'stores.country_id', 'stores.created_at', 'stores.updated_at', 'stores.delete', 'banks_accounts.balance')
