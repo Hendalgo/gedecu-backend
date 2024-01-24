@@ -130,10 +130,11 @@ class StoreController extends Controller
             }
 
             $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
-
+            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
             $auxStore = $store->toArray(); 
             
             $auxStore['accounts'] = $bank_accounts;
+            $auxStore['cash_balance'] = $cash_account;
 
             return response()->json($auxStore, 200);
         }
@@ -144,10 +145,12 @@ class StoreController extends Controller
         }
 
         $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
+        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
 
         $auxStore = $store->toArray(); 
             
         $auxStore['accounts'] = $bank_accounts;
+        $auxStore['cash_balance'] = $cash_account;
         return response()->json($auxStore, 200);
     }
     public function update(Request $request, $id){
