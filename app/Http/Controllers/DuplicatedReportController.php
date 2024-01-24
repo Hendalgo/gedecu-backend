@@ -6,6 +6,7 @@ use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\Subreport;
 use App\Models\User;
+use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -98,7 +99,7 @@ class DuplicatedReportController extends Controller
                 $subreport->duplicate_data = $validatedData;
                 $subreport->save();
             });
-        } catch (\Throwable $th) {
+        } catch (Error $th) {
             return response()->json(['message' => $th], 400);
         }
         catch(\Illuminate\Database\QueryException $e){
