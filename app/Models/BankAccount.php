@@ -35,4 +35,7 @@ class BankAccount extends Model
     public function store(){
         return $this->belongsTo('\App\Models\Store', 'store_id', 'id');
     }
+    public function type(){
+        return $this->belongsTo('\App\Models\AccountType', 'account_type_id', 'id');
+    }
 }

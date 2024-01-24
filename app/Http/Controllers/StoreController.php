@@ -119,7 +119,36 @@ class StoreController extends Controller
         return response()->json(['message' => 'forbiden'], 401);
     }
     public function show($id){
-        return response()->json(Store::find($id), 200);
+        $user = User::find(auth()->user()->id);
+        $store = Store::where('id', '=', $id)->where('delete', false) ;
+        
+        if ($user->role->id === 1) {
+            $store = $store->with('country.currency', 'accounts', 'user')->first();
+
+            if (!$store) {
+                return response()->json(['message' => 'No se encontro el local'], 404);
+            }
+
+            $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
+
+            $auxStore = $store->toArray(); 
+            
+            $auxStore['accounts'] = $bank_accounts;
+
+            return response()->json($auxStore, 200);
+        }
+        $store = $store->where('user_id', '=', $user->id)->with('country.currency', 'user')->first();
+
+        if (!$store) {
+            return response()->json(['message' => 'No se encontro el local'], 404);
+        }
+
+        $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
+
+        $auxStore = $store->toArray(); 
+            
+        $auxStore['accounts'] = $bank_accounts;
+        return response()->json($auxStore, 200);
     }
     public function update(Request $request, $id){
         $user = User::find(auth()->user()->id);
