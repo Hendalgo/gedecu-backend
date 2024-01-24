@@ -99,7 +99,10 @@ class DuplicatedReportController extends Controller
                 $subreport->save();
             });
         } catch (\Throwable $th) {
-            return response()->json(['message' => 'Error al completar el reporte'], 400);
+            return response()->json(['message' => $th], 400);
+        }
+        catch(\Illuminate\Database\QueryException $e){
+            return response()->json(['message' => $e], 400);
         }
     }
 }
