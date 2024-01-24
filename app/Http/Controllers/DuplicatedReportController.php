@@ -72,7 +72,7 @@ class DuplicatedReportController extends Controller
         if ($subreport->duplicate_status == true){
             return response()->json(['message' => 'Este reporte ya fue completado'], 400);
         }
-        if ($subreport->duplicate === false){
+        if ($subreport->duplicate == false){
             return response()->json(['message' => 'Este reporte no es un duplicado'], 400);
         }
 
