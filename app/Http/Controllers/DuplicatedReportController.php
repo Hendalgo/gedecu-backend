@@ -9,6 +9,7 @@ use App\Models\User;
 use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class DuplicatedReportController extends Controller
 {
@@ -56,10 +57,19 @@ class DuplicatedReportController extends Controller
         if ($currentUser->role->id !== 1 ){
             return response()->json(['message' => 'You are not authorized to complete this action'], 403);
         }
+        $validateId = Validator::make(['id' => $id], [
+            'id' => 'required|exists:subreports,id'
+        ]);
+        if ($validateId->fails()) {
+            return response()->json(['message' => 'El subreporte no existe'], 400);
+        }
+        $subreport = Subreport::find($id);
 
-        $subreport = Subreport::query()->findOrFail($id);
+        if(!$subreport){
+            return response()->json(['message' => 'El subreporte no existe'], 400);
+        }
 
-        if ($subreport->duplicate_status === true){
+        if ($subreport->duplicate_status == true){
             return response()->json(['message' => 'Este reporte ya fue completado'], 400);
         }
         if ($subreport->duplicate === false){
@@ -67,7 +77,7 @@ class DuplicatedReportController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request, $subreport) {
+           return DB::transaction(function () use ($request, $subreport) {
                 $validatedData = $request->validate([
                     'amount' => 'required|numeric',
                     'currency_id' => 'required|exists:currencies,id',
@@ -77,10 +87,10 @@ class DuplicatedReportController extends Controller
                 // if the account exist 
                 if (array_key_exists('account_id', $request->all())) {
                     $validatedData['account_id'] = $request->validate([
-                        'account_id' => 'required|exists:bank_accounts,id',
+                        'account_id' => 'required|exists:banks_accounts,id',
                     ]);
-                    $account = BankAccount::query()->findOrFail($validatedData['account_id']);
-                    $account->balance = $account->balance + $validatedData['amount'];
+                    $account = BankAccount::where('delete', false)->where('id', $validatedData['account_id'])->firstOrFail();
+                    $account->balance += $validatedData['amount'];
                     $account->save();
                 }
                 else if (array_key_exists('store_id', $request->all())) {
@@ -88,16 +98,17 @@ class DuplicatedReportController extends Controller
                         'store_id' => 'required|exists:stores,id',
                     ]);
 
-                    $cashAccount = BankAccount::where('store_id', $validatedData['store_id'])->where('account_type_id', 3)->first();
-                    $cashAccount->balance = $cashAccount->balance + $validatedData['amount'];
+                    $cashAccount = BankAccount::where('delete', false)->where('store_id', $validatedData['store_id'])->where('account_type_id', 3)->firstOrFail();
+                    $cashAccount->balance +=  $validatedData['amount'];
                     $cashAccount->save();
                 }
                 else {
                     return response()->json(['message' => 'Debe especificar una cuenta o un comercio'], 400);
                 }
                 $subreport->duplicate_status = true;
-                $subreport->duplicate_data = $validatedData;
+                $subreport->duplicate_data = $request->all();
                 $subreport->save();
+                return response()->json(['message' => $subreport], 201);
             });
         } catch (Error $th) {
             return response()->json(['message' => $th], 400);
