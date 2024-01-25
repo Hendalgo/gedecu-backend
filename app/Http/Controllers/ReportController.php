@@ -183,12 +183,12 @@ class ReportController extends Controller
                                 $bankAccount->save();
                             }
                             else if(!array_key_exists('account_id', $subreport)){
-                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                $store = Store::with('accounts')->where('user_id', auth()->user()->id)->first();
                                 if(!$store){
                                     throw new \Exception("No se encontró el local del usuario");   
                                 }
                                 foreach ($store->accounts as $account) {
-                                    if($account->account_type_id === 3 && $account->currency_id === $currency){
+                                    if($account->account_type_id == 3 && $account->currency_id == $currency){
                                         $account->balance += $amount;
                                         $account->save();
                                     }
@@ -228,7 +228,7 @@ class ReportController extends Controller
                                 $bankAccount->save();
                             }
                             else if(!array_key_exists('account_id', $subreport)){
-                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                $store = Store::with('accounts')->where('user_id', auth()->user()->id)->first();
                                 if(!$store){
                                     throw new \Exception("No se encontró el local del usuario");   
                                 }
