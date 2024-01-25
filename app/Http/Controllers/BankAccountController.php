@@ -136,7 +136,7 @@ class BankAccountController extends Controller
                 $validatedData = $request->validate([
                     'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                     'identifier'=> 'required|string|min:2|max:255',
-                    'bank' => 'required|exists:banks,id',
+                    'bank_id' => 'required|exists:banks,id',
                     'balance' => 'required|numeric',
                     'currency_id' => 'required|exists:currencies,id',
                 ], $messages);
@@ -162,7 +162,7 @@ class BankAccountController extends Controller
                 $validatedData = $request->validate([
                     'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                     'identifier'=> 'required|string|min:2|max:255',
-                    'bank' => 'required|exists:banks,id',
+                    'bank_id' => 'required|exists:banks,id',
                     'balance' => 'required|numeric',
                     'currency_id' => 'required|exists:currencies,id',
                 ], $messages);
