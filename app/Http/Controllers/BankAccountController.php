@@ -34,10 +34,12 @@ class BankAccountController extends Controller
             'store' => 'integer|exists:stores,id',
             'currency' => 'integer|exists:currencies,id',
         ]);
-        $bank_account = BankAccount::where('banks_accounts.delete', false)-> where('banks_accounts.account_type_id', "!=", 3)
-                ->join('banks', 'banks_accounts.bank_id', '=', "banks.id")
-                ->join('countries', 'banks.country_id', '=', "countries.id")
-                ->join('users', 'user_id', "=", "users.id")
+        $bank_account = BankAccount::where('banks_accounts.delete', false)
+                ->where('banks_accounts.account_type_id', "!=", 3)
+                ->leftjoin('banks', 'banks_accounts.bank_id', '=', "banks.id")
+                ->leftjoin('countries', 'banks.country_id', '=', "countries.id")
+                ->leftjoin('users', 'user_id', "=", "users.id")
+                ->leftjoin('stores', 'banks_accounts.store_id', '=', "stores.id")
                 ->select('banks_accounts.*');
         $country = $request->get('country');
         $type = $request->get('type');
@@ -54,7 +56,7 @@ class BankAccountController extends Controller
             $bank_account = $bank_account->where('bank_id', $bank);
         }
         if($type){
-            $bank_account = $bank_account->where('banks.type_id', $type);
+            $bank_account = $bank_account->where('type_id', $type);
         }
         if ($country) {
             $bank_account = $bank_account->where('countries.id', $country);
@@ -64,6 +66,18 @@ class BankAccountController extends Controller
         }
         if ($store) {
             $bank_account = $bank_account->where('banks_accounts.store_id', $store);
+        }
+        if ($since) {
+            $bank_account = $bank_account->whereDate('banks_accounts.created_at', '>=', $since);
+        }
+        if ($until) {
+            $bank_account = $bank_account->whereDate('banks_accounts.created_at', '<=', $until);
+        }
+        if ($order) {
+            $bank_account = $bank_account->orderBy('banks_accounts.'.$order, $orderBy);
+        }
+        else{
+            $bank_account = $bank_account->orderBy('banks_accounts.created_at', 'desc');
         }
         if (auth()->user()->role->id === 1) {
             if ($paginated === 'no') {
