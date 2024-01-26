@@ -30,13 +30,14 @@ class DuplicatedReportController extends Controller
 
         if ($search) {
             $subreports = $subreports->where(function ($query) use ($search){
-                $query->where('user.email', 'LIKE', '%'.$search.'%')
-                    ->orWhere('user.name', 'LIKE', '%'.$search.'%')
+                $query->where('users.email', 'LIKE', '%'.$search.'%')
+                    ->orWhere('users.name', 'LIKE', '%'.$search.'%')
                     ->orWhere('subreports.amount', 'LIKE', '%'.$search.'%')
                     ->orWhere('subreports.date', 'LIKE', '%'.$search.'%')
                     ->orWhere('subreports.description', 'LIKE', '%'.$search.'%')
                     ->orWhere(function ($query) use ($search) {
-                        $query->where('subreports.duplicate_data', 'LIKE', '%'.$search.'%');
+                        $query->where('subreports.duplicate_data', 'LIKE', '%'.$search.'%')
+                        ->orWhere('subreports.data', 'LIKE', '%'.$search.'%');
                     });
                 });
         }
