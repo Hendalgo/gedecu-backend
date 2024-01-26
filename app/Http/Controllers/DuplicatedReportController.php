@@ -17,7 +17,7 @@ class DuplicatedReportController extends Controller
         $currentUser = auth()->user();
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
-        $completed = $request->get('completed', 'no');
+        $completed = $request->get('completed', 'all');
         $subreports = Subreport::query()
             ->where('subreports.duplicate', true)
             ->leftjoin('reports', 'subreports.report_id', '=', 'reports.id')
@@ -27,6 +27,9 @@ class DuplicatedReportController extends Controller
 
         if ($completed === 'yes') {
             $subreports = $subreports->where('subreports.duplicate_status', true);
+        }
+        if ($completed === 'no') {
+            $subreports = $subreports->where('subreports.duplicate_status', false);
         }
         if ($currentUser->role->id !== 1 ){
             $subreports = $subreports->where('users.id', $currentUser->id);
