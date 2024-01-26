@@ -129,8 +129,8 @@ class StoreController extends Controller
                 return response()->json(['message' => 'No se encontro el local'], 404);
             }
 
-            $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
-            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type', 'bank')->first();
+            $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type', 'bank')->get();
+            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
             $auxStore = $store->toArray(); 
             
             $auxStore['accounts'] = $bank_accounts;
@@ -144,8 +144,8 @@ class StoreController extends Controller
             return response()->json(['message' => 'No se encontro el local'], 404);
         }
 
-        $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
-        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type', 'bank')->first();
+        $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type','bank')->get();
+        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
 
         $auxStore = $store->toArray(); 
             
