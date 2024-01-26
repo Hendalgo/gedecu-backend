@@ -154,7 +154,7 @@ class BankAccountController extends Controller
                     "balance" => $validatedData['balance'],
                     "meta_data" => json_encode([]),
                     "currency_id" => $validatedData['currency_id'],
-                    'account_type_id' => $bank_type,
+                    'account_type_id' => $bank_type == 1 ? 1 : 2,
                 ]);
                 return response()->json($bank_account, 201);
             }
@@ -176,7 +176,7 @@ class BankAccountController extends Controller
                     "balance" => $validatedData['balance'],
                     "meta_data" => json_encode([]),
                     "currency_id" => $validatedData['currency_id'],
-                    'account_type_id' => $bank_type ,
+                    'account_type_id' => $bank_type == 1 ? 1 : 2,
                 ]);
                 return response()->json($bank_account, 201);
             }

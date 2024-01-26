@@ -19,7 +19,8 @@ class BankAccount extends Model
         "user_id",
         "currency_id",
         "store_id",
-        "delete"
+        "delete",
+        "account_type_id"
     ];
 
     
