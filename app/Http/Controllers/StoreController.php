@@ -22,6 +22,7 @@ class StoreController extends Controller
         $paginated = $request->get('paginated', 'yes');
         // Filter to get stores where user is not owner
         $not_owner = $request->get('not_owner', 'no');
+        $country = $request->get('country');
         $store = Store::
             leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
             ->leftjoin('countries', 'stores.country_id', '=', 'countries.id')
@@ -45,6 +46,9 @@ class StoreController extends Controller
                 ->orWhereHas('user', function ($query) use ($search){
                     $query->where('users.name', 'LIKE', "%{$search}%");
                 });
+            })
+            ->when($country, function ($query, $country){
+                $query->where('countries.id', '=', $country);
             });
         if ($not_owner === 'yes') {
             $store = $store->where(function ($query) {

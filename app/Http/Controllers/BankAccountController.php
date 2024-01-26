@@ -45,12 +45,14 @@ class BankAccountController extends Controller
         $type = $request->get('type');
         
         if ($search) {
-            $bank_account = $bank_account
-            ->select('banks.name as bank_name', "user.name as user_name");
-            $bank_account = $bank_account->where("banks.name", "LIKE", "%{$search}%")
-                ->orWhere("banks_accounts.name", "LIKE", "%{$search}%")
-                ->orWhere("banks_accounts.identifier", "LIKE", "%{$search}%")
-                ->orWhere("users.name", "LIKE", "%{$search}%");
+            $bank_account = $bank_account->where(function ($query) use ($search){
+                $query->where('banks_accounts.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('banks_accounts.identifier', 'LIKE', '%'.$search.'%')
+                    ->orWhere('banks.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('countries.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('users.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('stores.name', 'LIKE', '%'.$search.'%');
+            });
         }
         if ($bank) {
             $bank_account = $bank_account->where('bank_id', $bank);

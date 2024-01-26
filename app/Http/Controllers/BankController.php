@@ -19,15 +19,26 @@ class BankController extends Controller
         $per_page = $request->get('per_page', 10);
         $search = $request->get("search"); 
         $country = $request->get("country");
+        $type = $request->get("type");
         
-        $bank = Bank::where('banks.delete', false);
+        $bank = Bank::where('banks.delete', false)
+            ->leftjoin('accounts_types', 'banks.type_id', '=', 'accounts_types.id');
         /* if ($search) {
             $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
         } */
+        if ($search){
+            $bank = $bank->where(function ($query) use ($search){
+                $query->where('banks.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('banks.meta_data', 'LIKE', '%'.$search.'%')
+                    ->orWhere('accounts_types.name', 'LIKE', '%'.$search.'%');
+            });
+        }
         if ($country) {
             $bank = $bank->where("banks.country_id", "=", $country);
         }
-
+        if ($type) {
+            $bank = $bank->where("banks.type_id", "=", $type);
+        }
         $bank = $bank->with("country", "type");
         if ($paginated === 'no') {
             return response()->json($bank->get(), 200);

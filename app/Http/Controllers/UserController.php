@@ -172,6 +172,13 @@ class UserController extends Controller
                 }
             }
             $user->save();
+
+            if ($user->role_id == 5 || $user->role_id == 6) {
+                $currency = Country::with("currency")->find($user->country_id);
+                $userBalance = UserBalance::where('user_id', $user->id)->first();
+                $userBalance->currency_id = $currency->currency->id;
+                $userBalance->save();
+            }
     
             return response()->json(['message'=> 'exito'], 201);
         }
