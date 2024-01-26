@@ -130,7 +130,7 @@ class StoreController extends Controller
             }
 
             $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
-            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
+            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type', 'bank')->first();
             $auxStore = $store->toArray(); 
             
             $auxStore['accounts'] = $bank_accounts;
@@ -145,7 +145,7 @@ class StoreController extends Controller
         }
 
         $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type')->get();
-        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
+        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type', 'bank')->first();
 
         $auxStore = $store->toArray(); 
             
