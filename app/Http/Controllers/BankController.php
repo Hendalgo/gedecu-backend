@@ -22,7 +22,8 @@ class BankController extends Controller
         $type = $request->get("type");
         
         $bank = Bank::where('banks.delete', false)
-            ->leftjoin('accounts_types', 'banks.type_id', '=', 'accounts_types.id');
+            ->leftjoin('accounts_types', 'banks.type_id', '=', 'accounts_types.id')
+            ->select('banks.*');
         /* if ($search) {
             $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
         } */
