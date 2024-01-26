@@ -81,12 +81,12 @@ class BankAccountController extends Controller
         else{
             $bank_account = $bank_account->orderBy('banks_accounts.created_at', 'desc');
         }
-        if (auth()->user()->role->id === 1) {
+        if (auth()->user()->role->id === 1 || auth()->user()->role->id === 5){
             if ($paginated === 'no') {
-                $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user')->get();
+                $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->get();
             }
             else{
-                $bank_account = $bank_account->with('bank.country', 'bank.type','currency', 'user')->paginate($per_page);
+                $bank_account = $bank_account->with('bank.country', 'bank.type','currency', 'user', 'store.user')->paginate($per_page);
             }
             return response()->json($bank_account, 200);
         }
