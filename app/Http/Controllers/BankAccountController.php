@@ -145,11 +145,11 @@ class BankAccountController extends Controller
                 $validator->setRules([
                     'user' => 'required|exists:users,id|user_has_store',
                 ]);
-                $bank_type = Bank::find($validatedData['bank'])->type_id;
+                $bank_type = Bank::find($validatedData['bank_id'])->type_id;
                 $bank_account = BankAccount::create([
                     "name" => $validatedData['name'],
                     "identifier" => $validatedData['identifier'],
-                    "bank_id" => $validatedData['bank'],
+                    "bank_id" => $validatedData['bank_id'],
                     "store_id" => $user->store->id,
                     "balance" => $validatedData['balance'],
                     "meta_data" => json_encode([]),
@@ -167,11 +167,11 @@ class BankAccountController extends Controller
                     'currency_id' => 'required|exists:currencies,id',
                 ], $messages);
 
-                $bank_type = Bank::find($validatedData['bank'])->type_id;
+                $bank_type = Bank::find($validatedData['bank_id'])->type_id;
                 $bank_account = BankAccount::create([
                     "name" => $validatedData['name'],
                     "identifier" => $validatedData['identifier'],
-                    "bank_id" => $validatedData['bank'],
+                    "bank_id" => $validatedData['bank_id'],
                     "user_id" => $user->id,
                     "balance" => $validatedData['balance'],
                     "meta_data" => json_encode([]),
