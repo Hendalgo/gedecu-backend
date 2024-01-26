@@ -92,12 +92,12 @@ class BankAccountController extends Controller
         }
         else{
             if ($paginated === 'no') {
-                $bank_account = $bank_account->where("user_id", auth()->user()->id)->with('bank.country', 'currency', 'user')->get();
+                $bank_account = $bank_account->where("user_id", auth()->user()->id)->with('bank.country', 'currency', 'user', 'store.user')->get();
                 //$sql = $bank_account->toSql();
                 return response()->json($bank_account, 200);
             }
             else{
-                $bank_account = $bank_account->where("user_id", auth()->user()->id)->with('bank.country', 'currency', 'user')->paginate($per_page);
+                $bank_account = $bank_account->where("user_id", auth()->user()->id)->with('bank.country', 'currency', 'user', 'store.user')->paginate($per_page);
                 //$sql = $bank_account->toSql();
                 return response()->json($bank_account, 200);
             }
