@@ -21,6 +21,7 @@ class DuplicatedReportController extends Controller
         $order = $request->get('order', 'created_at');
         $orderBy = $request->get('orderBy', 'desc');
         $search = $request->get('search', null);
+        $date = $request->get('date', null);
         $subreports = Subreport::query()
             ->where('subreports.duplicate', true)
             ->leftjoin('reports', 'subreports.report_id', '=', 'reports.id')
@@ -39,6 +40,12 @@ class DuplicatedReportController extends Controller
                     });
                 });
         }
+        if ($date) {
+            $subreports = $subreports->where(function ($query) use ($date){
+                $query->whereDate('subreports.created_at', $date);
+            });
+        }
+        
         if ($completed === 'yes') {
             $subreports = $subreports->where('subreports.duplicate_status', true);
         }
