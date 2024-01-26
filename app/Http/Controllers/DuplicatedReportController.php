@@ -18,6 +18,9 @@ class DuplicatedReportController extends Controller
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
         $completed = $request->get('completed', 'all');
+        $order = $request->get('order', 'created_at');
+        $orderBy = $request->get('orderBy', 'desc');
+        $search = $request->get('search', null);
         $subreports = Subreport::query()
             ->where('subreports.duplicate', true)
             ->leftjoin('reports', 'subreports.report_id', '=', 'reports.id')
@@ -25,6 +28,18 @@ class DuplicatedReportController extends Controller
             ->select('subreports.*')
             ->groupBy('subreports.id');
 
+        if ($search) {
+            $subreports = $subreports->where(function ($query) use ($search){
+                $query->where('user.email', 'LIKE', '%'.$search.'%')
+                    ->orWhere('user.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('subreports.amount', 'LIKE', '%'.$search.'%')
+                    ->orWhere('subreports.date', 'LIKE', '%'.$search.'%')
+                    ->orWhere('subreports.description', 'LIKE', '%'.$search.'%')
+                    ->orWhere(function ($query) use ($search) {
+                        $query->where('subreports.duplicate_data', 'LIKE', '%'.$search.'%');
+                    });
+                });
+        }
         if ($completed === 'yes') {
             $subreports = $subreports->where('subreports.duplicate_status', true);
         }
@@ -34,6 +49,10 @@ class DuplicatedReportController extends Controller
         if ($currentUser->role->id !== 1 ){
             $subreports = $subreports->where('users.id', $currentUser->id);
         }
+        if ($order) {
+            $subreports = $subreports->orderBy('subreports.'.$order, $orderBy);
+        }
+
         if ($paginated === 'no') {
             return response()->json($subreports->with('report.user', 'currency', 'report.type')->get(), 200);
         }
