@@ -29,15 +29,6 @@ class DuplicatedReportController extends Controller
             ->select('subreports.*')
             ->groupBy('subreports.id');
         $timezone = $request->header('TimeZone');
-        //Validate TimeZone is Valid with format "GTM-4"
-        if($timezone){
-            if(!in_array($timezone, timezone_identifiers_list())){
-                $timezone = 'America/Caracas';
-            }
-        }
-        else{
-            $timezone = 'America/Caracas';
-        }
         if ($search) {
             $subreports = $subreports->where(function ($query) use ($search){
                 $query->where('users.email', 'LIKE', '%'.$search.'%')

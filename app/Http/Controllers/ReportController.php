@@ -36,15 +36,8 @@ class ReportController extends Controller
 
         //Get TimeZone header
         $timezone = $request->header('TimeZone');
-        //Validate TimeZone is Valid with format "GTM-4"
-        if($timezone){
-            if(!in_array($timezone, timezone_identifiers_list())){
-                $timezone = 'America/Caracas';
-            }
-        }
-        else{
-            $timezone = 'America/Caracas';
-        }
+        return response()->json(['timezone' => $timezone], 200);
+
         // Start query
         $query = Report::query();
 
@@ -64,7 +57,7 @@ class ReportController extends Controller
             }
 
             if ($date) {
-                $query = $query->whereDate('reports.created_at', $date);
+                $query = $query->whereDate(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'), $date);
             }
             if ($role){
                 $query = $query->where('users.role_id', $role);
@@ -81,7 +74,7 @@ class ReportController extends Controller
             $query = $query->whereDate('reports.created_at', '<=', $until);
         }
         if($date){
-            $query = $query->whereDate('reports.created_at', $date);
+            $query = $query->whereDate(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'), $date);
         }
         if ($order && $orderBy) {
             $query = $query->orderBy($order, $orderBy);
