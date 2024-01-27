@@ -20,6 +20,10 @@ class AuthMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try {
+            $timezone = $request->header('TimeZone', 'America/Caracas');
+            if(!$this->isValidTimeZone($timezone)){
+                $timezone = 'America/Caracas';
+            }
             $user = JWTAuth::parseToken()->authenticate();
             if (!$user) throw new Exception();
         } catch (Exception $e) {
@@ -38,5 +42,9 @@ class AuthMiddleware
             ], 401);
         }
         return $next($request);
+    }
+    
+    public function isValidTimeZone($timeZone) {
+        return preg_match('/^[\+\-](0[0-9]|1[0-3]):[0-5][0-9]$/', $timeZone) === 1;
     }
 }
