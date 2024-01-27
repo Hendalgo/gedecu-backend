@@ -21,6 +21,7 @@ class BankAccountController extends Controller
         $bank = $request->get('bank');
         $store = $request->get('store');
         $currency = $request->get('currency');
+        $user = User::find(auth()->user()->id);
 
         $validatedData = $request->validate([
             'order' => 'in:balance,created_at',
@@ -81,27 +82,22 @@ class BankAccountController extends Controller
         else{
             $bank_account = $bank_account->orderBy('banks_accounts.created_at', 'desc');
         }
-        if (auth()->user()->role->id === 1 || auth()->user()->role->id === 5){
-            if ($paginated === 'no') {
-                $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->get();
-            }
-            else{
-                $bank_account = $bank_account->with('bank.country', 'bank.type','currency', 'user', 'store.user')->paginate($per_page);
-            }
-            return response()->json($bank_account, 200);
+        if($user->role->id === 3){
+            $bank_account = $bank_account->where('banks_accounts.store_id', $user->store->id);
+        }
+        if ($user->role->id === 2) {
+            $bank_account = $bank_account->where('banks_accounts.user_id', $user->id);
+        }
+        if($user->role->id === 4 || $user->role->id === 5 || $user->role->id === 6){
+            return response()->json(['message' => 'No tiene acceso a estas cuentas'], 403);
+        }
+        if ($paginated === 'no') {
+            $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->get();
         }
         else{
-            if ($paginated === 'no') {
-                $bank_account = $bank_account->where("user_id", auth()->user()->id)->with('bank.country', 'currency', 'user', 'store.user')->get();
-                //$sql = $bank_account->toSql();
-                return response()->json($bank_account, 200);
-            }
-            else{
-                $bank_account = $bank_account->where("user_id", auth()->user()->id)->with('bank.country', 'currency', 'user', 'store.user')->paginate($per_page);
-                //$sql = $bank_account->toSql();
-                return response()->json($bank_account, 200);
-            }
+            $bank_account = $bank_account->with('bank.country', 'bank.type','currency', 'user', 'store.user')->paginate($per_page);
         }
+        return response()->json($bank_account, 200);
     }
     public function create(){
     }
