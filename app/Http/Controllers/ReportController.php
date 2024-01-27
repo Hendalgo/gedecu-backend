@@ -38,14 +38,12 @@ class ReportController extends Controller
         $timezone = $request->header('TimeZone');
         //Validate TimeZone is Valid with format "GTM-4"
         if($timezone){
-            $timezone = explode('-', $timezone);
-            if(count($timezone) !== 2){
-                return response()->json(['error' => 'Formato de TimeZone inválido'], 422);
+            if(!in_array($timezone, timezone_identifiers_list())){
+                $timezone = 'America/Caracas';
             }
-            $timezone = $timezone[0] . $timezone[1];
         }
         else{
-            $timezone = 'UTC';
+            $timezone = 'America/Caracas';
         }
         // Start query
         $query = Report::query();
@@ -66,10 +64,7 @@ class ReportController extends Controller
             }
 
             if ($date) {
-                //Convert date to UTC
-                $date = \Carbon\Carbon::parse($date)->setTimezone($timezone)->toDateString();
                 $query = $query->whereDate('reports.created_at', $date);
-                return response()->json(["date" => $date], 200);
             }
             if ($role){
                 $query = $query->where('users.role_id', $role);
@@ -86,8 +81,6 @@ class ReportController extends Controller
             $query = $query->whereDate('reports.created_at', '<=', $until);
         }
         if($date){
-            //Convert date to UTC
-            $date = \Carbon\Carbon::parse($date)->setTimezone($timezone)->toDateString();
             $query = $query->whereDate('reports.created_at', $date);
         }
         if ($order && $orderBy) {

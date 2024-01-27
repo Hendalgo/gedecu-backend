@@ -28,7 +28,16 @@ class DuplicatedReportController extends Controller
             ->leftjoin('users', 'reports.user_id', '=', 'users.id')
             ->select('subreports.*')
             ->groupBy('subreports.id');
-
+        $timezone = $request->header('TimeZone');
+        //Validate TimeZone is Valid with format "GTM-4"
+        if($timezone){
+            if(!in_array($timezone, timezone_identifiers_list())){
+                $timezone = 'America/Caracas';
+            }
+        }
+        else{
+            $timezone = 'America/Caracas';
+        }
         if ($search) {
             $subreports = $subreports->where(function ($query) use ($search){
                 $query->where('users.email', 'LIKE', '%'.$search.'%')
@@ -41,8 +50,8 @@ class DuplicatedReportController extends Controller
                 });
         }
         if ($date) {
-            $subreports = $subreports->where(function ($query) use ($date){
-                $query->whereDate('subreports.created_at', $date);
+            $subreports = $subreports->where(function ($query) use ($date, $timezone){
+                $query->whereDate(DB::raw('DATE(CONVERT_TZ(subreports.created_at, "+00:00", "'.$timezone.'"))'), $date);
             });
         }
         
