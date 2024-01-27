@@ -36,7 +36,6 @@ class ReportController extends Controller
 
         //Get TimeZone header
         $timezone = $request->header('TimeZone');
-        return response()->json(['timezone' => $timezone], 200);
 
         // Start query
         $query = Report::query();

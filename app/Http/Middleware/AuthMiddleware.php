@@ -24,7 +24,7 @@ class AuthMiddleware
             if(!$this->isValidTimeZone($timezone)){
                 $timezone = 'America/Caracas';
             }
-            return response($timezone);
+            $request->headers->set('TimeZone', $timezone);
             $user = JWTAuth::parseToken()->authenticate();
             if (!$user) throw new Exception();
         } catch (Exception $e) {
