@@ -32,6 +32,7 @@ class ReportController extends Controller
         $search = $request->get('search');
         $user = $request->get('user');
         $type = $request->get('type_id');
+        $role = $request->get('role');
         // Start query
         $query = Report::query();
 
@@ -52,6 +53,9 @@ class ReportController extends Controller
 
             if ($date) {
                 $query = $query->whereDate('reports.created_at', $date);
+            }
+            if ($role){
+                $query = $query->where('users.role_id', $role);
             }
             return response()->json($query->with('user.role')->paginate(10), 200);
         }
