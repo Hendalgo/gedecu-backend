@@ -246,6 +246,7 @@ class ReportController extends Controller
                                         $account->save();
                                     }
                                 }
+                                throw new \Exception(json_encode($store->accounts));
                             }
                         }
                     }
