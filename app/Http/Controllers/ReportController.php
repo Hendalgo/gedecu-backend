@@ -241,7 +241,7 @@ class ReportController extends Controller
                                     throw new \Exception("No se encontró el local del usuario");   
                                 }
                                 foreach ($store->accounts as $account) {
-                                    if($account->account_type_id === 3 && $account->currency_id === $currency){
+                                    if($account->account_type_id == 3 && $account->currency_id == $currency){
                                         $account->balance -= $amount;
                                         $account->save();
                                     }
