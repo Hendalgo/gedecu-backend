@@ -21,6 +21,7 @@ class BankAccountController extends Controller
         $bank = $request->get('bank');
         $store = $request->get('store');
         $currency = $request->get('currency');
+        $userParam = $request->get('user');
         $user = User::find(auth()->user()->id);
 
         $validatedData = $request->validate([
@@ -88,8 +89,11 @@ class BankAccountController extends Controller
         if ($user->role->id === 2) {
             $bank_account = $bank_account->where('banks_accounts.user_id', $user->id);
         }
-        if($user->role->id === 4 || $user->role->id === 5 || $user->role->id === 6){
+        if($user->role->id === 5 || $user->role->id === 6){
             return response()->json(['message' => 'No tiene acceso a estas cuentas'], 403);
+        }
+        if ($userParam) {
+            $bank_account = $bank_account->where('banks_accounts.user_id', $userParam);
         }
         if ($paginated === 'no') {
             $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->get();
