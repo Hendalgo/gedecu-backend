@@ -347,7 +347,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2024-01-07 07:10:28',
                 'updated_at' => '2024-01-07 07:10:28',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"amount","validation":"required|numeric"},{"name":"user_id","validation":"required|exists:users,id"},{"name":"isDuplicated","validation":"required|boolean"},{"name":"deposits_quantity","validation":"required|numeric"}],"name":"Billetera depositante","type":4,"user_balance":true}'
+                'meta_data' => '{"all":[{"name":"amount","validation":"required|numeric"},{"name":"user_id","validation":"required|exists:users,id"},{"name":"isDuplicated","validation":"required|boolean"},{"name":"deposits_quantity","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"}],"name":"Billetera depositante","type":4,"user_balance":true,"convert_amount":true}'
             ],
             [
                 'id' => 29,
@@ -371,7 +371,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2024-01-07 07:21:15',
                 'updated_at' => '2024-01-07 07:21:15',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"supplier_id","validation":"required|exists:users,id|user_role:4"},{"name":"amount","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Entrega","type":4,"user_balance":true}'
+                'meta_data' => '{"all":[{"name":"supplier_id","validation":"required|exists:users,id|user_role:6"},{"name":"amount","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Entrega","type":4,"user_balance":true}'
             ],
             [
                 'id' => 31,
@@ -383,7 +383,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2024-01-07 07:21:15',
                 'updated_at' => '2024-01-07 07:21:15',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"store_id","validation":"required|exists:stores,id"},{"name":"amount","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Efectivo caja fuerte","type":5}'
+                'meta_data' => '{"all":[{"name":"store_id","validation":"required|exists:stores,id"},{"name":"amount","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Efectivo caja fuerte","type":5, "user_balance":true}'
             ],
             [
                 'id' => 32,
@@ -395,7 +395,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2024-01-07 07:21:15',
                 'updated_at' => '2024-01-07 07:21:15',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"amount","validation":"required|numeric"},{"name":"store_id","validation":"required|exists:stores,id"},{"name":"isDuplicated","validation":"required|boolean"},{"name":"deposits_quantity","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"}],"name":"Efectivo egreso caja fuerte","type":5}'
+                'meta_data' => '{"all":[{"name":"amount","validation":"required|numeric"},{"name":"store_id","validation":"required|exists:stores,id"},{"name":"isDuplicated","validation":"required|boolean"},{"name":"deposits_quantity","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"}],"name":"Efectivo egreso caja fuerte","type":5 ,"user_balance":true}'
             ],
             [
                 'id' => 33,
@@ -407,7 +407,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2024-01-07 07:21:15',
                 'updated_at' => '2024-01-07 07:21:15',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"supplier_id","validation":"required|exists:users,id|user_role:4"},{"name":"amount","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Entrega","type":5}'
+                'meta_data' => '{"all":[{"name":"supplier_id","validation":"required|exists:users,id|user_role:4"},{"name":"amount","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Entrega","type":5 ,"user_balance":true}'
             ],
             [
                 'id' => 34,

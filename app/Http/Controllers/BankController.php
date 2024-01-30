@@ -113,6 +113,13 @@ class BankController extends Controller
             $bank->name = $validatedData['name'];
             $bank->country_id = $validatedData['country'];
             $bank->type_id = $validatedData['type_id'];
+
+            //Change all bank accounts to the new type
+            $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
+            foreach ($bankAccounts as $bankAccount) {
+                $bankAccount->type_id = $validatedData['type_id'];
+                $bankAccount->save();
+            }
             $bank->save();
             return response()->json(['message'=> 'exito'], 201);
         }
