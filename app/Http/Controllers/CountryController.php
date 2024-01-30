@@ -96,9 +96,9 @@ class CountryController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $country = Country::find($id);
-            /* if ($country->is_initial) {
+            if ($country->is_initial) {
                 return response()->json(['error'=> 'No puedes eliminar el país inicial'], 403);
-            } */
+            }
             $country->delete();
             return response()->json(['message' => 'exito'], 201);
         }
