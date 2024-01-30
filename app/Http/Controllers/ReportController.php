@@ -300,6 +300,7 @@ class ReportController extends Controller
             $data[] = [
                 'duplicate' =>  $sub['isDuplicated'],
                 'amount' =>$amount,
+                'duplicate_status' => false,
                 'currency_id' => $currency,
                 'data' => json_encode($sub)
             ];
