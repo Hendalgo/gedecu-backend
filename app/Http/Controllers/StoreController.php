@@ -185,9 +185,7 @@ class StoreController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $Store = Store::find($id);
-            
-            $Store->delete = true;
-            $Store->save();
+            $Store->delete();
     
             return response()->json(['message'=> 'exito'], 201);
         }

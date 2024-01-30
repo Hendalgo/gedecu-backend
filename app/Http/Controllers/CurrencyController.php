@@ -88,14 +88,8 @@ class CurrencyController extends Controller
             if ($currency->is_initial) {
                 return response()->json(['message' => 'No se puede eliminar la moneda inicial'], 403);
             }
-            $currency->country_id = null;
-            $currency->delete = true;
-            if ( $currency->save()) {
-                return response()->json(['message' => 'exito'], 201);
-            }
-            else{
-                return response()->json(['message' => 'error'], 404);
-            }
+            $currency->delete();
+            return response()->json(['message' => 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden', 403]);
     }

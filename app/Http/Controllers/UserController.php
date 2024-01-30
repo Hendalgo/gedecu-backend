@@ -192,13 +192,8 @@ class UserController extends Controller
         }
         if ($currentUser->role->id === 1) {
             $user = User::find($id);
-            $user->delete = true;
-            if ($user->save()) {
-                return response()->json(['message' => 'exito'], 200);
-            }
-            else{
-                return response()->json(['message' => 'error'], 404);
-            }
+            $user->delete();
+            return response()->json(['message'=> 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }

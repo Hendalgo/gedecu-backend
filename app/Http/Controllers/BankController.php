@@ -129,13 +129,7 @@ class BankController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $bank = Bank::find($id);
-            $bank->delete = true;
-            $bank->save();
-            $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
-            foreach ($bankAccounts as $bankAccount) {
-                $bankAccount->delete = true;
-                $bankAccount->save();
-            }
+            $bank->delete();
             return response()->json(['message' => 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);

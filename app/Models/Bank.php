@@ -25,6 +25,14 @@ class Bank extends Model
         return $this->belongsTo(AccountType::class, 'type_id', 'id');
     }
     public function accounts(){
-        return $this->hasMany('App\Models\Account', 'bank_id', 'id');
+        return $this->hasMany('App\Models\BankAccount', 'bank_id', 'id');
+    }
+    public function delete()
+    {
+        foreach ($this->accounts as $account) {
+            $account->delete();
+        }
+        $this->delete = 1;
+        return $this->save();
     }
 }

@@ -58,9 +58,23 @@ class User extends Authenticatable implements JWTSubject
     public function store(){
         return $this->hasOne('\App\Models\Store', 'user_id');
     }
+    public function accounts(){
+        return $this->hasMany('\App\Models\BankAccount', 'user_id');
+    }
     public function getJWTIdentifier()
     {
         return $this->getKey();
+    }
+    public function delete()
+    {
+        foreach ($this->accounts as $account) {
+            $account->delete();
+        }
+        //$this->balance->delete();
+        $this->store()->update(['user_id' => null]);
+        
+        $this->delete = 1;
+        return $this->save();
     }
 
     protected static function booted()

@@ -23,4 +23,9 @@ class UserBalance extends Model
     {
         return $this->belongsTo(Currency::class);
     }
+    public function delete()
+    {
+        $this->delete = 1;
+        return $this->save();
+    }
 }

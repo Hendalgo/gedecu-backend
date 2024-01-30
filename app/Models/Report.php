@@ -25,4 +25,9 @@ class Report extends Model
     public function subreports(){
         return $this->hasMany('App\Models\Subreport', 'report_id', 'id');
     }
+    public function delete()
+    {
+        /* $this->subreports()->delete();
+        return parent::update(['delete' => 1]); */
+    }
 }

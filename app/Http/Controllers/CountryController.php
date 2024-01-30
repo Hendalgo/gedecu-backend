@@ -96,27 +96,11 @@ class CountryController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $country = Country::find($id);
-            if ($country->is_initial) {
-                return response()->json(['error'=> 'No puedes eliminar el país inicial'], 500);
-            }
-            $country->delete = true;
-            if($country->save()){
-                // Obtén todos los bancos asociados a este país
-                $banks = Bank::where('country_id', $id)->get();
-                foreach ($banks as $bank) {
-                    $bank->delete = true;
-                    $bank->save();
-                    // Obtén todas las cuentas bancarias asociadas a este banco
-                    $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
-                    foreach ($bankAccounts as $bankAccount) {
-                        $bankAccount->delete = true;
-                        $bankAccount->save();
-                    }
-                }
-                return response()->json(['message' => 'exito'], 201);
-            }
-            
-            return response()->json(['error'=> 'Hubo un problema al eliminar el pais'], 500);
+            /* if ($country->is_initial) {
+                return response()->json(['error'=> 'No puedes eliminar el país inicial'], 403);
+            } */
+            $country->delete();
+            return response()->json(['message' => 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden', 403]);
     }

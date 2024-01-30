@@ -24,7 +24,14 @@ class Store extends Model
     public function accounts(){
         return $this->hasMany('App\Models\BankAccount', 'store_id', 'id');
     }
-
+    public function delete()
+    {
+        foreach ($this->accounts as $account) {
+            $account->delete();
+        }
+        $this->delete = 1;
+        return $this->save();
+    }
     protected static function booted()
     {
         static::created(function ($store) {

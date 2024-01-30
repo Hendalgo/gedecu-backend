@@ -264,9 +264,15 @@ class BankAccountController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $bank = BankAccount::find($id);
-            $bank->delete = true; 
-            $bank->save();
-    
+            $bank->delete();
+            return response()->json(['message'=> 'exito'], 201);
+        }
+        else{
+            $bank = BankAccount::find($id);
+            if ($bank->user_id !== $user->id) {
+                return response()->json(['message' => 'forbiden'], 401);
+            }
+            $bank->delete();
             return response()->json(['message'=> 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);
