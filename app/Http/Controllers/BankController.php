@@ -117,7 +117,7 @@ class BankController extends Controller
             //Change all bank accounts to the new type
             $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
             foreach ($bankAccounts as $bankAccount) {
-                $bankAccount->type_id = $validatedData['type_id'];
+                $bankAccount->account_type_id = $validatedData['type_id'];
                 $bankAccount->save();
             }
             $bank->save();
