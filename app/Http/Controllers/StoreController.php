@@ -107,7 +107,7 @@ class StoreController extends Controller
                         'country_id' => $validatedData['country_id']
                     ]);
                     $country = Country::where("id", "=", $validatedData['country_id'])->with('currency')->first();
-                    $bank_account = $store->account()->create([
+                    $bank_account = $store->accounts()->create([
                         'name' => "Efectivo",
                         'identifier' => "Efectivo",
                         "balance" => $validatedData['balance'],
