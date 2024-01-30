@@ -76,7 +76,7 @@ class DuplicatedReportController extends Controller
         if ($currentUser->role->id !== 1 ){
             $subreport = $subreport->where('users.id', $currentUser->id);
         }
-        $subreport = $subreport->with('report.user', 'currency')->firstOrFail();
+        $subreport = $subreport->with('report.user', 'currency',  'report.type')->firstOrFail();
         return response()->json($subreport, 200);
     }
     public function duplicated_complete(Request $request, $id){
