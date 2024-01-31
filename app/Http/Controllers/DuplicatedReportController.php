@@ -58,11 +58,11 @@ class DuplicatedReportController extends Controller
         if ($order) {
             $subreports = $subreports->orderBy('subreports.'.$order, $orderBy);
         }
-
+        $subreports = $subreports->with('report.user.role', 'currency', 'report.type');
         if ($paginated === 'no') {
-            return response()->json($subreports->with('report.user', 'currency', 'report.type')->get(), 200);
+            return response()->json($subreports->get(), 200);
         }
-        return response()->json($subreports->with('report.user', 'currency', 'report.type')->paginate($per_page), 200);
+        return response()->json($subreports->paginate($per_page), 200);
     }
     public function show($id){
         $currentUser = auth()->user();
