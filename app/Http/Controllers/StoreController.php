@@ -40,12 +40,8 @@ class StoreController extends Controller
             ->when($search, function ($query, $search){
                 $query->where('stores.name', 'LIKE', "%{$search}%")
                 ->orWhere('stores.location', 'LIKE', "%{$search}%")
-                ->orWhereHas('country', function ($query) use ($search){
-                    $query->where('countries.name', 'LIKE', "%{$search}%");
-                })
-                ->orWhereHas('user', function ($query) use ($search){
-                    $query->where('users.name', 'LIKE', "%{$search}%");
-                });
+                ->orWhere('countries.name', 'LIKE', "%{$search}%")
+                ->orWhere('users.name', 'LIKE', "%{$search}%");
             })
             ->when($country, function ($query, $country){
                 $query->where('countries.id', '=', $country);
