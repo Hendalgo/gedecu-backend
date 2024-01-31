@@ -54,5 +54,12 @@ class RolesSeeder extends Seeder
         $user->permissions = json_encode([]);
 
         $user->save();
+
+        $user = new Role();
+        $user->name = 'Jefe';
+        $user->description = 'Jefe de tienda';
+        $user->permissions = json_encode([]);
+
+        $user->save();
     }
 }

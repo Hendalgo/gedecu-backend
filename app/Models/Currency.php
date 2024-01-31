@@ -17,4 +17,9 @@ class Currency extends Model
     public function country(){
         return $this->belongsTo('\App\Models\Country', 'country_id');
     }
+    public function delete()
+    {
+        $this->delete = 1;
+        return $this->save();
+    }
 }

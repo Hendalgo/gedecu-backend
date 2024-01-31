@@ -172,6 +172,13 @@ class UserController extends Controller
                 }
             }
             $user->save();
+
+            if ($user->role_id == 5 || $user->role_id == 6) {
+                $currency = Country::with("currency")->find($user->country_id);
+                $userBalance = UserBalance::where('user_id', $user->id)->first();
+                $userBalance->currency_id = $currency->currency->id;
+                $userBalance->save();
+            }
     
             return response()->json(['message'=> 'exito'], 201);
         }
@@ -185,13 +192,8 @@ class UserController extends Controller
         }
         if ($currentUser->role->id === 1) {
             $user = User::find($id);
-            $user->delete = true;
-            if ($user->save()) {
-                return response()->json(['message' => 'exito'], 200);
-            }
-            else{
-                return response()->json(['message' => 'error'], 404);
-            }
+            $user->delete();
+            return response()->json(['message'=> 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }
@@ -208,6 +210,8 @@ class UserController extends Controller
         $order = $request->get('order', 'created_at');
         $orderBy = $request->get('order_by', 'desc');
         $role = $request->get('role');
+        $country = $request->get('country');
+
         $balances = UserBalance::query()
             ->leftjoin("users", "users.id", "=", "user_balances.user_id")
             ->leftjoin("currencies", "currencies.id", "=", "user_balances.currency_id")
@@ -219,11 +223,15 @@ class UserController extends Controller
                 ->select("user_balances.*", "users.name as user_name", "currencies.name as currency_name")
                 ->where(function ($balances) use ($search) {
                     $balances->where('users.name', 'LIKE', "%{$search}%")
-                        ->orWhere('currencies.name', 'LIKE', "%{$search}%");
+                        ->orWhere('currencies.name', 'LIKE', "%{$search}%")
+                        ->orWhere('users.email', 'LIKE', "%{$search}%");
                 });
         }
         if ($role) {
             $balances = $balances->where('users.role_id', $role);
+        }
+        if ($country) {
+            $balances = $balances->where('users.country_id', $country);
         }
         if($currentUser->role->id !== 1){
             $balances = $balances->where('users.id', $currentUser->id);

@@ -32,6 +32,11 @@ class ReportController extends Controller
         $search = $request->get('search');
         $user = $request->get('user');
         $type = $request->get('type_id');
+        $role = $request->get('role');
+
+        //Get TimeZone header
+        $timezone = $request->header('TimeZone');
+
         // Start query
         $query = Report::query();
 
@@ -51,7 +56,10 @@ class ReportController extends Controller
             }
 
             if ($date) {
-                $query = $query->whereDate('reports.created_at', $date);
+                $query = $query->whereDate(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'), $date);
+            }
+            if ($role){
+                $query = $query->where('users.role_id', $role);
             }
             return response()->json($query->with('user.role')->paginate(10), 200);
         }
@@ -65,7 +73,7 @@ class ReportController extends Controller
             $query = $query->whereDate('reports.created_at', '<=', $until);
         }
         if($date){
-            $query = $query->whereDate('reports.created_at', $date);
+            $query = $query->whereDate(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'), $date);
         }
         if ($order && $orderBy) {
             $query = $query->orderBy($order, $orderBy);
@@ -154,8 +162,10 @@ class ReportController extends Controller
                     if ($report_type->type === 'income') {
                         foreach ($validatedSubreports as $subreport) {
                             $amount = $subreport['amount'];
+                            $currency = $subreport['currency_id'];
                             if (array_key_exists('convert_amount', $report_type_config)) {
                                 $amount = $subreport['amount'] * $subreport['rate'];
+                                $currency = $subreport['conversionCurrency_id'];
                             }
                             if (array_key_exists('user_balance', $report_type_config)) {
                                 $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
@@ -181,20 +191,26 @@ class ReportController extends Controller
                                 $bankAccount->save();
                             }
                             else if(!array_key_exists('account_id', $subreport)){
-                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                $store = Store::with('accounts')->where('user_id', auth()->user()->id)->first();
                                 if(!$store){
                                     throw new \Exception("No se encontró el local del usuario");   
                                 }
-                                $store->account->balance += $amount;
-                                $store->account->save();
+                                foreach ($store->accounts as $account) {
+                                    if($account->account_type_id == 3 && $account->currency_id == $currency){
+                                        $account->balance += $amount;
+                                        $account->save();
+                                    }
+                                }
                             }
                         }
                     }
                     if ($report_type->type === 'expense') {
                         foreach ($validatedSubreports as $subreport) {
                             $amount = $subreport['amount'];
+                            $currency = $subreport['currency_id'];
                             if (array_key_exists('convert_amount', $report_type_config)) {
                                 $amount = $subreport['amount'] * $subreport['rate'];
+                                $currency = $subreport['conversionCurrency_id'];
                             }
                             if (array_key_exists('user_balance', $report_type_config)) {
                                 $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
@@ -220,12 +236,16 @@ class ReportController extends Controller
                                 $bankAccount->save();
                             }
                             else if(!array_key_exists('account_id', $subreport)){
-                                $store = Store::with('account')->where('user_id', auth()->user()->id)->first();
+                                $store = Store::with('accounts')->where('user_id', auth()->user()->id)->first();
                                 if(!$store){
                                     throw new \Exception("No se encontró el local del usuario");   
                                 }
-                                $store->account->balance -= $amount;
-                                $store->account->save();
+                                foreach ($store->accounts as $account) {
+                                    if($account->account_type_id == 3 && $account->currency_id == $currency){
+                                        $account->balance -= $amount;
+                                        $account->save();
+                                    }
+                                }
                             }
                         }
                     }
@@ -280,8 +300,9 @@ class ReportController extends Controller
             $data[] = [
                 'duplicate' =>  $sub['isDuplicated'],
                 'amount' =>$amount,
+                'duplicate_status' => false,
                 'currency_id' => $currency,
-                'data' => json_encode($sub)
+                'data' => json_encode([$sub])
             ];
         }
         $report->subreports()->createMany($data);

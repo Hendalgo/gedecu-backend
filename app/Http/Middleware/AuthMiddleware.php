@@ -20,23 +20,32 @@ class AuthMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try {
+            $timezone = $request->header('TimeZone', 'America/Caracas');
+            if(!$this->isValidTimeZone($timezone)){
+                $timezone = 'America/Caracas';
+            }
+            $request->headers->set('TimeZone', $timezone);
             $user = JWTAuth::parseToken()->authenticate();
             if (!$user) throw new Exception();
         } catch (Exception $e) {
             if ($e instanceof TokenInvalidException) {
                 return response()->json([
                     "error" => "Token Invalido"
-                ], 422);
+                ], 401);
             }
             if ($e instanceof TokenExpiredException) {
                 return response()->json([
                     "error" => "Token Expirado"
-                ], 422);
+                ], 401);
             }
             return response()->json([
                 "error" => "Token no encontrado"
-            ], 422);
+            ], 401);
         }
         return $next($request);
+    }
+    
+    public function isValidTimeZone($timeZone) {
+        return preg_match('/^[\+\-](0[0-9]|1[0-3]):[0-5][0-9]$/', $timeZone) === 1;
     }
 }

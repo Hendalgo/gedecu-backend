@@ -55,11 +55,40 @@ class User extends Authenticatable implements JWTSubject
     public function balance(){
         return $this->hasOne('\App\Models\UserBalance', 'user_id');
     }
+    public function store(){
+        return $this->hasOne('\App\Models\Store', 'user_id');
+    }
+    public function accounts(){
+        return $this->hasMany('\App\Models\BankAccount', 'user_id');
+    }
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
+    public function delete()
+    {
+        foreach ($this->accounts as $account) {
+            $account->delete();
+        }
+        //$this->balance->delete();
+        $this->store()->update(['user_id' => null]);
+        
+        $this->delete = 1;
+        return $this->save();
+    }
 
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            if ($user->role_id === 5 || $user->role_id === 6){
+                $user->balance()->create([
+                    'user_id' => $user->id,
+                    'balance' => 0,
+                    'currency_id' => Currency::where('country_id', $user->country_id)->first()->id,
+                ]);
+            }
+        });
+    }
     /**
      * Return a key value array, containing any custom claims to be added to the JWT.
      *

@@ -17,7 +17,11 @@ class BankAccountOwnnerRule implements Rule
         $user = auth()->user();
         $bankAccount = BankAccount::findOrFail($value);
         if ($bankAccount->user_id !== $user->id) {
-            if ($user->role->id !== 1) {
+            $store = $bankAccount->store->user_id;
+            if ($store === $user->id) {
+                return true;
+            }
+            else if ($user->role->id !== 1) {
                 return false;
             }
         }

@@ -49,7 +49,7 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        $user->load('country.currency', 'balance.currency');
+        $user->load('country.currency', 'balance.currency', 'store');
         $user->load('role');
         return response()->json($user);
     }
@@ -61,9 +61,12 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        auth()->logout();
-
-        return response()->json(['message' => 'Successfully logged out']);
+        if (is_numeric(auth()->user()->id)) {
+            auth()->logout();
+            return response()->json(['message' => 'Successfully logged out']);
+        } else {
+            return response()->json(['message' => 'No user to logout'], 401);
+        }
     }
     protected function respondWithToken($token)
     {

@@ -19,15 +19,27 @@ class BankController extends Controller
         $per_page = $request->get('per_page', 10);
         $search = $request->get("search"); 
         $country = $request->get("country");
+        $type = $request->get("type");
         
-        $bank = Bank::where('banks.delete', false);
+        $bank = Bank::where('banks.delete', false)
+            ->leftjoin('accounts_types', 'banks.type_id', '=', 'accounts_types.id')
+            ->select('banks.*');
         /* if ($search) {
             $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
         } */
+        if ($search){
+            $bank = $bank->where(function ($query) use ($search){
+                $query->where('banks.name', 'LIKE', '%'.$search.'%')
+                    ->orWhere('banks.meta_data', 'LIKE', '%'.$search.'%')
+                    ->orWhere('accounts_types.name', 'LIKE', '%'.$search.'%');
+            });
+        }
         if ($country) {
             $bank = $bank->where("banks.country_id", "=", $country);
         }
-
+        if ($type) {
+            $bank = $bank->where("banks.type_id", "=", $type);
+        }
         $bank = $bank->with("country", "type");
         if ($paginated === 'no') {
             return response()->json($bank->get(), 200);
@@ -101,6 +113,13 @@ class BankController extends Controller
             $bank->name = $validatedData['name'];
             $bank->country_id = $validatedData['country'];
             $bank->type_id = $validatedData['type_id'];
+
+            //Change all bank accounts to the new type
+            $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
+            foreach ($bankAccounts as $bankAccount) {
+                $bankAccount->account_type_id = $validatedData['type_id'];
+                $bankAccount->save();
+            }
             $bank->save();
             return response()->json(['message'=> 'exito'], 201);
         }
@@ -110,13 +129,7 @@ class BankController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $bank = Bank::find($id);
-            $bank->delete = true;
-            $bank->save();
-            $bankAccounts = BankAccount::where('bank_id', $bank->id)->get();
-            foreach ($bankAccounts as $bankAccount) {
-                $bankAccount->delete = true;
-                $bankAccount->save();
-            }
+            $bank->delete();
             return response()->json(['message' => 'exito'], 201);
         }
         return response()->json(['message' => 'forbiden'], 401);

@@ -19,7 +19,8 @@ class BankAccount extends Model
         "user_id",
         "currency_id",
         "store_id",
-        "delete"
+        "delete",
+        "account_type_id"
     ];
 
     
@@ -31,5 +32,15 @@ class BankAccount extends Model
     }
     public function currency(){
         return $this->belongsTo('\App\Models\Currency', 'currency_id', 'id');
+    }
+    public function store(){
+        return $this->belongsTo('\App\Models\Store', 'store_id', 'id');
+    }
+    public function type(){
+        return $this->belongsTo('\App\Models\AccountType', 'account_type_id', 'id');
+    }
+    public function delete(){
+        $this->delete = 1;
+        return $this->save();
     }
 }
