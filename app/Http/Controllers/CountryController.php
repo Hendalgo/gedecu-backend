@@ -23,8 +23,10 @@ class CountryController extends Controller
             $search = $request->get("search"); 
             $countries = Country::query();
             if ($search) {
-                $countries = $countries->where("countries.name", "LIKE", "%$search%")
-                                ->orWhere("countries.shortcode", "LIKE", "%$search%");
+                $countries = $countries->where(function ($query) use ($search){
+                    $query->where('countries.name', 'LIKE', '%'.$search.'%')
+                        ->orWhere('countries.shortcode', 'LIKE', '%'.$search.'%');
+                });
             }
 
             $countries = $countries->where("countries.delete", false)->with('banks', 'currency')->paginate(10);

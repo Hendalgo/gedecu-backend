@@ -23,30 +23,32 @@ class StoreController extends Controller
         // Filter to get stores where user is not owner
         $not_owner = $request->get('not_owner', 'no');
         $country = $request->get('country');
-        $store = Store::
-            leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
+        $store = Store::leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
             ->leftjoin('countries', 'stores.country_id', '=', 'countries.id')
             ->leftjoin('currencies', 'countries.id', '=', 'currencies.country_id')
             ->leftjoin('users', 'stores.user_id', '=', 'users.id')
             ->where('banks_accounts.account_type_id', 3)
             ->select('stores.*', 'banks_accounts.balance as cash_balance')
             ->groupBy('stores.id', 'stores.name', 'stores.location', 'stores.user_id', 'stores.country_id', 'stores.created_at', 'stores.updated_at', 'stores.delete', 'banks_accounts.balance')
-            ->orderBy($order ?? 'stores.id', $orderBy ?? 'desc')
-            ->when($since, function ($query, $since){
-                $query->whereDate('stores.created_at', '>=', $since);
-            })
-            ->when($until, function ($query, $until){
-                $query->whereDate('stores.created_at', '<=', $until);
-            })
-            ->when($search, function ($query, $search){
+            ->orderBy($order ?? 'stores.id', $orderBy ?? 'desc');
+            
+        if ($since) {
+            $store = $store->whereDate('stores.created_at', '>=', $since);
+        }
+        if ($until) {
+            $store = $store->whereDate('stores.created_at', '<=', $until);
+        }
+        if ($search) {
+            $store = $store->where(function ($query) use ($search){
                 $query->where('stores.name', 'LIKE', "%{$search}%")
                 ->orWhere('stores.location', 'LIKE', "%{$search}%")
                 ->orWhere('countries.name', 'LIKE', "%{$search}%")
                 ->orWhere('users.name', 'LIKE', "%{$search}%");
-            })
-            ->when($country, function ($query, $country){
-                $query->where('countries.id', '=', $country);
             });
+        }
+        if ($country) {
+            $store = $store->where('countries.id', '=', $country);
+        }
         if ($not_owner === 'yes') {
             $store = $store->where(function ($query) {
                 $query->where('stores.user_id', '!=', auth()->user()->id)

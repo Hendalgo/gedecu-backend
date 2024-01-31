@@ -34,9 +34,11 @@ class UserController extends Controller
         if ($search) {
             $users = $users
                 ->select("users.*", "countries.name as country_name")
-                ->where('users.name', 'LIKE', "%{$search}%")
-                ->orWhere('users.email', 'LIKE', "%{$search}%")
-                ->orWhere('countries.name', 'LIKE', "%{$search}%");
+                ->where(function ($users) use ($search) {
+                    $users->where('users.name', 'LIKE', "%{$search}%")
+                        ->orWhere('users.email', 'LIKE', "%{$search}%")
+                        ->orWhere('countries.name', 'LIKE', "%{$search}%");
+                });
         }
         if ($since) {
             $users = $users->where('users.created_at', '>=', $since);
