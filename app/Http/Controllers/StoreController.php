@@ -27,6 +27,7 @@ class StoreController extends Controller
             leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
             ->leftjoin('countries', 'stores.country_id', '=', 'countries.id')
             ->leftjoin('currencies', 'countries.id', '=', 'currencies.country_id')
+            ->leftjoin('users', 'stores.user_id', '=', 'users.id')
             ->where('banks_accounts.account_type_id', 3)
             ->select('stores.*', 'banks_accounts.balance as cash_balance')
             ->groupBy('stores.id', 'stores.name', 'stores.location', 'stores.user_id', 'stores.country_id', 'stores.created_at', 'stores.updated_at', 'stores.delete', 'banks_accounts.balance')
