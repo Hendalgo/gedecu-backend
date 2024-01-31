@@ -32,7 +32,7 @@ class Store extends Model
         $this->delete = 1;
         return $this->save();
     }
-    protected static function booted()
+    /* protected static function booted()
     {
         static::created(function ($store) {
             $account = new BankAccount();
@@ -44,5 +44,5 @@ class Store extends Model
             $account->balance = fake()->numberBetween(1000, 1000000);
             $account->save();
         });
-    }
+    } */
 }
