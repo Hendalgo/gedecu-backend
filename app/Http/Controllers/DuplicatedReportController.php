@@ -134,7 +134,7 @@ class DuplicatedReportController extends Controller
                     return response()->json(['message' => 'Debe especificar una cuenta o un comercio'], 400);
                 }
                 $subreport->duplicate_status = true;
-                $subreport->duplicate_data = $request->all();
+                $subreport->duplicate_data = [$request->all()];
                 $subreport->save();
                 return response()->json(['message' => $subreport], 201);
             });

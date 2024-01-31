@@ -302,7 +302,7 @@ class ReportController extends Controller
                 'amount' =>$amount,
                 'duplicate_status' => false,
                 'currency_id' => $currency,
-                'data' => json_encode($sub)
+                'data' => json_encode([$sub])
             ];
         }
         $report->subreports()->createMany($data);
