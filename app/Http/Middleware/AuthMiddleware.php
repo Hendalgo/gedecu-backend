@@ -20,6 +20,7 @@ class AuthMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try {
+            //Get the timezone from the header to set the timezone for the user
             $timezone = $request->header('TimeZone', 'America/Caracas');
             if(!$this->isValidTimeZone($timezone)){
                 $timezone = 'America/Caracas';
@@ -27,6 +28,11 @@ class AuthMiddleware
             $request->headers->set('TimeZone', $timezone);
             $user = JWTAuth::parseToken()->authenticate();
             if (!$user) throw new Exception();
+            //Validate if the user is deleted
+            if ($user->delete) {
+                auth()->logout();
+                throw new Exception();
+            }
         } catch (Exception $e) {
             if ($e instanceof TokenInvalidException) {
                 return response()->json([
@@ -42,6 +48,7 @@ class AuthMiddleware
                 "error" => "Token no encontrado"
             ], 401);
         }
+        
         return $next($request);
     }
     
