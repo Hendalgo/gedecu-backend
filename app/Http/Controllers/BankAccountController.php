@@ -268,12 +268,15 @@ class BankAccountController extends Controller
             return response()->json(['message'=> 'exito'], 201);
         }
         else{
-            $bank = BankAccount::find($id);
-            if ($bank->user_id !== $user->id) {
-                return response()->json(['message' => 'forbiden'], 401);
+            $user = User::find(auth()->user()->id);
+            $bank = BankAccount::with('store')->find($id);
+
+            if ($bank->store_id === $user->store->id || $bank->user_id === $user->id) {
+                $bank->delete();
+                return response()->json(['message' => 'exito'], 201);
             }
-            $bank->delete();
-            return response()->json(['message'=> 'exito'], 201);
+
+            return response()->json(['message' => 'forbidden'], 401);
         }
         return response()->json(['message' => 'forbiden'], 401);
     }
