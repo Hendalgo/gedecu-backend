@@ -15,6 +15,7 @@ class Subreport extends Model
         "report_id",
         "currency_id",
         "data",
+        "duplicate_status"
     ];
 
     public function report(){
