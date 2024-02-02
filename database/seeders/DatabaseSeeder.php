@@ -32,9 +32,9 @@ class DatabaseSeeder extends Seeder
         $this->call(ReportsTypesSeeder::class);
         $this->call(RoleReportPermissionSeeder::class);
 
-        Bank::factory(10)->create();
+        /* Bank::factory(10)->create();
         User::factory(50)->create();
-        Store::factory(10)->create();/* 
+        Store::factory(10)->create();
         BankAccount::factory(10)->create(); */
     }
 }
