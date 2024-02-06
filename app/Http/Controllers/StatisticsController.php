@@ -69,7 +69,7 @@ class StatisticsController extends Controller
                 $banks_accounts->where('user_id', $user->id);
             }
         }
-        $banks_accounts = $banks_accounts->selectRaw('currency_id, SUM(balance) as total')
+        $banks_accounts = $banks_accounts->where('delete', false)->selectRaw('currency_id, SUM(balance) as total')
             ->groupBy('currency_id')
             ->with('currency')
             ->get();
@@ -90,9 +90,11 @@ class StatisticsController extends Controller
                 $banks_accounts->where('user_id', $user->id);
             }
         }
-        $banks_accounts = $banks_accounts->selectRaw('bank_id, SUM(balance) as total')
+        $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)
+            ->selectRaw('bank_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+            ->leftJoin('currencies', 'bank_accounts.currency_id', '=', 'currencies.id')
             ->groupBy('bank_id', 'currency_id')
-            ->with('bank', 'currency')
+            ->with('bank')
             ->get();
         return response()->json($banks_accounts);
     }
