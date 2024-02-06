@@ -10,6 +10,7 @@ use App\Http\Controllers\DuplicatedReportController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportTypeController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -120,6 +121,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::get('role', [RoleController::class, 'index']);
 
     /*Stadistics*/
-    Route::get('stadistics', [ReportController::class, 'getMovementsByPeriods']);
-
+    Route::get('statistics', [StatisticsController::class, 'getMovementsByPeriods']);
+    Route::get('statistics/total-currencies', [StatisticsController::class, 'getTotalByCurrency']);
+    Route::get('statistics/total-banks', [StatisticsController::class, 'getTotalByBank']);
 });

@@ -7,7 +7,7 @@ use App\Models\Subreport;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class StadisticsController extends Controller
+class StatisticsController extends Controller
 {
     public function getMovementsByPeriods(Request $request){
         $user = User::find(auth()->user()->id);
