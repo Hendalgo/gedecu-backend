@@ -194,6 +194,9 @@ class UserController extends Controller
         }
         if ($currentUser->role->id === 1) {
             $user = User::find($id);
+            if($user->is_initial){
+                return response()->json(['message' => 'forbiden'], 401);
+            }
             $user->delete();
             return response()->json(['message'=> 'exito'], 201);
         }
