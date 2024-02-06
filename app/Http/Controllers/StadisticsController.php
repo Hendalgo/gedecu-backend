@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
 use App\Models\Subreport;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -52,5 +53,47 @@ class StadisticsController extends Controller
         }
 
         $subreports = $subreports->groupBy('period')->get();
+    }
+    public function getTotalByCurrency(){
+        $user = User::with('store')->find(auth()->user()->id);
+        $banks_accounts = BankAccount::query();
+        if($user->role_id == 2){
+            $banks_accounts->where('user_id', $user->id);
+        }
+        if($user->role_id == 3){
+            $store = $user->store->id;
+            if($store){
+                $banks_accounts->where('store_id', $store);
+            }
+            else{
+                $banks_accounts->where('user_id', $user->id);
+            }
+        }
+        $banks_accounts = $banks_accounts->selectRaw('currency_id, SUM(balance) as total')
+            ->groupBy('currency_id')
+            ->with('currency')
+            ->get();
+        return response()->json($banks_accounts);
+    }
+    public function getTotalByBank(){
+        $user = User::with('store')->find(auth()->user()->id);
+        $banks_accounts = BankAccount::query();
+        if($user->role_id == 2){
+            $banks_accounts->where('user_id', $user->id);
+        }
+        if($user->role_id == 3){
+            $store = $user->store->id;
+            if($store){
+                $banks_accounts->where('store_id', $store);
+            }
+            else{
+                $banks_accounts->where('user_id', $user->id);
+            }
+        }
+        $banks_accounts = $banks_accounts->selectRaw('bank_id, SUM(balance) as total')
+            ->groupBy('bank_id', 'currency_id')
+            ->with('bank', 'currency')
+            ->get();
+        return response()->json($banks_accounts);
     }
 }
