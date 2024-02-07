@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Rules\BankAccountOwnnerRule;
+use App\Rules\ParameterIsFalse;
 use App\Rules\UserHasStoreRule;
 use App\Rules\UserRoleRule;
 use Carbon\Carbon;
@@ -37,6 +38,12 @@ class AppServiceProvider extends ServiceProvider
         });
         Validator::extend('user_has_store', function ($attribute, $value, $parameters, $validator) {
             $rule = new UserHasStoreRule();
+            return $rule->validate($attribute, $value, function ($message) {
+                return $message;
+            });
+        });
+        Validator::extend('is_false', function ($attribute, $value, $parameters, $validator) {
+            $rule = new ParameterIsFalse();
             return $rule->validate($attribute, $value, function ($message) {
                 return $message;
             });
