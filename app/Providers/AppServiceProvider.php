@@ -43,10 +43,10 @@ class AppServiceProvider extends ServiceProvider
             });
         });
         Validator::extend('is_false', function ($attribute, $value, $parameters, $validator) {
-            $rule = new ParameterIsFalse();
-            return $rule->validate($attribute, $value, function ($message) {
-                return $message;
-            });
+            return !$value;
+        });
+        Validator::replacer('is_false', function ($message, $attribute, $rule, $parameters) {
+            return "El campo $attribute debe ser falso.";
         });
     }
 }
