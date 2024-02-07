@@ -92,7 +92,7 @@ class StatisticsController extends Controller
         }
         $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)
             ->selectRaw('bank_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
-            ->leftJoin('currencies', 'bank_accounts.currency_id', '=', 'currencies.id')
+            ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
             ->groupBy('bank_id', 'currency_id')
             ->with('bank')
             ->get();
