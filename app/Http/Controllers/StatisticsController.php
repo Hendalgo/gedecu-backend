@@ -78,7 +78,7 @@ class StatisticsController extends Controller
     
         foreach ($banks_accounts as $account) {
             $lastHistory = TotalCurrenciesHistory::where('currency_id', $account->currency_id)
-                ->latest('date')
+                ->latest('created_at')
                 ->first();
             
             if ($lastHistory) {
