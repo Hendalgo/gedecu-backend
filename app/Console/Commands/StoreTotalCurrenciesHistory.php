@@ -28,8 +28,8 @@ class StoreTotalCurrenciesHistory extends Command
             TotalCurrenciesHistory::create([
                 'currency_id' => $currency->currency_id,
                 'total' => $currency->total,
-                'created_at' => now()->subMinutes(30),
-                'updated_at' => now()->subMinutes(30)
+                'created_at' => now()->subMinute(),
+                'updated_at' => now()->subMinute()
             ]);
         }
         Log::info('Finished total currencies history storage');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
 use App\Models\Subreport;
+use App\Models\TotalCurrenciesHistory;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -74,6 +75,20 @@ class StatisticsController extends Controller
             ->groupBy('currency_id')
             ->with('currency')
             ->get();
+    
+        foreach ($banks_accounts as $account) {
+            $lastHistory = TotalCurrenciesHistory::where('currency_id', $account->currency_id)
+                ->latest('date')
+                ->first();
+            
+            if ($lastHistory) {
+                $account->total -= $lastHistory->total;
+                $account->percent = ($lastHistory->total != 0) ? ($account->total / $lastHistory->total) * 100 : 0;
+            } else {
+                $account->percent = 0;
+            }
+        }
+    
         return response()->json($banks_accounts);
     }
     public function getTotalByBank(){
