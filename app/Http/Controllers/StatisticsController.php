@@ -76,18 +76,22 @@ class StatisticsController extends Controller
             ->with('currency')
             ->get();
     
-        foreach ($banks_accounts as $account) {
+        $banks_accounts = $banks_accounts->map(function ($account) {
+            $accountArray = $account->toArray();
+    
             $lastHistory = TotalCurrenciesHistory::where('currency_id', $account->currency_id)
                 ->latest('created_at')
                 ->first();
-            
+    
             if ($lastHistory) {
-                $account->total -= $lastHistory->total;
-                $account->percent = ($lastHistory->total != 0) ? ($account->total / $lastHistory->total) * 100 : 0;
+                $accountArray['total'] -= $lastHistory->total;
+                $accountArray['percent'] = ($lastHistory->total != 0) ? ($accountArray['total'] / $lastHistory->total) * 100 : 0;
             } else {
-                $account->percent = 0;
+                $accountArray['percent'] = 0;
             }
-        }
+    
+            return $accountArray;
+        });
     
         return response()->json($banks_accounts);
     }
