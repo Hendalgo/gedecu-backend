@@ -14,7 +14,7 @@ class StatisticsController extends Controller
     public function getMovementsByPeriods(Request $request)
     {
         $period = $request->query('period', 'week');
-        $from = $request->query('from', now()->subWeek());
+        $from = $request->query('from', $this->getDefaultStartDate($period));
         $to = $request->query('to', now());
 
         $timezone = $request->header('timezone', 'UTC');
@@ -24,14 +24,11 @@ class StatisticsController extends Controller
         $subreports = Subreport::with('report')
             ->whereBetween('created_at', [$from, $to])
             ->get()
-            ->groupBy(function ($subreport) use ($period, $timezone) {
-                return $subreport->created_at->setTimezone($timezone)->format($this->getDateFormat($period));
-            })
+            ->groupBy(['report.type', function ($subreport) use ($period, $timezone) {
+                return $this->getPeriodLabel($subreport->created_at, $period, $timezone);
+            }])
             ->map(function ($groupedSubreports) {
-                return $groupedSubreports->groupBy('report.type')
-                    ->map(function ($subreportsByType) {
-                        return $subreportsByType->sum('amount');
-                    });
+                return $groupedSubreports->sum('amount');
             });
 
         return response()->json($subreports);
@@ -54,6 +51,48 @@ class StatisticsController extends Controller
                 return 'Y';
             default:
                 return 'D d';
+        }
+    }
+
+    private function getDefaultStartDate($period)
+    {
+        switch ($period) {
+            case 'day':
+                return now()->subDays(7);
+            case 'week':
+                return now()->subWeeks(12);
+            case 'month':
+                return now()->subMonths(6);
+            case 'quarter':
+                return now()->subQuarters(6);
+            case 'semester':
+                return now()->subMonths(6 * 6);
+            case 'year':
+                return now()->subYears(5);
+            default:
+                return now()->subWeek();
+        }
+    }
+    private function getPeriodLabel($date, $period, $timezone)
+    {
+        $date = $date->setTimezone($timezone);
+        switch ($period) {
+            case 'day':
+                return $date->format('D d');
+            case 'week':
+                $startOfWeek = $date->startOfWeek()->format('D d');
+                $endOfWeek = $date->endOfWeek()->format('D d');
+                return "$startOfWeek - $endOfWeek";
+            case 'month':
+                return $date->format('M Y');
+            case 'quarter':
+                return '[Q]Q Y';
+            case 'semester':
+                return '[S]S Y';
+            case 'year':
+                return 'Y';
+            default:
+                return $date->format('D d');
         }
     }
     public function getTotalByCurrency(){
@@ -86,8 +125,10 @@ class StatisticsController extends Controller
                 $previousTotal = $lastHistory->total;
                 $currentTotal = $accountArray['total'];
                 $change = $currentTotal - $previousTotal;
-                $percentageChange = ($change / $previousTotal) * 100;
-
+                $percentageChange = 0;
+                if ($previousTotal !== 0) {
+                    $percentageChange = ($change / $previousTotal) * 100;
+                }
                 $accountArray['percentage'] = $percentageChange;
             }
             return $accountArray;

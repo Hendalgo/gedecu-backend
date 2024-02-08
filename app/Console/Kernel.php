@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        $schedule->command('totalcurrencieshistory:store')->daily()->appendOutputTo(storage_path('logs/totalcurrencieshistory.log'));;
+        $schedule->command('totalcurrencieshistory:store')->dailyAt('05:00')->appendOutputTo(storage_path('logs/totalcurrencieshistory.log'));
     }
 
     /**
