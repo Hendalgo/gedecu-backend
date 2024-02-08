@@ -82,14 +82,14 @@ class StatisticsController extends Controller
             $lastHistory = TotalCurrenciesHistory::where('currency_id', $account->currency_id)
                 ->latest('created_at')
                 ->first();
-    
-            if ($lastHistory) {
-                $accountArray['total'] -= $lastHistory->total;
-                $accountArray['percent'] = ($lastHistory->total != 0) ? ($accountArray['total'] / $lastHistory->total) * 100 : 0;
-            } else {
-                $accountArray['percent'] = 0;
+            if($lastHistory) {
+                $previousTotal = $lastHistory->total;
+                $currentTotal = $accountArray['total'];
+                $change = $currentTotal - $previousTotal;
+                $percentageChange = ($change / $previousTotal) * 100;
+
+                $accountArray['percentage'] = $percentageChange;
             }
-    
             return $accountArray;
         });
     
