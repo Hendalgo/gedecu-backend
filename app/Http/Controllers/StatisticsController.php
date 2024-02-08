@@ -5,54 +5,55 @@ namespace App\Http\Controllers;
 use App\Models\BankAccount;
 use App\Models\Subreport;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class StatisticsController extends Controller
 {
-    public function getMovementsByPeriods(Request $request){
-        $user = User::find(auth()->user()->id);
+    public function getMovementsByPeriods(Request $request)
+    {
+        $period = $request->query('period', 'week');
+        $from = $request->query('from', now()->subWeek());
+        $to = $request->query('to', now());
 
-        $period = $request->get('period', 'month');
-        $currency = $request->get('currency');
+        $timezone = $request->header('timezone', 'UTC');
+        $from = Carbon::parse($from, $timezone)->startOfDay();
+        $to = Carbon::parse($to, $timezone)->endOfDay();
 
-        $validations = [
-            'period' => 'required|in:month,year,day,week,quarter,semester',
-            'currency' => 'required|exists:currencies,id'
-        ];
+        $subreports = Subreport::with('report')
+            ->whereBetween('created_at', [$from, $to])
+            ->get()
+            ->groupBy(function ($subreport) use ($period, $timezone) {
+                return $subreport->created_at->setTimezone($timezone)->format($this->getDateFormat($period));
+            })
+            ->map(function ($groupedSubreports) {
+                return $groupedSubreports->groupBy('report.type')
+                    ->map(function ($subreportsByType) {
+                        return $subreportsByType->sum('amount');
+                    });
+            });
 
-        $this->validate($request, $validations);
+        return response()->json($subreports);
+    }
 
-        $subreports = Subreport::query()
-            ->leftJoin('reports', 'reports.id', '=', 'subreports.report_id');
-        if($user->role_id != 1){
-            $subreports->where('reports.user_id', $user->id);
-        }
-        $subreports = $subreports->where('reports.currency_id', $currency);
-
-        switch ($period){
-            case 'month':
-                $subreports->where('subreports.created_at', '>=', now()->subMonth()->startOfMonth())
-                    ->where('subreports.created_at', '<=', now()->subMonth()->endOfMonth());
-                $subreports->selectRaw('MONTH(subreports.created_at) as period, SUM(subreports.amount) as total');
-                break;
-            case 'year':
-                $subreports->selectRaw('YEAR(subreports.created_at) as period, SUM(subreports.amount) as total');
-                break;
+    private function getDateFormat($period)
+    {
+        switch ($period) {
             case 'day':
-                $subreports->selectRaw('DAY(subreports.created_at) as period, SUM(subreports.amount) as total');
-                break;
+                return 'D d';
             case 'week':
-                $subreports->selectRaw('WEEK(subreports.created_at) as period, SUM(subreports.amount) as total');
-                break;
+                return 'W';
+            case 'month':
+                return 'M Y';
             case 'quarter':
-                $subreports->selectRaw('QUARTER(subreports.created_at) as period, SUM(subreports.amount) as total');
-                break;
+                return '[Q]Q Y';
             case 'semester':
-                $subreports->selectRaw('QUARTER(subreports.created_at) as period, SUM(subreports.amount) as total');
-                break;
+                return '[S]S Y';
+            case 'year':
+                return 'Y';
+            default:
+                return 'D d';
         }
-
-        $subreports = $subreports->groupBy('period')->get();
     }
     public function getTotalByCurrency(){
         $user = User::with('store')->find(auth()->user()->id);
