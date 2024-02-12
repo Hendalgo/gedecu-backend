@@ -145,13 +145,14 @@ class StatisticsController extends Controller
         if($user->role_id == 3){
             $store = $user->store->id;
             if($store){
-                $banks_accounts->where('store_id', $store)->where('account_type_id', "!=", 3);
+                $banks_accounts->where('store_id', $store);
             }
             else{
                 $banks_accounts->where('user_id', $user->id);
             }
         }
         $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)
+            ->where('account_type_id', "!=", 3)
             ->selectRaw('bank_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
             ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
             ->groupBy('bank_id', 'currency_id')
