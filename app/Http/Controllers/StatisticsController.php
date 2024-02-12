@@ -127,7 +127,7 @@ class StatisticsController extends Controller
                 $change = $currentTotal - $previousTotal;
                 $percentageChange = 0;
                 if ($previousTotal != 0) {
-                    $percentageChange = ($change / $previousTotal) * 100;
+                    $percentageChange = ($change / abs($previousTotal)) * 100;
                 }
                 $accountArray['percentage'] = $percentageChange;
             }
