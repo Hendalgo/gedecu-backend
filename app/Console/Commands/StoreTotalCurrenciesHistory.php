@@ -25,10 +25,15 @@ class StoreTotalCurrenciesHistory extends Command
             ->get();
 
         foreach ($currencies as $currency) {
-            TotalCurrenciesHistory::create([
-                'currency_id' => $currency->currency_id,
-                'total' => $currency->total,
-            ]);
+            $currency_history = TotalCurrenciesHistory::where('currency_id', $currency->currency_id)
+                ->latest('created_at')
+                ->first();  
+            if ($currency_history->total != $currency->total) {
+                TotalCurrenciesHistory::create([
+                    'currency_id' => $currency->currency_id,
+                    'total' => $currency->total,
+                ]);
+            }
         }
         Log::info('Finished total currencies history storage');
     }

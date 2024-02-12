@@ -145,7 +145,7 @@ class StatisticsController extends Controller
         if($user->role_id == 3){
             $store = $user->store->id;
             if($store){
-                $banks_accounts->where('store_id', $store);
+                $banks_accounts->where('store_id', $store)->where('account_type_id', "!=", 3);
             }
             else{
                 $banks_accounts->where('user_id', $user->id);
