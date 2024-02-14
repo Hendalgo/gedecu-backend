@@ -16,53 +16,65 @@ class StatisticsController extends Controller
     public function getMovementsByPeriods(Request $request)
     {
         $period = $request->query('period', 'week');
-        $from = $request->query('from');
-        $to = $request->query('to');
+        $from = $request->query('from', now()->subYear());
+        $to = $request->query('to', now());
         $currency = $request->query('currency');
 
-        Validator::make($request->all(), [
+        $validate = Validator::make($request->all(), [
             'period' => 'required|in:day,week,month,quarter,semester,year',
             'from' => 'date',
             'to' => 'date',
             'currency' => 'required|exists:currencies,id'
         ]);
 
+        $validate->validate();
+
         $timezone = $request->header('timezone', 'UTC');
         $from = Carbon::parse($from, $timezone)->startOfDay();
         $to = Carbon::parse($to, $timezone)->endOfDay();
-
         $subreports = Subreport::with('report.type')
             ->where('currency_id', $currency)
-            ->where(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'))
+            ->where(DB::raw('DATE(CONVERT_TZ(subreports.created_at, "+00:00", "'.$timezone.'"))'))
             ->when( $from && $to, function($query) use ($from, $to) {
                 return $query->whereBetween('created_at', [$from, $to]);
             })
             ->get()
             ->groupBy(['report.type.type', function ($subreport) use ($period) {
-                return $subreport->groupBy('created_at', function ($subreport) use ($period) {
-                    return $this->getPeriod($period, $subreport);
+                return $this->getPeriod($subreport, $period);
+            }])
+            ->map(function ($subreports) {
+                return $subreports->map(function ($subreport) {
+                    return $subreport->sum('amount');
                 });
-            }]);
+            });
         return response()->json($subreports);
     }
 
-    private function getPeriod($period, $subreport)
+    private function getPeriod($subreport,$period)
     {
+        $date = $subreport->created_at;
+
         switch ($period) {
             case 'day':
-                return $subreport->groupBy('DATE(created_at)');
+                return $date->format('D, d/m');
             case 'week':
-                return $subreport->groupBy('WEEK(created_at)');
+                // Inicio y fin de la semana
+                return $date->startOfWeek()->format('d-m-Y') . ' - ' . $date->endOfWeek()->format('d-m-Y');
             case 'month':
-                return $subreport->groupBy('MONTH(created_at)');
+                // Inicio y fin del mes
+                return $date->startOfMonth()->format('d-m-Y') . ' - ' . $date->endOfMonth()->format('d-m-Y');
             case 'quarter':
-                return $subreport->groupBy('QUARTER(created_at)');
+                // Inicio y fin del trimestre
+                return $date->startOfQuarter()->format('d-m-Y') . ' - ' . $date->endOfQuarter()->format('d-m-Y');
             case 'semester':
-                return $subreport->groupBy('MONTH(created_at) > 6');
+                // Inicio y fin del semestre
+                $start = $date->month > 6 ? $date->firstOfJuly()->format('d-m-Y') : $date->firstOfJanuary()->format('d-m-Y');
+                $end = $date->month > 6 ? $date->endOfYear()->format('d-m-Y') : $date->endOfJune()->format('d-m-Y');
+                return $start . ' - ' . $end;
             case 'year':
-                return $subreport->groupBy('YEAR(created_at)');
+                return $date->format('Y');
             default:
-                return $subreport->groupBy('DATE(created_at)');
+                return $date->startOfWeek()->format('d-m-Y') . ' - ' . $date->endOfWeek()->format('d-m-Y');
         }
     }
 
