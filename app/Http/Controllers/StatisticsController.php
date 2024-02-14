@@ -34,7 +34,7 @@ class StatisticsController extends Controller
         $to = Carbon::parse($to, $timezone)->endOfDay();
         $subreports = Subreport::with('report.type')
             ->where('currency_id', $currency)
-            ->where(DB::raw('DATE(CONVERT_TZ(subreports.created_at, "+00:00", "'.$timezone.'"))'))
+            ->where(DB::raw('DATE(CONVERT_TZ(subreports.created_at, "+00:00", "'.$timezone.'"))'), '!=', null)
             ->when( $from && $to, function($query) use ($from, $to) {
                 return $query->whereBetween('created_at', [$from, $to]);
             })
