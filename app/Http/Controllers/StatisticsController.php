@@ -8,93 +8,64 @@ use App\Models\TotalCurrenciesHistory;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class StatisticsController extends Controller
 {
     public function getMovementsByPeriods(Request $request)
     {
         $period = $request->query('period', 'week');
-        $from = $request->query('from', $this->getDefaultStartDate($period));
-        $to = $request->query('to', now());
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $currency = $request->query('currency');
+
+        Validator::make($request->all(), [
+            'period' => 'required|in:day,week,month,quarter,semester,year',
+            'from' => 'date',
+            'to' => 'date',
+            'currency' => 'required|exists:currencies,id'
+        ]);
 
         $timezone = $request->header('timezone', 'UTC');
         $from = Carbon::parse($from, $timezone)->startOfDay();
         $to = Carbon::parse($to, $timezone)->endOfDay();
 
-        $subreports = Subreport::with('report')
-            ->whereBetween('created_at', [$from, $to])
+        $subreports = Subreport::with('report.type')
+            ->where('currency_id', $currency)
+            ->where(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'))
+            ->when( $from && $to, function($query) use ($from, $to) {
+                return $query->whereBetween('created_at', [$from, $to]);
+            })
             ->get()
-            ->groupBy(['report.type', function ($subreport) use ($period, $timezone) {
-                return $this->getPeriodLabel($subreport->created_at, $period, $timezone);
-            }])
-            ->map(function ($groupedSubreports) {
-                return $groupedSubreports->sum('amount');
-            });
-
+            ->groupBy(['report.type.type', function ($subreport) use ($period) {
+                return $subreport->groupBy('created_at', function ($subreport) use ($period) {
+                    return $this->getPeriod($period, $subreport);
+                });
+            }]);
         return response()->json($subreports);
     }
 
-    private function getDateFormat($period)
+    private function getPeriod($period, $subreport)
     {
         switch ($period) {
             case 'day':
-                return 'D d';
+                return $subreport->groupBy('DATE(created_at)');
             case 'week':
-                return 'W';
+                return $subreport->groupBy('WEEK(created_at)');
             case 'month':
-                return 'M Y';
+                return $subreport->groupBy('MONTH(created_at)');
             case 'quarter':
-                return '[Q]Q Y';
+                return $subreport->groupBy('QUARTER(created_at)');
             case 'semester':
-                return '[S]S Y';
+                return $subreport->groupBy('MONTH(created_at) > 6');
             case 'year':
-                return 'Y';
+                return $subreport->groupBy('YEAR(created_at)');
             default:
-                return 'D d';
+                return $subreport->groupBy('DATE(created_at)');
         }
     }
 
-    private function getDefaultStartDate($period)
-    {
-        switch ($period) {
-            case 'day':
-                return now()->subDays(7);
-            case 'week':
-                return now()->subWeeks(12);
-            case 'month':
-                return now()->subMonths(6);
-            case 'quarter':
-                return now()->subQuarters(6);
-            case 'semester':
-                return now()->subMonths(6 * 6);
-            case 'year':
-                return now()->subYears(5);
-            default:
-                return now()->subWeek();
-        }
-    }
-    private function getPeriodLabel($date, $period, $timezone)
-    {
-        $date = $date->setTimezone($timezone);
-        switch ($period) {
-            case 'day':
-                return $date->format('D d');
-            case 'week':
-                $startOfWeek = $date->startOfWeek()->format('D d');
-                $endOfWeek = $date->endOfWeek()->format('D d');
-                return "$startOfWeek - $endOfWeek";
-            case 'month':
-                return $date->format('M Y');
-            case 'quarter':
-                return '[Q]Q Y';
-            case 'semester':
-                return '[S]S Y';
-            case 'year':
-                return 'Y';
-            default:
-                return $date->format('D d');
-        }
-    }
     public function getTotalByCurrency(){
         $user = User::with('store')->find(auth()->user()->id);
         $banks_accounts = BankAccount::query();
