@@ -29,7 +29,7 @@ class StatisticsController extends Controller
 
         $validate->validate();
 
-        $timezone = $request->header('timezone');
+        $timezone = $request->header('TimeZone');
         $from = Carbon::parse($from, $timezone)->startOfDay();
         $to = Carbon::parse($to, $timezone)->endOfDay();
         $subreports = Subreport::with('report.type')
