@@ -59,7 +59,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2023-11-09 06:21:08',
                 'updated_at' => '2023-11-09 06:21:08',
                 'country' => 0,
-                'meta_data' => '{"all":[{"name":"store_id","validation":"required|exists:stores,id"},{"name":"transferences_quantity","validation":"required|numeric"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"account_id","validation":"required|exists:banks_accounts,id|bank_account_owner"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Locales","convert_amount":true}'
+                'meta_data' => '{"all":[{"name":"store_id","validation":"required|exists:stores,id"},{"name":"transferences_quantity","validation":"required|numeric"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"account_id","validation":"required|exists:banks_accounts,id|bank_account_owner"},{"name":"isDuplicated","validation":"required|boolean"}, {"name": "rate_currency", "validation": "required|exists:currencies,id"}],"name":"Locales","convert_amount":true}'
             ],
             [
                 'id' => 5,
@@ -155,7 +155,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2023-12-24 12:11:45',
                 'updated_at' => '2023-12-24 12:11:45',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"transferences_quantity","validation":"required|numeric"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean|is_false"}],"name":"Cuenta Billetera","type":"2"}'
+                'meta_data' => '{"all":[{"name":"transferences_quantity","validation":"required|numeric"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean|is_false"}, {"name": "rate_currency", "validation": "required|exists:currencies,id"}],"name":"Cuenta Billetera","type":"2"}'
             ],
             [
                 'id' => 13,
@@ -275,7 +275,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2023-12-25 09:01:19',
                 'updated_at' => '2023-12-25 09:01:19',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"transferences_quantity","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean|is_false"}],"name":"Billetera","type":"1","admin":[{"name":"country_id","validation":"required|exists:countries,id"}],"special":[{"name":"country_id","validation":"required|exists:countries,id"}]}'
+                'meta_data' => '{"all":[{"name":"transferences_quantity","validation":"required|numeric"},{"name":"currency_id","validation":"required|exists:currencies,id"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean|is_false"}, {"name": "rate_currency", "validation": "required|exists:currencies,id"}],"name":"Billetera","type":"1","admin":[{"name":"country_id","validation":"required|exists:countries,id"}],"special":[{"name":"country_id","validation":"required|exists:countries,id"}]}'
             ],
             [
                 'id' => 23,
@@ -287,19 +287,20 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2023-12-25 09:53:03',
                 'updated_at' => '2023-12-25 09:53:03',
                 'country' => 0,
-                'meta_data' => '{"all":[{"name":"bank_id","validation":"required|exists:banks,id"},{"name":"currency_id","validation":"required|numeric"},{"name":"transferences_quantity","validation":"required|numeric"},{"name":"user_id","validation":"required|exists:users,id|user_role:2"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean|is_false"}],"name":"Giros","type":"1","admin":[{"name":"country_id","validation":"required|exists:countries,id"}],"special":[{"name":"country_id","validation":"required|exists:countries,id"}]}'
+                'meta_data' => '{"all":[{"name":"bank_id","validation":"required|exists:banks,id"},{"name":"currency_id","validation":"required|numeric"},{"name":"transferences_quantity","validation":"required|numeric"},{"name":"user_id","validation":"required|exists:users,id|user_role:2"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean|is_false"}, {"name": "rate_currency", "validation": "required|exists:currencies,id"}],"name":"Giros","type":"1","admin":[{"name":"country_id","validation":"required|exists:countries,id"}],"special":[{"name":"country_id","validation":"required|exists:countries,id"}]}'
             ],
+            /**This is a duplicated record, but it must be here. Don't delete it */
             [
                 'id' => 24,
                 'name' => 'cuenta billetera',
-                'description' => null,
+                'description' => "Cuenta billetera, de gestores de locales",
                 'type' => 'income',
                 'config' => '{"styles":{"color":"#58151C","borderColor":"#F1AEB5","backgroundColor":"#F8D7DA"}}',
-                'delete' => 0,
+                'delete' => 1,
                 'created_at' => '2023-12-27 16:43:14',
                 'updated_at' => '2023-12-27 16:43:14',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"transferences_quantity","validation":"required|numeric"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean"}],"name":"Cuenta Billetera","type":"2"}'
+                'meta_data' => '{"all":[{"name":"transferences_quantity","validation":"required|numeric"},{"name":"amount","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"},{"name":"isDuplicated","validation":"required|boolean"}, {"name": "rate_currency", "validation": "required|exists:currencies,id"}],"name":"Cuenta Billetera","type":"2"}'
             ],
             [
                 'id' => 25,
@@ -347,7 +348,7 @@ class ReportsTypesSeeder extends Seeder
                 'created_at' => '2024-01-07 07:10:28',
                 'updated_at' => '2024-01-07 07:10:28',
                 'country' => 1,
-                'meta_data' => '{"all":[{"name":"amount","validation":"required|numeric"},{"name":"user_id","validation":"required|exists:users,id"},{"name":"isDuplicated","validation":"required|boolean"},{"name":"deposits_quantity","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"}],"name":"Billetera depositante","type":4,"user_balance":true,"convert_amount":true}'
+                'meta_data' => '{"all":[{"name":"amount","validation":"required|numeric"},{"name":"user_id","validation":"required|exists:users,id"},{"name":"isDuplicated","validation":"required|boolean"},{"name":"deposits_quantity","validation":"required|numeric"},{"name":"rate","validation":"required|numeric"}, {"name": "rate_currency", "validation": "required|exists:currencies,id"}],"name":"Billetera depositante","type":4,"user_balance":true,"convert_amount":true}'
             ],
             [
                 'id' => 29,

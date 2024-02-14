@@ -164,7 +164,7 @@ class ReportController extends Controller
                             $amount = $subreport['amount'];
                             $currency = $subreport['currency_id'];
                             if (array_key_exists('convert_amount', $report_type_config)) {
-                                $amount = $subreport['amount'] * $subreport['rate'];
+                                $amount = $this->calculateAmount($subreport);
                                 $currency = $subreport['conversionCurrency_id'];
                             }
                             if (array_key_exists('user_balance', $report_type_config)) {
@@ -209,7 +209,7 @@ class ReportController extends Controller
                             $amount = $subreport['amount'];
                             $currency = $subreport['currency_id'];
                             if (array_key_exists('convert_amount', $report_type_config)) {
-                                $amount = $subreport['amount'] * $subreport['rate'];
+                                $amount = $this->calculateAmount($subreport);
                                 $currency = $subreport['conversionCurrency_id'];
                             }
                             if (array_key_exists('user_balance', $report_type_config)) {
@@ -293,9 +293,10 @@ class ReportController extends Controller
         foreach ($subreport as $sub) {
             $currency = $sub['currency_id'];
             $amount = $sub['amount'];
+            
             if (array_key_exists('convert_amount', $report_type_config)) {
                 $currency = $sub['conversionCurrency_id'];
-                $amount = $sub['amount'] * $sub['rate'];
+                $amount = $this->calculateAmount($sub);
             } 
             $data[] = [
                 'duplicate' =>  $sub['isDuplicated'],
@@ -306,5 +307,24 @@ class ReportController extends Controller
             ];
         }
         $report->subreports()->createMany($data);
+    }
+ 
+    //Calculate the amount of the subreport
+    //This because the rate could be in the same currency or in the conversion currency
+    private function calculateAmount(Array $sub): float{
+        if(array_key_exists('rate_currency', $sub)){
+            if ($sub['rate_currency'] === $sub['currency_id']) {
+                return $sub['amount'] / $sub['rate'];
+            }
+            else if($sub['rate_currency'] === $sub['conversionCurrency_id']){
+                return $sub['amount'] * $sub['rate'];
+            }
+            else{
+                throw new \Exception("No se encontró la tasa de cambio");
+            }
+        }
+        else{
+            throw new \Exception("No se encontró la tasa de cambio");
+        }
     }
 }
