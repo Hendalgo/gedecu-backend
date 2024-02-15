@@ -7,6 +7,7 @@ use App\Models\Report;
 use App\Models\ReportType;
 use App\Models\RoleReportPermission;
 use App\Models\Store;
+use App\Models\Subreport;
 use App\Models\User;
 use App\Models\UserBalance;
 use Illuminate\Database\QueryException;
@@ -290,14 +291,37 @@ class ReportController extends Controller
     }
     private function create_subreport (Array $subreport, $report, $report_type_config){
         $data = [];
+        
+        /* $toCompare = Subreport::
+            whereBetween('created_at', [$report->created_at->subDay(), $report->created_at])
+            ->with('report.type')
+            ->get()
+            ->where('report.type.id', $report->type->associated_type_id)
+            ;
+ */
         foreach ($subreport as $sub) {
             $currency = $sub['currency_id'];
             $amount = $sub['amount'];
             
+            /*
+                Filtered subreports
+            */
+                  
+            /* $filtered = $toCompare->filter(function ($value, $key) use ($sub, $amount, $currency) {
+                if ($value->data['currency_id'] === $sub['currency_id'] && $value->data['amount'] === $sub['amount']) {
+                    return true;
+                }
+                if ($value->data['currency_id'] === $sub['conversionCurrency_id'] && $value->data['amount'] === $amount) {
+                    return true;
+                }
+                return false;
+            }); */
+
             if (array_key_exists('convert_amount', $report_type_config)) {
                 $currency = $sub['conversionCurrency_id'];
                 $amount = $this->calculateAmount($sub);
             } 
+
             $data[] = [
                 'duplicate' =>  $sub['isDuplicated'],
                 'amount' =>$amount,

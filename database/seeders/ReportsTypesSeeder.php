@@ -448,5 +448,12 @@ class ReportsTypesSeeder extends Seeder
             ]
         ];
         ReportType::insert($reportTypes);
+        $this->update();
+    }
+
+    private function update(): void{
+        $reportType = ReportType::find(1);
+        $reportType->associated_type_id = 26;
+        $reportType->save();
     }
 }
