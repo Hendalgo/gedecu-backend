@@ -56,7 +56,7 @@ class StatisticsController extends Controller
 
         switch ($period) {
             case 'day':
-                return $date->format('D, d/m');
+                return $date->format('Y-m-d');
             case 'week':
                 // Inicio y fin de la semana
                 return $date->startOfWeek()->format('d-m-Y') . ' - ' . $date->endOfWeek()->format('d-m-Y');
