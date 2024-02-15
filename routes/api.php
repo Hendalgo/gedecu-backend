@@ -7,6 +7,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DuplicatedReportController;
+use App\Http\Controllers\InconsistenceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportTypeController;
 use App\Http\Controllers\RoleController;
@@ -124,4 +125,8 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::get('statistics', [StatisticsController::class, 'getMovementsByPeriods']);
     Route::get('statistics/total-currencies', [StatisticsController::class, 'getTotalByCurrency']);
     Route::get('statistics/total-banks', [StatisticsController::class, 'getTotalByBank']);
+
+
+    /*Inconsistences*/
+    Route::get('inconsistences', [InconsistenceController::class, 'index']);
 });

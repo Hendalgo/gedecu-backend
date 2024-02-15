@@ -292,13 +292,13 @@ class ReportController extends Controller
     private function create_subreport (Array $subreport, $report, $report_type_config){
         $data = [];
         
-        /* $toCompare = Subreport::
+        $toCompare = Subreport::
             whereBetween('created_at', [$report->created_at->subDay(), $report->created_at])
             ->with('report.type')
             ->get()
             ->where('report.type.id', $report->type->associated_type_id)
             ;
- */
+
         foreach ($subreport as $sub) {
             $currency = $sub['currency_id'];
             $amount = $sub['amount'];
@@ -307,7 +307,7 @@ class ReportController extends Controller
                 Filtered subreports
             */
                   
-            /* $filtered = $toCompare->filter(function ($value, $key) use ($sub, $amount, $currency) {
+            $filtered = $toCompare->filter(function ($value, $key) use ($sub, $amount, $currency) {
                 if ($value->data['currency_id'] === $sub['currency_id'] && $value->data['amount'] === $sub['amount']) {
                     return true;
                 }
@@ -315,7 +315,10 @@ class ReportController extends Controller
                     return true;
                 }
                 return false;
-            }); */
+            });
+            
+            $inconsistence = new InconsistenceController;
+            $inconsistence->invoke($filtered, $sub, $report->type->id);
 
             if (array_key_exists('convert_amount', $report_type_config)) {
                 $currency = $sub['conversionCurrency_id'];
