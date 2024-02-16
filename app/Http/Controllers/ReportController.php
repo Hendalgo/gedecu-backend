@@ -7,7 +7,6 @@ use App\Models\Report;
 use App\Models\ReportType;
 use App\Models\RoleReportPermission;
 use App\Models\Store;
-use App\Models\Subreport;
 use App\Models\User;
 use App\Models\UserBalance;
 use Illuminate\Database\QueryException;
@@ -292,39 +291,14 @@ class ReportController extends Controller
     private function create_subreport (Array $subreport, $report, $report_type_config){
         $data = [];
         
-        $toCompare = Subreport::
-            whereBetween('created_at', [$report->created_at->subDay(), $report->created_at])
-            ->with('report.type')
-            ->get()
-            ->where('report.type.id', $report->type->associated_type_id)
-            ;
-
         foreach ($subreport as $sub) {
             $currency = $sub['currency_id'];
             $amount = $sub['amount'];
-            
-            /*
-                Filtered subreports
-            */
-                  
-            $filtered = $toCompare->filter(function ($value, $key) use ($sub, $amount, $currency) {
-                if ($value->data['currency_id'] === $sub['currency_id'] && $value->data['amount'] === $sub['amount']) {
-                    return true;
-                }
-                if ($value->data['currency_id'] === $sub['conversionCurrency_id'] && $value->data['amount'] === $amount) {
-                    return true;
-                }
-                return false;
-            });
-            
-            $inconsistence = new InconsistenceController;
-            $inconsistence->invoke($filtered, $sub, $report->type->id);
 
             if (array_key_exists('convert_amount', $report_type_config)) {
                 $currency = $sub['conversionCurrency_id'];
                 $amount = $this->calculateAmount($sub);
             } 
-
             $data[] = [
                 'duplicate' =>  $sub['isDuplicated'],
                 'amount' =>$amount,
@@ -333,18 +307,20 @@ class ReportController extends Controller
                 'data' => json_encode($sub)
             ];
         }
-        $report->subreports()->createMany($data);
+        $inconsistence = new InconsistenceController();
+        $insertedSub = $report->subreports()->createMany($data);
+        $inconsistence->check_inconsistences($report, $insertedSub);
     }
  
     //Calculate the amount of the subreport
     //This because the rate could be in the same currency or in the conversion currency
     private function calculateAmount(Array $sub): float{
         if(array_key_exists('rate_currency', $sub)){
-            if ($sub['rate_currency'] === $sub['currency_id']) {
-                return $sub['amount'] / $sub['rate'];
-            }
-            else if($sub['rate_currency'] === $sub['conversionCurrency_id']){
+            if ($sub['rate_currency'] == $sub['currency_id']) {
                 return $sub['amount'] * $sub['rate'];
+            }
+            else if($sub['rate_currency'] == $sub['conversionCurrency_id']){
+                return $sub['amount'] / $sub['rate'];
             }
             else{
                 throw new \Exception("No se encontró la tasa de cambio");
