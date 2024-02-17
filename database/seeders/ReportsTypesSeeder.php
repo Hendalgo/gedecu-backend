@@ -473,5 +473,14 @@ class ReportsTypesSeeder extends Seeder
         $reportType = ReportType::find(23);
         $reportType->associated_type_id = 4;
         $reportType->save();
+
+        /*Ayuda Realizada Gestor - Ayuda Recibida Gestor*/
+        $reportType = ReportType::find(6);
+        $reportType->associated_type_id = 15;
+        $reportType->save();
+
+        $reportType = ReportType::find(15);
+        $reportType->associated_type_id = 6;
+        $reportType->save();
     }
 }
