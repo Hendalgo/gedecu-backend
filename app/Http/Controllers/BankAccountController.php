@@ -23,7 +23,7 @@ class BankAccountController extends Controller
         $currency = $request->get('currency');
         $userParam = $request->get('user');
         $user = User::find(auth()->user()->id);
-
+        $negatives = $request->get('negatives', 'no');
         $validatedData = $request->validate([
             'order' => 'in:balance,created_at',
             'order_by' => 'in:asc,desc',
@@ -55,6 +55,9 @@ class BankAccountController extends Controller
                     ->orWhere('users.name', 'LIKE', '%'.$search.'%')
                     ->orWhere('stores.name', 'LIKE', '%'.$search.'%');
             });
+        }
+        if ($negatives === 'yes') {
+            $bank_account = $bank_account->where('banks_accounts.balance', '<', 0);
         }
         if ($bank) {
             $bank_account = $bank_account->where('bank_id', $bank);

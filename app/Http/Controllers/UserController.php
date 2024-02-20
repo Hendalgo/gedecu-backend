@@ -216,6 +216,7 @@ class UserController extends Controller
         $orderBy = $request->get('order_by', 'desc');
         $role = $request->get('role');
         $country = $request->get('country');
+        $more_than_one = $request->get('more_than_one', 'no');
 
         $balances = UserBalance::query()
             ->leftjoin("users", "users.id", "=", "user_balances.user_id")
@@ -231,6 +232,9 @@ class UserController extends Controller
                         ->orWhere('currencies.name', 'LIKE', "%{$search}%")
                         ->orWhere('users.email', 'LIKE', "%{$search}%");
                 });
+        }
+        if ($more_than_one === 'yes') {
+            $balances = $balances->where('user_balances.balance', '>', 1);
         }
         if ($role) {
             $balances = $balances->where('users.role_id', $role);
