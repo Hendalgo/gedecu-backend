@@ -7,8 +7,10 @@ use App\Models\Report;
 use App\Models\ReportType;
 use App\Models\RoleReportPermission;
 use App\Models\Store;
+use App\Models\SubreportData;
 use App\Models\User;
 use App\Models\UserBalance;
+use App\Services\KeyValueMap;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,19 +18,21 @@ use Illuminate\Support\Facades\Validator;
 
 class ReportController extends Controller
 {
+    protected $KeyMapValue;
+
+    public function __construct()
+    {
+        $this->KeyMapValue = new KeyValueMap();
+    }
     public function index(Request $request){
         $currentUser = User::find(auth()->user()->id);
 
          // Get query parameters
         $order = $request->get('order', 'created_at');
         $orderBy = $request->get('order_by', 'desc');
-        $duplicated = $request->get('duplicated');
-        $duplicated_status = $request->get('duplicated_status');
-        
         $date = $request->get('date');
         $since = $request->get('since');
         $until = $request->get('until');
-        $bank = $request->get('bank');
         $search = $request->get('search');
         $user = $request->get('user');
         $type = $request->get('type_id');
@@ -265,8 +269,10 @@ class ReportController extends Controller
         return response()->json(['message' => 'forbiden'], 401);
     }
     public function show($id){
-        $report = Report::with('type', 'user.role', 'subreports')->find($id);
+        $report = Report::with('type', 'user.role', 'subreports.data')->find($id);
         $currentUser = User::find(auth()->user()->id);
+        $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
+
         if (!$report) {
            return response()->json(['error' => 'No se encontró el reporte'], 404);
         }
@@ -294,7 +300,7 @@ class ReportController extends Controller
         foreach ($subreport as $sub) {
             $currency = $sub['currency_id'];
             $amount = $sub['amount'];
-
+    
             if (array_key_exists('convert_amount', $report_type_config)) {
                 $currency = $sub['conversionCurrency_id'];
                 $amount = $this->calculateAmount($sub);
@@ -304,13 +310,26 @@ class ReportController extends Controller
                 'amount' =>$amount,
                 'duplicate_status' => false,
                 'currency_id' => $currency,
-                'data' => json_encode($sub)
             ];
         }
         $inconsistence = new InconsistenceController();
-        $insertedSub = $report->subreports()->createMany($data);
-        $insertedSub->load('report.user.store');
-        $inconsistence->check_inconsistences($report, $insertedSub);
+        $insertedSubs = $report->subreports()->createMany($data);
+        $subreport_data = [];
+        foreach ($insertedSubs as $index => $insertedSub) {
+            foreach ($subreport[$index] as $key => $value) {
+                if ($key !== 'isDuplicated') {
+                    $subreport_data[] = [
+                        'key' => $key,
+                        'value' => $value,
+                        'subreport_id' => $insertedSub->id
+                    ];
+                }
+            }
+        }
+        SubreportData::insert($subreport_data);
+        $insertedSubs->load('report.user.store', 'data');
+        $insertedSubs = $this->KeyMapValue->transformElement($insertedSubs);
+        $inconsistence->check_inconsistences($report, $insertedSubs);
     }
  
     //Calculate the amount of the subreport

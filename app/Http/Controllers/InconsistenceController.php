@@ -4,17 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\Inconsistence;
 use App\Models\Subreport;
+use App\Services\KeyValueMap;
 use Illuminate\Http\Request;
 
 class InconsistenceController extends Controller
 {
+    protected $keyValueMap;
+    public function __construct()
+    {
+        $this->keyValueMap = new KeyValueMap();
+    }
     public function index(Request $request){
         //Get subreports that are not verified on the inconsistencies table
         $subreports = Subreport::join('inconsistences', 'subreports.id', '=', 'inconsistences.subreport_id')
             ->select('subreports.*')
             ->where('inconsistences.verified', 0)
-            ->with('report.type')
+            ->with('report.type', 'data')
             ->get();
+        
+        //transform data to key value
+        $subreports = $this->keyValueMap->transformElement($subreports);
+
         return response()->json($subreports);
     }
     public function invoke($filtered, $sub, $type){
@@ -150,18 +160,27 @@ class InconsistenceController extends Controller
                 $query->where('verified', 1);
             })
             ->whereBetween('created_at', [$report->created_at->subDay(), $report->created_at])
-            ->with('report.type')
+            ->with('report.type', 'data')
             ->get()
             ->where('report.type.id', $report->type->associated_type_id)
             ;
-            
+        $toCompare = $this->keyValueMap->transformElement($toCompare);
+        //Transform the data to json
+        //bc before it works with json data
+        //and now it works with key value
+        foreach ($toCompare as $key => $value) {
+            $toCompare[$key]->data = json_encode($value->data);
+        }
+
         foreach($subreports as $sub){
             //if the subreport is duplicated, then skip it
+            $sub->data = json_encode($sub->data);
             if($sub->duplicated){
                 continue;
             }
             //Filter the subreports that have the same currency and amount
             $filtered = $toCompare->filter(function ($value, $key) use ($sub) {
+                
                 $valueData = json_decode($value->data, true);
                 $subData = json_decode($sub->data, true);
             

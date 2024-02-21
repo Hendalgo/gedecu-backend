@@ -14,7 +14,6 @@ class Subreport extends Model
         "duplicate",
         "report_id",
         "currency_id",
-        "data",
         "duplicate_status"
     ];
 
@@ -26,5 +25,8 @@ class Subreport extends Model
     }
     public function inconsistences(){
         return $this->hasOne('\App\Models\Inconsistence', 'subreport_id');
+    }
+    public function data(){
+        return $this->hasMany('\App\Models\SubreportData', 'subreport_id');
     }
 }

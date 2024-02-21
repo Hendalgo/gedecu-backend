@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\Subreport;
-use App\Models\User;
+use App\Services\KeyValueMap;
 use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +12,11 @@ use Illuminate\Support\Facades\Validator;
 
 class DuplicatedReportController extends Controller
 {
+    protected $keyValueMap;
+    public function __construct(KeyValueMap $keyValueMap)
+    {
+        $this->keyValueMap = $keyValueMap;
+    }
     public function index (Request $request){
         $currentUser = auth()->user();
         $paginated = $request->get('paginated', 'yes');
@@ -26,10 +30,9 @@ class DuplicatedReportController extends Controller
             ->where('subreports.duplicate', true)
             ->leftjoin('reports', 'subreports.report_id', '=', 'reports.id')
             ->leftjoin('users', 'reports.user_id', '=', 'users.id')
-            ->select('subreports.*')
-            ->groupBy('subreports.id');
+            ->select('subreports.*');
         $timezone = $request->header('TimeZone');
-        if ($search) {
+        if ($search !== null) {
             $subreports = $subreports->where(function ($query) use ($search){
                 $query->where('users.email', 'LIKE', '%'.$search.'%')
                     ->orWhere('users.name', 'LIKE', '%'.$search.'%')
@@ -58,11 +61,16 @@ class DuplicatedReportController extends Controller
         if ($order) {
             $subreports = $subreports->orderBy('subreports.'.$order, $orderBy);
         }
-        $subreports = $subreports->with('report.user.role', 'currency', 'report.type');
+        $subreports = $subreports->with('report.user.role', 'currency', 'report.type', 'data');
+
         if ($paginated === 'no') {
-            return response()->json($subreports->get(), 200);
+            $subreports = $subreports->get();
         }
-        return response()->json($subreports->paginate($per_page), 200);
+        else {
+            $subreports = $subreports->paginate($per_page);
+        }
+        $subreports = $this->keyValueMap->transformElement($subreports);
+        return response()->json($subreports, 200);
     }
     public function show($id){
         $currentUser = auth()->user();
@@ -71,12 +79,20 @@ class DuplicatedReportController extends Controller
             ->leftjoin('reports', 'subreports.report_id', '=', 'reports.id')
             ->leftjoin('users', 'reports.user_id', '=', 'users.id')
             ->select('subreports.*')
-            ->groupBy('subreports.id')
             ->where('subreports.id', $id);
         if ($currentUser->role->id !== 1 ){
             $subreport = $subreport->where('users.id', $currentUser->id);
         }
-        $subreport = $subreport->with('report.user', 'currency',  'report.type')->firstOrFail();
+        $subreport = $subreport->with('report.user', 'currency',  'report.type', 'data')->firstOrFail();
+
+        $data = [];
+        foreach ($subreport->data as $item_data) {
+            $data[$item_data->key] = $item_data->value;
+        }
+        $subreport->sdata = $data;
+        unset($subreport->data);
+        $subreport->data = $subreport->sdata;
+        unset($subreport->sdata);
         return response()->json($subreport, 200);
     }
     public function duplicated_complete(Request $request, $id){
