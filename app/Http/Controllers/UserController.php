@@ -216,7 +216,7 @@ class UserController extends Controller
         $orderBy = $request->get('order_by', 'desc');
         $role = $request->get('role');
         $country = $request->get('country');
-        $more_than_one = $request->get('more_than_one', 'no');
+        $more_than_one = $request->get('moreThanOne', 'no');
 
         $balances = UserBalance::query()
             ->leftjoin("users", "users.id", "=", "user_balances.user_id")
