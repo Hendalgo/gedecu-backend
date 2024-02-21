@@ -106,22 +106,27 @@ class ReportController extends Controller
                 'subreports' => 'required|array',
             ]);
             $subreports = $request->subreports;
-            $report_type = ReportType::find($request->type_id);
+            $report_type = ReportType::with(['validations'])->find($request->type_id);
             $report_type_config = json_decode($report_type->meta_data, true);
+
             $validator = Validator::make([], []); // Create a empty intance of validator
             $validatedSubreports = [];
+
             // Validate all fields in the subreports
             foreach ($subreports as $subreport) {
-                $validator->setData(['currency_id' => $subreport['currency_id']]);
+                $validator->setData($subreport);
                 $validator->setRules(['currency_id' => 'required|exists:currencies,id']);
-                $reportValidations = $report_type_config['all'];
+                
+                //Get the validations for the role all
+                $reportValidations = $report_type->validations->where('validation_role', 'all')->toArray();
+
+                //Get the validations for the role
+                $reportValidationsRole = $report_type->validations->where('validation_role', auth()->user()->role->id)->toArray();
                 if(array_key_exists('convert_amount', $report_type_config)){
-                    $validator->setData(['conversionCurrency_id' => $subreport['conversionCurrency_id']]);
                     $validator->setRules(['conversionCurrency_id' => 'required|exists:currencies,id']);
                 }
                 foreach ($reportValidations as $validation) {
                     if (array_key_exists($validation['name'], $subreport)) {
-                        $validator->setData([$validation['name'] => $subreport[$validation['name']]]);
                         $validator->setRules([$validation['name'] => $validation['validation']]);
                         if ($validator->fails()) {
                             $errorMessages = $validator->errors()->all();
@@ -132,11 +137,9 @@ class ReportController extends Controller
                     }
                 }
                 // Find if the role need extra validations for create the report
-                if (array_key_exists(auth()->user()->role->id, $report_type_config)) {
-                    $reportValidationsEspecial = $report_type_config[auth()->user()->role->id];
-                    foreach ($reportValidationsEspecial as $validation) {
+                if (count($reportValidationsRole) > 0) {
+                    foreach ($reportValidationsRole as $validation) {
                         if (array_key_exists($validation['name'], $subreport)) {
-                            $validator->setData([$validation['name'] => $subreport[$validation['name']]]);
                             $validator->setRules([$validation['name'] => $validation['validation']]);
                             if ($validator->fails()) {
                                 return response()->json(['error' => 'Error de validación en el subreporte'], 422);

@@ -21,4 +21,8 @@ class ReportType extends Model
     {
         return $this->hasMany('App\\Models\\Report', 'type_id');
     }
+    public function validations()
+    {
+        return $this->hasMany('App\\Models\\ReportTypeValidations', 'report_type_id');
+    }
 }
