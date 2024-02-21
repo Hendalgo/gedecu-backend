@@ -27,18 +27,62 @@ class InconsistenceController extends Controller
         if($type == 23 || $type == 4){
             $this->giro_local($filtered, $sub, $type);
         }
+        if($type == 17 || $type == 27){
+            $this->efectivo_depositante_entrega_efectivo($filtered, $sub, $type);
+        }
+        if($type == 15 || $type == 25){
+            $this->ayuda_recibida_local_ayuda_realizada_local($filtered, $sub, $type);
+        }
     }
 
+    private function ayuda_recibida_local_ayuda_realizada_local($filtered, $sub, $type){
+        $filtered = $filtered->filter(function($item) use ($sub){
+            $itemData = json_decode($item->data, true);
+            if($itemData['store_id'] == $sub->report->user->store->id){
+                return true;
+            }
+            return false;
+        });
+        return $this->check_if_have_matches($filtered, $sub);
+    }
+    private function efectivo_depositante_entrega_efectivo($filtered, $sub, $type){
+        /*Entrega de efectivo encargado*/
+        if ($type == 17) {
+            $filtered = $filtered->filter(function ($item) use ($sub) {
+                $subData = json_decode($sub->data, true);
+                /*The id of the selected user must coincide with the id of the user that
+                 * created the report
+                 */
+                if ($subData['user_id'] == $item->report->user_id) {
+                    return true;
+                }
+                return false;
+            });
+        }
+        /*Efectivo depositante*/
+        if ($type == 27){
+            $filtered = $filtered->filter(function ($item) use ($sub) {
+                $subData = json_decode($sub->data, true);
+                $itemData = json_decode($item->data, true);
+                /**The id of current user created report
+                 * must coincide with the id of the user that
+                 * encargado selected in the subreport
+                 */
+                if ($sub->report->user_id == $itemData['user_id']) {
+                    return true;
+                }
+                return false;
+            });
+        }
+        return $this->check_if_have_matches($filtered, $sub);
+    }
     /**Check Help Gestor received and sent */
     private function helpG($filtered, $sub, $type){
         $filtered = $filtered->filter(function($item) use ($sub){
-            $itemData = json_decode($item->data, true);
             $subData = json_decode($sub->data, true);
             if($subData['user_id'] == $item->report->user_id){
                 //Bank from bank account should be the same
-                if($subData['bank_id'] == $itemData['bank_id']){
-                    return true;
-                }
+                return true;
             }
             return false;
         });

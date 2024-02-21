@@ -482,5 +482,23 @@ class ReportsTypesSeeder extends Seeder
         $reportType = ReportType::find(15);
         $reportType->associated_type_id = 6;
         $reportType->save();
+
+        /*Entrega Efectivo - Efectivo*/
+        $reportType = ReportType::find(17);
+        $reportType->associated_type_id = 27;
+        $reportType->save();
+
+        $reportType = ReportType::find(27);
+        $reportType->associated_type_id = 17;
+        $reportType->save();
+
+        /*Ayuda realizada local - Ayuda recibida local*/
+        $reportType = ReportType::find(25);
+        $reportType->associated_type_id = 15;
+        $reportType->save();
+
+        $reportType = ReportType::find(15);
+        $reportType->associated_type_id = 25;
+        $reportType->save();
     }
 }

@@ -309,6 +309,7 @@ class ReportController extends Controller
         }
         $inconsistence = new InconsistenceController();
         $insertedSub = $report->subreports()->createMany($data);
+        $insertedSub->load('report.user.store');
         $inconsistence->check_inconsistences($report, $insertedSub);
     }
  
