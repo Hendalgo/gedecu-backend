@@ -20,7 +20,7 @@ return new class extends Migration
                 ->references('id')
                 ->on('currencies')
                 ->onDelete('cascade')
-            ->onUpdate('cascade');
+                ->onUpdate('cascade');
 
             $table->unsignedBigInteger('store_id'); // Agrega la columna
             $table->foreign('store_id') // Establece la columna como clave foránea

@@ -21,23 +21,24 @@ class AuthController extends Controller
         try {
             $request->validate([
                 'email' => 'required|email',
-                'password' => 'required'
+                'password' => 'required',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['error' => 'Faltan campos requeridos'], 422);
         }
-    
+
         $credentials = request(['email', 'password']);
 
         if (! $token = auth()->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        
+
         if (auth()->user()->delete) {
             return response()->json([
-                "error" => "El usuario ya no existe"
+                'error' => 'El usuario ya no existe',
             ], 401);
         }
+
         return $this->respondWithToken($token);
     }
 
@@ -51,6 +52,7 @@ class AuthController extends Controller
         $user = auth()->user();
         $user->load('country.currency', 'balance.currency', 'store');
         $user->load('role');
+
         return response()->json($user);
     }
 
@@ -63,11 +65,13 @@ class AuthController extends Controller
     {
         if (is_numeric(auth()->user()->id)) {
             auth()->logout();
+
             return response()->json(['message' => 'Successfully logged out']);
         } else {
             return response()->json(['message' => 'No user to logout'], 401);
         }
     }
+
     protected function respondWithToken($token)
     {
 
@@ -75,7 +79,7 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'bearer',
             'expirtation' => auth()->factory()->getTTl(),
-            'user' => auth()->user()
+            'user' => auth()->user(),
         ]);
     }
 }

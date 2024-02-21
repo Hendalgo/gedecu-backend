@@ -21,7 +21,7 @@ class StoreFactory extends Factory
         $name = $this->faker->company();
         $location = $this->faker->address();
         $country = Country::where('delete', false)->where('id', '!=', 2)->inRandomOrder()->first()->id;
-        $user = User::where('delete', false)->where('role_id', 3)/*->where('country_id', $country)*/->inRandomOrder()->first()->id;
+        $user = User::where('delete', false)->where('role_id', 3)/*->where('country_id', $country)*/ ->inRandomOrder()->first()->id;
         $delete = $this->faker->boolean();
 
         return [
@@ -31,5 +31,5 @@ class StoreFactory extends Factory
             'user_id' => $user,
             'delete' => $delete,
         ];
-    } 
+    }
 }

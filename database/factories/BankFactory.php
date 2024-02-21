@@ -22,7 +22,7 @@ class BankFactory extends Factory
         $country_id = Country::where('delete', false)->inRandomOrder()->first()->id;
         $type_id = $this->faker->numberBetween(1, 2);
         $delete = $this->faker->boolean();
-        
+
         return [
             'name' => $name,
             'img' => $img,

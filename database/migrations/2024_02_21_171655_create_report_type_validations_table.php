@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('validation');
             $table->string('validation_role')->default('all');
-            $table->foreignId('report_type_id')->constrained("reports_types")->cascadeOnDelete();
+            $table->foreignId('report_type_id')->constrained('reports_types')->cascadeOnDelete();
             $table->timestamps();
         });
     }

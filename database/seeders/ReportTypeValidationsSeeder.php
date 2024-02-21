@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\ReportTypeValidations;
+use Illuminate\Database\Seeder;
 
 class ReportTypeValidationsSeeder extends Seeder
 {

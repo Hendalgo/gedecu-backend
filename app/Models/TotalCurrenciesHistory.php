@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class TotalCurrenciesHistory extends Model
 {
     use HasFactory;
+
     protected $fillable = ['currency_id', 'total'];
+
     protected $table = 'total_currencies_history';
 
     public function currency()

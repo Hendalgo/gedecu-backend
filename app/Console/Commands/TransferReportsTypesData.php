@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\ReportType;
 use App\Models\ReportTypeValidations;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Console\Command;
 
 class TransferReportsTypesData extends Command
@@ -35,7 +34,7 @@ class TransferReportsTypesData extends Command
             $data->map(function ($item, $key) use ($reportType, $data) {
                 $userRoleIds = Role::pluck('id')->toArray(); //Get all role ids
 
-                if ($key !== 'all' && !in_array($key, $userRoleIds)) {
+                if ($key !== 'all' && ! in_array($key, $userRoleIds)) {
                     return; //Skip if role id is not found thats mean is not a validation
                 }
                 $validations = [];

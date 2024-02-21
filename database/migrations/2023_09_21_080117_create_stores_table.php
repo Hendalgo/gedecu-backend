@@ -15,14 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('location');
-            
-            
+
             $table->unsignedBigInteger('country_id');
             $table->foreign('country_id')->references('id')->on('countries');
-            
-            $table->unsignedBigInteger('user_id')/* ->unique() */->nullable();
+
+            $table->unsignedBigInteger('user_id')/* ->unique() */ ->nullable();
             $table->foreign('user_id')->references('id')->on('users');
-            
+
             $table->boolean('delete')->default(false);
             $table->timestamps();
         });

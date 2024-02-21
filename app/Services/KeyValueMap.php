@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 class KeyValueMap
@@ -18,7 +19,7 @@ class KeyValueMap
 
             unset($item->sdata);
         });
+
         return $items;
     }
 }
-?>

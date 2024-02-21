@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/{any?}', function ($any = null) {
-    $path = $any ? public_path('react-app/' . $any) : public_path('index.html');
+    $path = $any ? public_path('react-app/'.$any) : public_path('index.html');
 
     if (file_exists($path)) {
         return response()->file($path);

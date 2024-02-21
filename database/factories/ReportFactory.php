@@ -20,16 +20,15 @@ class ReportFactory extends Factory
      * @return array<string, mixed>
      */
     public function definition(): array
-    {   
-        $bankAccount= BankAccount::inRandomOrder()->first();
+    {
+        $bankAccount = BankAccount::inRandomOrder()->first();
         $bank = Bank::inRandomOrder()->first();
-        $type =  ReportType::inRandomOrder()->first();
+        $type = ReportType::inRandomOrder()->first();
         $amount = fake()->randomFloat(2, 5000000, 1000000000000);
         if ($type->type === 'income') {
             $bankAccount->balance = $bankAccount->balance + abs($amount);
             $bankAccount->save();
-        }
-        elseif($type->type === 'expense'){
+        } elseif ($type->type === 'expense') {
             $bankAccount->balance = $bankAccount->balance - abs($amount);
             $bankAccount->save();
         }
@@ -48,8 +47,8 @@ class ReportFactory extends Factory
             'notes' => fake()->paragraph(),
             'user_id' => User::inRandomOrder()->first()->id,
             'type_id' => $type->id,
-            'bank_account_id' =>  $bankAccount->id,
-            'created_at' => fake()->dateTimeBetween('-7 days', 'now')
+            'bank_account_id' => $bankAccount->id,
+            'created_at' => fake()->dateTimeBetween('-7 days', 'now'),
         ];
     }
 }

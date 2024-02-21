@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\BankAccount;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class BankAccountSeeder extends Seeder
@@ -21,7 +20,7 @@ class BankAccountSeeder extends Seeder
         $cash->identifier = 158481878718718718;
         $cash->meta_data = json_encode([]);
         $cash->save();
-        
+
         $cash2 = new BankAccount();
 
         $cash2->name = 'Marta Sanchez';

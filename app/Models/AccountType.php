@@ -8,14 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class AccountType extends Model
 {
     use HasFactory;
-    protected $table = "accounts_types";
+
+    protected $table = 'accounts_types';
 
     protected $fillable = [
-        "name",
-        "description",
+        'name',
+        'description',
     ];
 
-    public function banks(){
-        return $this->hasMany(Bank::class, "type_id", "id");
+    public function banks()
+    {
+        return $this->hasMany(Bank::class, 'type_id', 'id');
     }
 }

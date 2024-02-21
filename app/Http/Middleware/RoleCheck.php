@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Http\Controllers\RoleController;
 use App\Models\User;
 use Closure;
 use Exception;
@@ -18,12 +17,13 @@ class RoleCheck
      */
     public function handle(Request $request, Closure $next, $permissions): Response
     {
-        try{
+        try {
             $user = User::find(auth()->user()->id);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
 
         }
+
         return $next($request);
     }
 }

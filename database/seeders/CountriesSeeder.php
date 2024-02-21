@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Country;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CountriesSeeder extends Seeder
@@ -24,12 +23,11 @@ class CountriesSeeder extends Seeder
             'styles' => [
                 'color' => '#FFFFFF',
                 'backgroundColor' => '#000000',
-                'borderColor' => '$FDFDFD'
-            ]
-            ]);
-        
-        $colombia->save();
+                'borderColor' => '$FDFDFD',
+            ],
+        ]);
 
+        $colombia->save();
 
         $venezuela = new Country();
 
@@ -39,9 +37,9 @@ class CountriesSeeder extends Seeder
             'styles' => [
                 'color' => '#FFFFFF',
                 'backgroundColor' => '#000000',
-                'borderColor' => '$FDFDFD'
-            ]
-            ]);
+                'borderColor' => '$FDFDFD',
+            ],
+        ]);
         $venezuela->is_initial = true;
         $venezuela->locale = 'es_VE';
         $venezuela->shortcode = 'VE';
@@ -56,8 +54,8 @@ class CountriesSeeder extends Seeder
             'styles' => [
                 'color' => '#FFFFFF',
                 'backgroundColor' => '#000000',
-                'borderColor' => '$FDFDFD'
-            ]
+                'borderColor' => '$FDFDFD',
+            ],
         ]);
         $usa->is_initial = true;
         $usa->locale = 'en_US';

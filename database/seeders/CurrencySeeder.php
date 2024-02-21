@@ -23,7 +23,7 @@ class CurrencySeeder extends Seeder
 
         $bolivar = new Currency();
 
-        $bolivar->name = "Bolivar Digital";
+        $bolivar->name = 'Bolivar Digital';
         $bolivar->shortcode = 'VES';
         $bolivar->symbol = 'Bs.';
         $bolivar->country_id = 2;
@@ -32,7 +32,7 @@ class CurrencySeeder extends Seeder
 
         $dolar = new Currency();
 
-        $dolar->name = "Dolar Americano";
+        $dolar->name = 'Dolar Americano';
         $dolar->shortcode = 'USD';
         $dolar->symbol = '$';
         $dolar->country_id = 3;

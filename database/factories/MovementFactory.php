@@ -22,17 +22,17 @@ class MovementFactory extends Factory
         $bank = BankAccount::find(json_decode($rand->meta_data)->bank_income);
         if ($rand->type->type === 'income') {
             $bank->balance = $bank->balance - abs($rand->amount);
-        }
-        elseif($rand->type->type === 'expense'){
+        } elseif ($rand->type->type === 'expense') {
             $bank->balance = $bank->balance + abs($rand->amount);
         }
+
         return [
             'amount' => $rand->amount,
             'bank_account_amount' => $bank->balance,
             'type' => $rand->type->type,
             'report_id' => $rand->id,
             'bank_account_id' => json_decode($rand->meta_data)->bank_income,
-            'created_at' => $rand->created_at
+            'created_at' => $rand->created_at,
         ];
     }
 }

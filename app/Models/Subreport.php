@@ -10,23 +10,30 @@ class Subreport extends Model
     use HasFactory;
 
     protected $fillable = [
-        "amount",
-        "duplicate",
-        "report_id",
-        "currency_id",
-        "duplicate_status"
+        'amount',
+        'duplicate',
+        'report_id',
+        'currency_id',
+        'duplicate_status',
     ];
 
-    public function report(){
+    public function report()
+    {
         return $this->belongsTo('\App\Models\Report', 'report_id');
     }
-    public function currency(){
+
+    public function currency()
+    {
         return $this->belongsTo('\App\Models\Currency', 'currency_id');
     }
-    public function inconsistences(){
+
+    public function inconsistences()
+    {
         return $this->hasOne('\App\Models\Inconsistence', 'subreport_id');
     }
-    public function data(){
+
+    public function data()
+    {
         return $this->hasMany('\App\Models\SubreportData', 'subreport_id');
     }
 }

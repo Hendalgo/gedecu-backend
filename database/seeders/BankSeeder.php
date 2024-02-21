@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Bank;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class BankSeeder extends Seeder
@@ -21,10 +20,10 @@ class BankSeeder extends Seeder
             'styles' => [
                 'color' => '#FFFFFF',
                 'backgroundColor' => '#000000',
-                'borderColor' => '#FDFDFD'
-            ]
-            ]);
-            
+                'borderColor' => '#FDFDFD',
+            ],
+        ]);
+
         $venezuela->currency_id = 1;
         $venezuela->save();
 
@@ -36,9 +35,9 @@ class BankSeeder extends Seeder
             'styles' => [
                 'color' => '#FFFFFF',
                 'backgroundColor' => '#000000',
-                'borderColor' => '#FDFDFD'
-            ]
-            ]);
+                'borderColor' => '#FDFDFD',
+            ],
+        ]);
         $santander->currency_id = 2;
         $santander->save();
     }

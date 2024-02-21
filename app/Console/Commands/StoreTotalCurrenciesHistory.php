@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\BankAccount;
 use App\Models\TotalCurrenciesHistory;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class StoreTotalCurrenciesHistory extends Command
@@ -27,7 +28,7 @@ class StoreTotalCurrenciesHistory extends Command
         foreach ($currencies as $currency) {
             $currency_history = TotalCurrenciesHistory::where('currency_id', $currency->currency_id)
                 ->latest('created_at')
-                ->first();  
+                ->first();
             if ($currency_history->total != $currency->total) {
                 TotalCurrenciesHistory::create([
                     'currency_id' => $currency->currency_id,
@@ -37,5 +38,4 @@ class StoreTotalCurrenciesHistory extends Command
         }
         Log::info('Finished total currencies history storage');
     }
-    
 }

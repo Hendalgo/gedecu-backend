@@ -16,7 +16,7 @@ class UserHasStoreRule implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         $store = Store::where('user_id', auth()->id())->first();
-        if (!$store) {
+        if (! $store) {
             $fail('Debe poseer un local asignado para crear este reporte.');
         }
     }

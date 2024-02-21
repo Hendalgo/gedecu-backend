@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\AccountType;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class AccountTypeSeeder extends Seeder
@@ -14,8 +13,8 @@ class AccountTypeSeeder extends Seeder
     public function run(): void
     {
         $AccountType = new AccountType();
-        $AccountType->name = "Banco";
-        $AccountType->description = "Cuenta bancaria";
+        $AccountType->name = 'Banco';
+        $AccountType->description = 'Cuenta bancaria';
 
         $AccountType->save();
 

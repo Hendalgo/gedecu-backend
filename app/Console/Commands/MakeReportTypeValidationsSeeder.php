@@ -51,7 +51,7 @@ class MakeReportTypeValidationsSeeder extends Command
 
         fwrite($file, "    }\n");
         fwrite($file, "}\n");
-        
+
         fclose($file);
 
         $this->info('Seeder created successfully.');

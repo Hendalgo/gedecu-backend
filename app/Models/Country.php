@@ -8,26 +8,36 @@ use Illuminate\Database\Eloquent\Model;
 class Country extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-        "name",
-        "shortcode",
-        "config",
-        "locale",
-        "img",
-        "delete"
+        'name',
+        'shortcode',
+        'config',
+        'locale',
+        'img',
+        'delete',
     ];
-    public function banks(){
+
+    public function banks()
+    {
         return $this->hasMany('\App\Models\Bank', 'country_id');
     }
-    public function users(){
+
+    public function users()
+    {
         return $this->hasMany('\App\Models\User', 'country_id');
     }
-    public function currency(){
+
+    public function currency()
+    {
         return $this->hasOne('\App\Models\Currency', 'country_id');
     }
-    public function stores(){
+
+    public function stores()
+    {
         return $this->hasMany('\App\Models\Store', 'country_id');
     }
+
     public function delete()
     {
         foreach ($this->banks as $bank) {
@@ -41,6 +51,7 @@ class Country extends Model
             $user->delete();
         }
         $this->delete = 1;
+
         return $this->save();
     }
 }

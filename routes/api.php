@@ -14,7 +14,6 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,17 +30,17 @@ use Illuminate\Support\Facades\Route;
 Route::group([
 
     'middleware' => 'api',
-    'prefix' => 'auth'
+    'prefix' => 'auth',
 
 ], function ($router) {
 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
 });
-Route::middleware('auth.veryfied')->group(function (){
+Route::middleware('auth.veryfied')->group(function () {
     Route::get('user', [AuthController::class, 'me']);
     /*
-        Bank types 
+        Bank types
     */
     Route::get('banks/types', [AccountTypeController::class, 'index']);
 
@@ -53,7 +52,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::get('banks/{id}', [BankController::class, 'show']);
     Route::put('banks/{id}', [BankController::class, 'update']);
     Route::delete('banks/{id}', [BankController::class, 'destroy']);
-    
+
     /**
      * Banks Accounts Routes
      */
@@ -63,7 +62,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy']);
     /*
         Users routes
-    */ 
+    */
     Route::get('users', [UserController::class, 'index']);
     Route::get('users/balances', [UserController::class, 'getBalances']);
     Route::get('users/roles', [UserController::class, 'getUserRoles']);
@@ -72,7 +71,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::put('users/{id}', [UserController::class, 'update']);
     Route::delete('users/{id}', [UserController::class, 'destroy']);
     /*
-     * Countries Routes 
+     * Countries Routes
      */
     Route::get('countries', [CountryController::class, 'index']);
     Route::get('countries/banks', [CountryController::class, 'getBanksCount']);
@@ -80,15 +79,15 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::post('countries', [CountryController::class, 'store']);
     Route::put('countries/{id}', [CountryController::class, 'update']);
     Route::delete('countries/{id}', [CountryController::class, 'destroy']);
-     /*
-     * Currencies Routes 
-     */
+    /*
+    * Currencies Routes
+    */
     Route::get('currencies', [CurrencyController::class, 'index']);
     Route::get('currencies/{id}', [CurrencyController::class, 'show']);
     Route::post('currencies', [CurrencyController::class, 'store']);
     Route::put('currencies/{id}', [CurrencyController::class, 'update']);
     Route::delete('currencies/{id}', [CurrencyController::class, 'destroy']);
-    
+
     /*
      * Reports Types Routes
      * */
@@ -100,7 +99,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::put('reports/duplicated/{id}', [DuplicatedReportController::class, 'duplicated_complete']);
     Route::get('reports/duplicated/{id}', [DuplicatedReportController::class, 'show']);
     /*
-    * Reports Routes 
+    * Reports Routes
     */
     Route::get('reports', [ReportController::class, 'index']);
     Route::get('reports/inconsistences', [ReportController::class, 'getInconsistences']);
@@ -109,7 +108,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::put('reports/{id}', [ReportController::class, 'update']);
     Route::delete('reports/{id}', [ReportController::class, 'destroy']);
     /*
-    * Stores Routes 
+    * Stores Routes
     */
     Route::get('stores', [StoreController::class, 'index']);
     Route::get('stores/{id}', [StoreController::class, 'show']);
@@ -117,7 +116,7 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::put('stores/{id}', [StoreController::class, 'update']);
     Route::delete('stores/{id}', [StoreController::class, 'destroy']);
     /*
-    * Role Routes 
+    * Role Routes
     */
     Route::get('role', [RoleController::class, 'index']);
 
@@ -125,7 +124,6 @@ Route::middleware('auth.veryfied')->group(function (){
     Route::get('statistics', [StatisticsController::class, 'getMovementsByPeriods']);
     Route::get('statistics/total-currencies', [StatisticsController::class, 'getTotalByCurrency']);
     Route::get('statistics/total-banks', [StatisticsController::class, 'getTotalByBank']);
-
 
     /*Inconsistences*/
     Route::get('inconsistences', [InconsistenceController::class, 'index']);

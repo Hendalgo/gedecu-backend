@@ -31,7 +31,7 @@ class TransferSubreportData extends Command
 
         foreach ($subreports as $subreport) {
             $data = json_decode($subreport->data, true);
-        
+
             foreach ($data as $key => $value) {
                 SubreportData::create([
                     'subreport_id' => $subreport->id,

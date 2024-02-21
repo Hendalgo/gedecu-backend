@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RolesSeeder extends Seeder
@@ -14,16 +13,16 @@ class RolesSeeder extends Seeder
     public function run(): void
     {
         $user = new Role();
-        $user->name = "Administrador";
-        $user->description = "Super admin, acceso a todas las funcionalidades de la aplicación";
-        $user->permissions = json_encode(array());
+        $user->name = 'Administrador';
+        $user->description = 'Super admin, acceso a todas las funcionalidades de la aplicación';
+        $user->permissions = json_encode([]);
 
         $user->save();
 
         $user = new Role();
         $user->name = 'Gestor';
         $user->description = '';
-        $user->permissions = json_encode(array());
+        $user->permissions = json_encode([]);
 
         $user->save();
 
@@ -31,14 +30,14 @@ class RolesSeeder extends Seeder
         $user->name = 'Encargado de local';
         $user->description = '';
         $user->permissions = json_encode([]);
-        
+
         $user->save();
 
         $user = new Role();
         $user->name = 'Proveedor';
         $user->description = '';
         $user->permissions = json_encode([]);
-        
+
         $user->save();
 
         $user = new Role();
@@ -47,7 +46,7 @@ class RolesSeeder extends Seeder
         $user->permissions = json_encode([]);
 
         $user->save();
-        
+
         $user = new Role();
         $user->name = 'Caja Fuerte';
         $user->description = '';

@@ -13,18 +13,24 @@ class Report extends Model
         'meta_data',
         'user_id',
         'type_id',
-        'delete'
+        'delete',
     ];
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo('App\Models\User', 'user_id', 'id');
     }
-    public function type(){
+
+    public function type()
+    {
         return $this->belongsTo('App\Models\ReportType', 'type_id', 'id');
     }
-    public function subreports(){
+
+    public function subreports()
+    {
         return $this->hasMany('App\Models\Subreport', 'report_id', 'id');
     }
+
     public function delete()
     {
         /* $this->subreports()->delete();

@@ -27,12 +27,12 @@ class UserFactory extends Factory
         $country_id = Country::where('delete', false)->inRandomOrder()->first()->id;
         $role_id = null;
         $delete = $this->faker->boolean();
-        if ($country_id === 2){
+        if ($country_id === 2) {
             $role_id = Role::inRandomOrder()->whereIn('id', [1, 2])->first()->id;
+        } else {
+            $role_id = Role::inRandomOrder()->where('id', '!=', 2)->first()->id;
         }
-        else{
-            $role_id = Role::inRandomOrder()->where('id', "!=", 2)->first()->id;
-        }
+
         return [
             'name' => $name,
             'email' => $email,

@@ -12,7 +12,7 @@ class Inconsistence extends Model
     protected $fillable = [
         'subreport_id',
         'verified',
-        'data'
+        'data',
     ];
 
     public function subreport()

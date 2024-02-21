@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\TestCase;
 
 class AuthControllerTest extends TestCase
 {
@@ -21,7 +21,7 @@ class AuthControllerTest extends TestCase
         $request = new Request();
         $request->replace([
             'email' => 'admin@gedecu.com',
-            'password' => 'password'
+            'password' => 'password',
         ]);
 
         $response = $this->authController->login($request);
@@ -34,7 +34,7 @@ class AuthControllerTest extends TestCase
         $request = new Request();
         $request->replace([
             'email' => 'test@example.com',
-            'password' => 'wrongpassword'
+            'password' => 'wrongpassword',
         ]);
 
         $response = $this->authController->login($request);
