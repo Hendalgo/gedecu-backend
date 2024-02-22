@@ -18,6 +18,12 @@ class InconsistenceController extends Controller
 
     public function index(Request $request)
     {
+        //Just can access admin
+        $currentUser = auth()->user();
+        if ($currentUser->role_id != 1) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        
         //Get query parameters
         $since = $request->input('since');
         $until = $request->input('until');
@@ -67,7 +73,7 @@ class InconsistenceController extends Controller
             $subreports = $subreports->whereBetween('subreports.created_at', [$since, $until]);
         }
 
-        return response()->json($subreports);
+        return response()->json($subreports); 
     }
 
     public function invoke($filtered, $sub, $type)
