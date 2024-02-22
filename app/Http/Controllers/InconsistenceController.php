@@ -18,15 +18,54 @@ class InconsistenceController extends Controller
 
     public function index(Request $request)
     {
+        //Get query parameters
+        $since = $request->input('since');
+        $until = $request->input('until');
+        $search = $request->input('search');
+        $type = $request->input('type');
+        $date = $request->input('date');
+        $per_page = $request->input('per_page', 10);
+        $paginate = $request->input('paginate', 'yes');
+        
         //Get subreports that are not verified on the inconsistencies table
         $subreports = Subreport::join('inconsistences', 'subreports.id', '=', 'inconsistences.subreport_id')
             ->select('subreports.*')
             ->where('inconsistences.verified', 0)
-            ->with('report.type', 'data')
-            ->get();
+            ->with('report.type', 'data', 'report.user.store');
 
-        //transform data to key value
-        $subreports = $this->keyValueMap->transformElement($subreports);
+        if($paginate == 'yes'){
+            $subreports = $subreports->paginate($per_page);
+        }
+        else{
+            $subreports = $subreports->get();
+        }
+    
+        //If the date is set, then filter the subreports by date
+        if ($date) {
+            $subreports = $subreports->whereDate('subreports.created_at', $date);
+        }
+        if ($type) {
+            $subreports = $subreports->whereHas('report.type', function ($query) use ($type) {
+                $query->where('id', $type);
+            });
+        }
+        if ($search) {
+            $subreports = $subreports->when($search, function ($query, $search) {
+                return $query->where('data', 'like', '%' . $search . '%')
+                        ->orWhere('created_at', 'like', '%' . $search . '%')
+                        ->orWhereHas('report.user.store', function ($query) use ($search) {
+                            $query->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('location', 'like', '%' . $search . '%');
+                        })
+                        ->orWhereHas('report.user', function ($query) use ($search) {
+                            $query->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('email', 'like', '%' . $search . '%');
+                        });
+            });
+        }
+        if ($since && $until) {
+            $subreports = $subreports->whereBetween('subreports.created_at', [$since, $until]);
+        }
 
         return response()->json($subreports);
     }
