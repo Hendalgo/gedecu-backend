@@ -26,6 +26,9 @@ class BankFactory extends Factory
         return [
             'name' => $name,
             'img' => $img,
+            'meta_data' => json_encode([
+                'styles' => [],
+            ]),
             'country_id' => $country_id,
             'type_id' => $type_id,
             'delete' => $delete,

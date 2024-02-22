@@ -62,7 +62,7 @@ class BankController extends Controller
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'image' => 'image',
                 'country' => 'required|exists:countries,id',
-                'type_id' => 'required|exists:accounts_types,id',
+                'type_id' => 'required|exists:accounts_types,id|in:1,2',
             ], $message);
             $validatedData['meta_data'] = json_encode([
                 'styles' => [],

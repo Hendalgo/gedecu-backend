@@ -2,9 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\Bank;
 use App\Models\Country;
+use App\Models\Currency;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Store>
@@ -16,20 +20,35 @@ class StoreFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition(): array
+    public function definition()
     {
-        $name = $this->faker->company();
-        $location = $this->faker->address();
-        $country = Country::where('delete', false)->where('id', '!=', 2)->inRandomOrder()->first()->id;
-        $user = User::where('delete', false)->where('role_id', 3)/*->where('country_id', $country)*/ ->inRandomOrder()->first()->id;
-        $delete = $this->faker->boolean();
+        $user = User::whereHas('role', function ($query) {
+            $query->where('id', 3);
+        })->get()->random();
 
-        return [
-            'name' => $name,
-            'location' => $location,
-            'country_id' => $country,
-            'user_id' => $user,
-            'delete' => $delete,
+        $country = Country::all()->random();
+
+        $storeData = [
+            'name' => $this->faker->company,
+            'location' => $this->faker->address,
+            'user_id' => $user->id,
+            'country_id' => $country->id,
         ];
+
+        DB::transaction(function () use ($storeData) {
+            $store = Store::create($storeData);
+
+            $bankAccountData = [
+                'name' => 'Efectivo',
+                'identifier' => 'Efectivo',
+                'balance' => $this->faker->randomFloat(2, 0, 10000),
+                'currency_id' => $store->country->currency->id,
+                'account_type_id' => 3,
+            ];
+
+            $store->accounts()->create($bankAccountData);
+        });
+
+        return $storeData;
     }
 }

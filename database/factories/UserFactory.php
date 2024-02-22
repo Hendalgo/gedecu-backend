@@ -4,7 +4,10 @@ namespace Database\Factories;
 
 use App\Models\Country;
 use App\Models\Role;
+use App\Models\User;
+use App\Models\UserBalance;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -17,31 +20,34 @@ class UserFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition(): array
+    public function definition()
     {
-        $name = $this->faker->name();
-        $email = $this->faker->unique()->safeEmail();
-        $email_verified_at = now();
-        $password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // password
-        $remember_token = Str::random(10);
-        $country_id = Country::where('delete', false)->inRandomOrder()->first()->id;
-        $role_id = null;
-        $delete = $this->faker->boolean();
-        if ($country_id === 2) {
-            $role_id = Role::inRandomOrder()->whereIn('id', [1, 2])->first()->id;
-        } else {
-            $role_id = Role::inRandomOrder()->where('id', '!=', 2)->first()->id;
-        }
-
         return [
-            'name' => $name,
-            'email' => $email,
-            'email_verified_at' => $email_verified_at,
-            'password' => $password,
-            'remember_token' => $remember_token,
-            'country_id' => $country_id,
-            'role_id' => $role_id,
-            'delete' => $delete,
+            'name' => $this->faker->name,
+            'email' => $this->faker->unique()->safeEmail,
+            'password' => Hash::make('password'), // password
+            'country_id' => Country::all()->random()->id,
+            'role_id' => Role::all()->random()->id,
+            'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Configure the model factory.
+     *
+     * @return $this
+     */
+    public function configure()
+    {
+        return $this->afterCreating(function (User $user) {
+            if ($user->role_id == 5 || $user->role_id == 6) {
+                $currency = Country::with('currency')->find($user->country_id);
+                UserBalance::create([
+                    'user_id' => $user->id,
+                    'balance' => fake()->randomFloat(2, 0, 1000),
+                    'currency_id' => $currency->currency->id,
+                ]);
+            }
+        });
     }
 }

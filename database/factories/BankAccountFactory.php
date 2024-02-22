@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Bank;
+use App\Models\Currency;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,22 +20,26 @@ class BankAccountFactory extends Factory
      */
     public function definition(): array
     {
-        $name = $this->faker->name();
-        $balance = $this->faker->numberBetween(1000, 1000000);
-        $identifier = $this->faker->creditCardNumber();
-        $bank_id = Bank::where('delete', false)->inRandomOrder()->first()->id;
-        $user_id = User::where('delete', false)->whereIn('role_id', [2])->inRandomOrder()->first()->id;
-        $currecy_id = $this->faker->numberBetween(1, 2, 3);
-        $delete = $this->faker->boolean();
+        $accountType = $this->faker->randomElement([1, 2]);
+        $userId = null;
+        $storeId = null;
+
+        if ($accountType == 1) {
+            $userId = User::factory()->create(['role_id' => 2])->id;
+        } else {
+            $storeId = Store::factory()->create()->id;
+        }
 
         return [
-            'name' => $name,
-            'balance' => $balance,
-            'identifier' => $identifier,
-            'bank_id' => $bank_id,
-            'user_id' => $user_id,
-            'currency_id' => $currecy_id,
-            'delete' => $delete,
+            'name' => $this->faker->name,
+            'identifier' => $this->faker->unique()->bankAccountNumber,
+            'bank_id' => Bank::all()->random()->id,
+            'balance' => $this->faker->randomFloat(2, 0, 10000),
+            'account_type_id' => $accountType,
+            'meta_data' => json_encode([]),
+            'currency_id' => Currency::all()->random()->id,
+            'user_id' => $userId,
+            'store_id' => $storeId,
         ];
     }
 }
