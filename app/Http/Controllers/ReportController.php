@@ -88,7 +88,7 @@ class ReportController extends Controller
         //If the user is admin and the request has a user id, get all reports from that user with subreports
         //else get the reports, with the subreport from current user
         if ($currentUser->role->id === 1) {
-            $query = $query->where('reports.user_id', $user)->with('type', 'subreports');
+            $query = $query->where('reports.user_id', $user)->with('type', 'subreports', 'user.role');
 
             return response()->json($query->paginate(10), 200);
         } else {
