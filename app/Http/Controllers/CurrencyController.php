@@ -37,8 +37,8 @@ class CurrencyController extends Controller
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $validatedData = $request->validate([
-                'name' => 'required|string|max:255',
-                'shortcode' => 'required|string|min:2|max:4',
+                'name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
+                'shortcode' => 'required|string|min:2|max:4|regex:/^[a-zA-Z\s]+$/',
                 'symbol' => 'required|string',
                 'country_id' => 'required|integer|exists:countries,id|unique:currencies,country_id',
             ]);

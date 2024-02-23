@@ -331,13 +331,11 @@ class ReportController extends Controller
         $subreport_data = [];
         foreach ($insertedSubs as $index => $insertedSub) {
             foreach ($subreport[$index] as $key => $value) {
-                if ($key !== 'isDuplicated') {
-                    $subreport_data[] = [
-                        'key' => $key,
-                        'value' => $value,
-                        'subreport_id' => $insertedSub->id,
-                    ];
-                }
+                $subreport_data[] = [
+                    'key' => $key,
+                    'value' => $value,
+                    'subreport_id' => $insertedSub->id,
+                ];
             }
         }
         SubreportData::insert($subreport_data);

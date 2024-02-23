@@ -37,10 +37,12 @@ class CountryController extends Controller
             $message = [
                 'country_name.required' => 'El nombre del país es requerido',
                 'country_shortcode.required' => 'El código de país es requerido',
+                'country_name.regex' => 'El nombre del país solo puede contener letras',
+                'country_shortcode.regex' => 'El código de país solo puede contener letras',
             ];
             $validatedData = $request->validate([
-                'country_name' => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
-                'country_shortcode' => 'required|string|min:2|max:4',
+                'country_name' => "required|string|max:255|regex:/^[a-zA-Z\s]+$/",
+                'country_shortcode' => 'required|string|min:2|max:4|regex:/^[a-zA-Z\s]+$/',
                 'locale' => 'string|max:20',
             ], $message);
             $country = Country::create([
@@ -73,10 +75,12 @@ class CountryController extends Controller
             $message = [
                 'country_name.required' => 'El nombre del país es requerido',
                 'country_shortcode.required' => 'El código de país es requerido',
+                'country_name.regex' => 'El nombre del país solo puede contener letras',
+                'country_shortcode.regex' => 'El código de país solo puede contener letras',
             ];
             $validatedData = $request->validate([
-                'country_name' => "required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/",
-                'country_shortcode' => 'required|string|min:2|max:4',
+                'country_name' => "required|string|max:255|regex:/^[a-zA-Z\s]+$/",
+                'country_shortcode' => 'required|string|min:2|max:4|regex:/^[a-zA-Z\s]+$/',
                 'locale' => 'string|max:20',
             ], $message);
 
