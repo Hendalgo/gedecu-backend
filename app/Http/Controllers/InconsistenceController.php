@@ -247,7 +247,7 @@ class InconsistenceController extends Controller
         foreach ($subreports as $sub) {
             //if the subreport is duplicated, then skip it
             $sub->data = json_encode($sub->data);
-            if ($sub->duplicated) {
+            if ($sub->duplicate) {
                 continue;
             }
             //Filter the subreports that have the same currency and amount
