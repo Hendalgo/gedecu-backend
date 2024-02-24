@@ -2,9 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Bank;
 use App\Models\Country;
-use App\Models\Currency;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;

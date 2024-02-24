@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\User;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class BankAccountController extends Controller
 {
-    public function index(Request $request){
+    public function index(Request $request)
+    {
         $order = $request->get('order');
         $orderBy = $request->get('order_by', 'desc');
         $since = $request->get('since');
@@ -37,17 +38,17 @@ class BankAccountController extends Controller
             'currency' => 'integer|exists:currencies,id',
         ]);
         $bank_account = BankAccount::where('banks_accounts.delete', false)
-                ->where('banks_accounts.account_type_id', "!=", 3)
-                ->leftjoin('banks', 'banks_accounts.bank_id', '=', "banks.id")
-                ->leftjoin('countries', 'banks.country_id', '=', "countries.id")
-                ->leftjoin('users', 'user_id', "=", "users.id")
-                ->leftjoin('stores', 'banks_accounts.store_id', '=', "stores.id")
-                ->select('banks_accounts.*');
+            ->where('banks_accounts.account_type_id', '!=', 3)
+            ->leftjoin('banks', 'banks_accounts.bank_id', '=', 'banks.id')
+            ->leftjoin('countries', 'banks.country_id', '=', 'countries.id')
+            ->leftjoin('users', 'user_id', '=', 'users.id')
+            ->leftjoin('stores', 'banks_accounts.store_id', '=', 'stores.id')
+            ->select('banks_accounts.*');
         $country = $request->get('country');
         $type = $request->get('type');
-        
+
         if ($search) {
-            $bank_account = $bank_account->where(function ($query) use ($search){
+            $bank_account = $bank_account->where(function ($query) use ($search) {
                 $query->where('banks_accounts.name', 'LIKE', '%'.$search.'%')
                     ->orWhere('banks_accounts.identifier', 'LIKE', '%'.$search.'%')
                     ->orWhere('banks.name', 'LIKE', '%'.$search.'%')
@@ -62,7 +63,7 @@ class BankAccountController extends Controller
         if ($bank) {
             $bank_account = $bank_account->where('bank_id', $bank);
         }
-        if($type){
+        if ($type) {
             $bank_account = $bank_account->where('type_id', $type);
         }
         if ($country) {
@@ -82,17 +83,16 @@ class BankAccountController extends Controller
         }
         if ($order) {
             $bank_account = $bank_account->orderBy('banks_accounts.'.$order, $orderBy);
-        }
-        else{
+        } else {
             $bank_account = $bank_account->orderBy('banks_accounts.created_at', 'desc');
         }
-        if($user->role->id === 3){
+        if ($user->role->id === 3) {
             $bank_account = $bank_account->where('banks_accounts.store_id', $user->store->id);
         }
         if ($user->role->id === 2) {
             $bank_account = $bank_account->where('banks_accounts.user_id', $user->id);
         }
-        if($user->role->id === 5 || $user->role->id === 6){
+        if ($user->role->id === 5 || $user->role->id === 6) {
             return response()->json(['message' => 'No tiene acceso a estas cuentas'], 403);
         }
         if ($userParam) {
@@ -100,15 +100,19 @@ class BankAccountController extends Controller
         }
         if ($paginated === 'no') {
             $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->get();
+        } else {
+            $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->paginate($per_page);
         }
-        else{
-            $bank_account = $bank_account->with('bank.country', 'bank.type','currency', 'user', 'store.user')->paginate($per_page);
-        }
+
         return response()->json($bank_account, 200);
     }
-    public function create(){
+
+    public function create()
+    {
     }
-    public function store(Request $request){
+
+    public function store(Request $request)
+    {
         $user = User::find(auth()->user()->id);
         $messages = [
             'name.required' => 'El nombre es un campo requerido',
@@ -117,10 +121,10 @@ class BankAccountController extends Controller
             'bank.exist' => 'Banco no existe',
             'balance.required' => 'Balance de la cuenta requerido',
             'balance.numeric' => 'Balance debe ser númerico',
-            "user.required" => 'Usuario es requerido',
-            "user.exist" => 'Usuario no existe'
+            'user.required' => 'Usuario es requerido',
+            'user.exist' => 'Usuario no existe',
         ];
-        
+
         if ($user->role->id === 1) {
             /* $validatedData = $request->validate([
                 'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
@@ -149,12 +153,11 @@ class BankAccountController extends Controller
                 return response()->json(['error'=> 'Hubo un problema al crear el reporte'], 500);
             } */
             return response()->json(['message' => 'forbiden'], 403);
-        }
-        else{
+        } else {
             if ($user->role->id === 3) {
                 $validatedData = $request->validate([
-                    'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                    'identifier'=> 'required|string|min:2|max:255',
+                    'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                    'identifier' => 'required|string|min:2|max:255',
                     'bank_id' => 'required|exists:banks,id',
                     'balance' => 'required|numeric',
                     'currency_id' => 'required|exists:currencies,id',
@@ -166,21 +169,21 @@ class BankAccountController extends Controller
                 ]);
                 $bank_type = Bank::find($validatedData['bank_id'])->type_id;
                 $bank_account = BankAccount::create([
-                    "name" => $validatedData['name'],
-                    "identifier" => $validatedData['identifier'],
-                    "bank_id" => $validatedData['bank_id'],
-                    "store_id" => $user->store->id,
-                    "balance" => $validatedData['balance'],
-                    "meta_data" => json_encode([]),
-                    "currency_id" => $validatedData['currency_id'],
+                    'name' => $validatedData['name'],
+                    'identifier' => $validatedData['identifier'],
+                    'bank_id' => $validatedData['bank_id'],
+                    'store_id' => $user->store->id,
+                    'balance' => $validatedData['balance'],
+                    'meta_data' => json_encode([]),
+                    'currency_id' => $validatedData['currency_id'],
                     'account_type_id' => $bank_type == 1 ? 1 : 2,
                 ]);
+
                 return response()->json($bank_account, 201);
-            }
-            else{
+            } else {
                 $validatedData = $request->validate([
-                    'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                    'identifier'=> 'required|string|min:2|max:255',
+                    'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                    'identifier' => 'required|string|min:2|max:255',
                     'bank_id' => 'required|exists:banks,id',
                     'balance' => 'required|numeric',
                     'currency_id' => 'required|exists:currencies,id',
@@ -188,26 +191,32 @@ class BankAccountController extends Controller
 
                 $bank_type = Bank::find($validatedData['bank_id'])->type_id;
                 $bank_account = BankAccount::create([
-                    "name" => $validatedData['name'],
-                    "identifier" => $validatedData['identifier'],
-                    "bank_id" => $validatedData['bank_id'],
-                    "user_id" => $user->id,
-                    "balance" => $validatedData['balance'],
-                    "meta_data" => json_encode([]),
-                    "currency_id" => $validatedData['currency_id'],
+                    'name' => $validatedData['name'],
+                    'identifier' => $validatedData['identifier'],
+                    'bank_id' => $validatedData['bank_id'],
+                    'user_id' => $user->id,
+                    'balance' => $validatedData['balance'],
+                    'meta_data' => json_encode([]),
+                    'currency_id' => $validatedData['currency_id'],
                     'account_type_id' => $bank_type == 1 ? 1 : 2,
                 ]);
+
                 return response()->json($bank_account, 201);
             }
         }
+
         return response()->json(['message' => 'errors'], 500);
     }
-    public function show($id){
+
+    public function show($id)
+    {
         return response()->json(BankAccount::find($id), 200);
     }
-    public function update(Request $request, $id){
+
+    public function update(Request $request, $id)
+    {
         $user = User::find(auth()->user()->id);
-            
+
         if ($user->role->id === 1) {
             $messages = [
                 'name.required' => 'El nombre es un campo requerido',
@@ -216,25 +225,24 @@ class BankAccountController extends Controller
                 'bank.exist' => 'Banco no existe',
                 'balance.required' => 'Balance de la cuenta requerido',
                 'balance.numeric' => 'Balance debe ser númerico',
-                'user.required' => 'El usuario es requerido'
+                'user.required' => 'El usuario es requerido',
             ];
             $validatedData = $request->validate([
-                'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'identifier'=> 'required|string|min:2|max:255',
+                'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                'identifier' => 'required|string|min:2|max:255',
                 'bank_id' => 'required|exists:banks,id',
                 'currency_id' => 'required|exists:currencies,id',
             ], $messages);
             $bank = BankAccount::find($id);
             foreach ($validatedData as $field => $value) {
-                if ($field !== 'bank' && $field !== "user") {
+                if ($field !== 'bank' && $field !== 'user') {
                     $bank->$field = $value;
                 }
             }
             $bank->save();
-    
+
             return response()->json($bank, 201);
-        }
-        else{
+        } else {
             $messages = [
                 'name.required' => 'El nombre es un campo requerido',
                 'identifier.required' => 'Identificador requerido, recuerde que este es lo que permite diferenciar entre cuentas, ejemplo el numero de cuenta o correo electronico',
@@ -244,8 +252,8 @@ class BankAccountController extends Controller
                 'balance.numeric' => 'Balance debe ser númerico',
             ];
             $validatedData = $request->validate([
-                'name'=> 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
-                'identifier'=> 'required|string|min:2|max:255',
+                'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                'identifier' => 'required|string|min:2|max:255',
                 'bank_id' => 'required|exists:banks,id',
                 'currency_id' => 'required|exists:currencies,id',
             ], $messages);
@@ -254,33 +262,37 @@ class BankAccountController extends Controller
                 return response()->json(['message' => 'forbiden'], 401);
             }
             foreach ($validatedData as $field => $value) {
-                if ($field !== 'bank' && $field !== "user") {
+                if ($field !== 'bank' && $field !== 'user') {
                     $bank->$field = $value;
                 }
             }
             $bank->save();
-    
+
             return response()->json($bank, 201);
         }
     }
-    public function destroy($id){
+
+    public function destroy($id)
+    {
         $user = User::find(auth()->user()->id);
         if ($user->role->id === 1) {
             $bank = BankAccount::find($id);
             $bank->delete();
-            return response()->json(['message'=> 'exito'], 201);
-        }
-        else{
+
+            return response()->json(['message' => 'exito'], 201);
+        } else {
             $user = User::find(auth()->user()->id);
             $bank = BankAccount::with('store')->find($id);
 
             if ($bank->store_id === $user->store->id || $bank->user_id === $user->id) {
                 $bank->delete();
+
                 return response()->json(['message' => 'exito'], 201);
             }
 
             return response()->json(['message' => 'forbidden'], 401);
         }
+
         return response()->json(['message' => 'forbiden'], 401);
     }
 }
