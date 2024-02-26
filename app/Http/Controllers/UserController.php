@@ -187,17 +187,46 @@ class UserController extends Controller
                 }
             }
             $user->save();
+            return response()->json(['message' => 'exito'], 201);
+        }
+        else if($currentUser->id == $id){
+            $messages = [
+                'name.required' => 'El nombre es requerido',
+                'email.unique' => 'Usuario ya registrado',
+                'email.required' => 'Email requerido',
+                'password.required' => 'Contraseña requerida',
+                'password.confirmed' => 'Contraseña no coincide con la confirmación',
+                'password.min' => 'Contraseña requiere minimo 8 caracteres',
+                'password.max' => 'Contraseña máximo 16 caracteres',
+                'country_id.exist' => 'País no registrado',
+                'role_id.exist' => 'Rol inválido',
+            ];
+            $validatedData = $request->validate([
+                'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
+                'password' => 'min:8|max:16|confirmed',
+                'image' => 'image',
+                'country_id' => 'required|exists:countries,id',
+                'role_id' => 'required|exists:roles,id',
+            ], $messages);
 
-            if ($user->role_id == 5 || $user->role_id == 6) {
-                $currency = Country::with('currency')->find($user->country_id);
-                $userBalance = UserBalance::where('user_id', $user->id)->first();
-                $userBalance->currency_id = $currency->currency->id;
-                $userBalance->save();
+            if (isset($validatedData['image'])) {
+                $imageName = time().'.'.$request->image->extension();
+                $request->image->move(public_path('images'), $imageName);
+                $validatedData['img'] = asset('images/'.$imageName);
             }
+
+            $user = $currentUser;
+
+            foreach ($validatedData as $field => $value) {
+                $user->$field = $value;
+                if ($field === 'email') {
+                    $user->$field = $user->email;
+                }
+            }
+            $user->save();
 
             return response()->json(['message' => 'exito'], 201);
         }
-
         return response()->json(['message' => 'forbiden'], 401);
 
     }
