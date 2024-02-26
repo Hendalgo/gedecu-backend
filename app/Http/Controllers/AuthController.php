@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -19,10 +21,12 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
+            
             $request->validate([
                 'email' => 'required|email',
                 'password' => 'required',
             ]);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['error' => 'Faltan campos requeridos'], 422);
         }
@@ -39,7 +43,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        return $this->respondWithToken($token);
+        return $this->responseWithToken($token);
     }
 
     /**
@@ -72,14 +76,29 @@ class AuthController extends Controller
         }
     }
 
-    protected function respondWithToken($token)
+    protected function responseWithToken($token)
     {
-
+        auth()->user()->refresh();
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
             'expirtation' => auth()->factory()->getTTl(),
             'user' => auth()->user(),
         ]);
+    }
+    public function refreshToken() {
+        
+        $token = JWTAuth::getToken();
+        
+        if (!$token) {
+            return response()->json(['error' => 'Token not provided'], 401);
+        }
+    
+        try {
+            $newToken = JWTAuth::refresh($token);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => 'Token invalid'], 401);
+        }
+        return $this->responseWithToken($newToken);
     }
 }
