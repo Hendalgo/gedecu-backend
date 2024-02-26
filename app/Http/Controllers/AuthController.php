@@ -78,12 +78,14 @@ class AuthController extends Controller
 
     protected function responseWithToken($token)
     {
-        auth()->user()->refresh();
+        $user = auth()->user();
+        $user->load('country.currency', 'balance.currency', 'store');
+        $user->load('role');
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expirtation' => auth()->factory()->getTTl(),
-            'user' => auth()->user(),
+            'expiration' => auth()->factory()->getTTl(),
+            'user' => $user,
         ]);
     }
     public function refreshToken() {
