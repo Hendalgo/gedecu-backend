@@ -36,9 +36,9 @@ Route::group([
 
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh-token', [AuthController::class, 'refreshToken']);
 });
 Route::middleware('auth.veryfied')->group(function () {
-    Route::post('auth/refresh-token', [AuthController::class, 'refreshToken']);
     Route::get('user', [AuthController::class, 'me']);
     /*
         Bank types
