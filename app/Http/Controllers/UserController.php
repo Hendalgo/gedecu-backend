@@ -168,8 +168,6 @@ class UserController extends Controller
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'password' => 'min:8|max:16|confirmed',
                 'image' => 'image',
-                'country_id' => 'required|exists:countries,id',
-                'role_id' => 'required|exists:roles,id',
             ], $messages);
 
             if (isset($validatedData['image'])) {
@@ -210,9 +208,7 @@ class UserController extends Controller
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'password' => 'min:8|max:16|confirmed',
-                'image' => 'image',
-                'country_id' => 'required|exists:countries,id',
-                'role_id' => 'required|exists:roles,id',
+                'image' => 'image'
             ], $messages);
 
             if (isset($validatedData['image'])) {
