@@ -185,6 +185,12 @@ class UserController extends Controller
                 if ($field === 'email') {
                     $user->$field = $user->email;
                 }
+                if($field === 'country_id'){
+                    $user->$field = $user->country_id;
+                }
+                if($field === 'role_id'){
+                    $user->$field = $user->role_id;
+                }
             }
             $user->save();
             return response()->json(['message' => 'exito'], 201);
@@ -221,6 +227,12 @@ class UserController extends Controller
                 $user->$field = $value;
                 if ($field === 'email') {
                     $user->$field = $user->email;
+                }
+                if($field === 'country_id'){
+                    $user->$field = $user->country_id;
+                }
+                if($field === 'role_id'){
+                    $user->$field = $user->role_id;
                 }
             }
             $user->save();
