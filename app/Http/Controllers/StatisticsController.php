@@ -39,6 +39,9 @@ class StatisticsController extends Controller
                 return $query->whereBetween('created_at', [$from, $to]);
             })
             ->get()
+            ->when(auth()->user()->role_id != 1, function ($query) {
+                return $query->where('report.user_id', auth()->user()->id);
+            })
             ->groupBy(['report.type.type', function ($subreport) use ($period) {
                 return $this->getPeriod($subreport, $period);
             }])

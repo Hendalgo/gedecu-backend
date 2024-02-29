@@ -128,4 +128,6 @@ Route::middleware('auth.veryfied')->group(function () {
 
     /*Inconsistences*/
     Route::get('inconsistences', [InconsistenceController::class, 'index']);
+    Route::patch('inconsistences/verify/all', [InconsistenceController::class, 'verify_all']);
+    Route::patch('inconsistences/verify/{id}', [InconsistenceController::class, 'verify_inconsistence']);
 });
