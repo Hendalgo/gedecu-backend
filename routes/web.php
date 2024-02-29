@@ -13,11 +13,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/{any?}', function ($any = null) {
-    $path = $any ? public_path('react-app/'.$any) : public_path('index.html');
+    $path = $any ? public_path('frontend/dist/'.$any) : public_path('frontend/dist/index.html');
 
     if (file_exists($path)) {
         return response()->file($path);
     }
 
-    return file_get_contents(public_path('index.html'));
+    return file_get_contents(public_path('frontend/dist/index.html'));
 })->where('any', '.*');
