@@ -91,11 +91,15 @@ class StatisticsController extends Controller
             $banks_accounts->where('user_id', $user->id);
         }
         if ($user->role_id == 3) {
-            $store = $user->store->id;
-            if ($store) {
-                $banks_accounts->where('store_id', $store);
-            } else {
-                $banks_accounts->where('user_id', $user->id);
+            //Check if the user has a store
+
+            if ($user->store) {
+                $store = $user->store->id;
+                if ($store) {
+                    $banks_accounts->where('store_id', $store);
+                } else {
+                    $banks_accounts->where('user_id', $user->id);
+                }
             }
         }
         $banks_accounts = $banks_accounts->where('delete', false)->selectRaw('currency_id, SUM(balance) as total')
@@ -134,11 +138,15 @@ class StatisticsController extends Controller
             $banks_accounts->where('user_id', $user->id);
         }
         if ($user->role_id == 3) {
-            $store = $user->store->id;
-            if ($store) {
-                $banks_accounts->where('store_id', $store);
-            } else {
-                $banks_accounts->where('user_id', $user->id);
+            //Check if the user has a store
+
+            if ($user->store) {
+                $store = $user->store->id;
+                if ($store) {
+                    $banks_accounts->where('store_id', $store);
+                } else {
+                    $banks_accounts->where('user_id', $user->id);
+                }
             }
         }
         $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)

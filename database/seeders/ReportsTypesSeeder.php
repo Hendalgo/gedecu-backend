@@ -446,6 +446,30 @@ class ReportsTypesSeeder extends Seeder
                 'country' => 1,
                 'meta_data' => '{"name":"Cuenta Billetera (Transferencia)","type":"2"}',
             ],
+            [
+                'id' => 37,
+                'name' => 'Nómina',
+                'description' => '',
+                'type' => 'expense',
+                'config' => '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
+                'delete' => 0,
+                'created_at' => '2024-01-17 04:18:57',
+                'updated_at' => '2024-01-17 04:18:57',
+                'country' => 1,
+                'meta_data' => '{"name":"Nómina","type":"2"}',
+            ],
+            [
+                'id' => 38,
+                'name' => 'Comisiones por Giros',
+                'description' => '',
+                'type' => 'income',
+                'config' => '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
+                'delete' => 0,
+                'created_at' => '2024-01-17 04:18:57',
+                'updated_at' => '2024-01-17 04:18:57',
+                'country' => 1,
+                'meta_data' => '{"name":"Income","type":"2"}',
+            ]
         ];
         ReportType::insert($reportTypes);
         $this->update();

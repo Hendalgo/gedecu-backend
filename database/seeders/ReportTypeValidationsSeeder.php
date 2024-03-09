@@ -875,5 +875,32 @@ class ReportTypeValidationsSeeder extends Seeder
             'validation_role' => 'all',
             'report_type_id' => 36,
         ]);
+
+        ReportTypeValidations::create([
+            'name' => 'account_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 37,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 37,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean',
+            'validation_role' => 'all',
+            'report_type_id' => 37,
+        ]);
+
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 38,
+        ]);
+
     }
 }

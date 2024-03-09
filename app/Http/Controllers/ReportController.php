@@ -124,6 +124,9 @@ class ReportController extends Controller
                 $validator->setData($subreport);
                 $validator->setRules(['currency_id' => 'required|exists:currencies,id']);
 
+                // Validate date
+                $validator->setRules(['date' => 'required|date']);
+                
                 //Get the validations for the role all
                 $reportValidations = $report_type->validations->where('validation_role', 'all')->toArray();
 
@@ -299,7 +302,7 @@ class ReportController extends Controller
 
     public function destroy(Request $request, $id)
     {
-        return response()->json(['message' => 'forbiden'], 401);
+        
     }
 
     public function getInconsistences(Request $request)
@@ -324,6 +327,7 @@ class ReportController extends Controller
                 'amount' => $amount,
                 'duplicate_status' => false,
                 'currency_id' => $currency,
+                'created_at' => $sub['date'],
             ];
         }
         $inconsistence = new InconsistenceController();
@@ -335,6 +339,7 @@ class ReportController extends Controller
                     'key' => $key,
                     'value' => $value,
                     'subreport_id' => $insertedSub->id,
+                    'created_at' => $subreport[$index]['date'],
                 ];
             }
         }
