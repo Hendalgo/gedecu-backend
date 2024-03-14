@@ -422,7 +422,7 @@ class ReportController extends Controller
         }
         if ($report_type->type === 'income' && $operation === 'undo') {
             $amount = $amount * -1;
-        } elseif ($report_type->type === 'expense') {
+        } elseif ($report_type->type === 'expense' && $operation === 'update') {
             $amount = $amount * -1;
         }
         if (array_key_exists('user_balance', $report_type_config)) {
