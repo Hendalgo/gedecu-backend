@@ -369,7 +369,7 @@ class ReportController extends Controller
                 'amount' => $amount,
                 'duplicate_status' => false,
                 'currency_id' => $currency,
-                'created_at' => $sub['date'],
+                'created_at' => Carbon::parse($sub['date']),
             ];
         }
         $inconsistence = new InconsistenceController();
@@ -381,7 +381,7 @@ class ReportController extends Controller
                     'key' => $key,
                     'value' => $value,
                     'subreport_id' => $insertedSub->id,
-                    'created_at' => $subreport[$index]['date'],
+                    'created_at' => Carbon::parse($subreport[$index]['date']),
                 ];
             }
         }
