@@ -16,25 +16,31 @@ class InconsistenceController extends Controller
         $this->keyValueMap = new KeyValueMap();
     }
 
-    public function verify_all(){
-        if(auth()->user()->role_id != 1){
+    public function verify_all()
+    {
+        if (auth()->user()->role_id != 1) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         $inconsistences = Inconsistence::where('verified', 0)->update(['verified' => 1]);
+
         return response()->json($inconsistences);
     }
-    public function verify_inconsistence(Request $request, $id){
-        if(auth()->user()->role_id != 1){
+
+    public function verify_inconsistence(Request $request, $id)
+    {
+        if (auth()->user()->role_id != 1) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         $inconsistence = Inconsistence::find($id);
-        if(!$inconsistence){
+        if (! $inconsistence) {
             return response()->json(['error' => 'Inconsistence not found'], 404);
         }
         $inconsistence->verified = 1;
         $inconsistence->save();
+
         return response()->json($inconsistence);
     }
+
     public function index(Request $request)
     {
         //Just can access admin

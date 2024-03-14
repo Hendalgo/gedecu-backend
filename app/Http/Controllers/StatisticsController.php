@@ -118,7 +118,7 @@ class StatisticsController extends Controller
             ->groupBy('currency_id', 'name')
             ->with('currency')
             ->get();
-        
+
         $banks_accounts = $banks_accounts->concat($banks_accounts_type3);
 
         $banks_accounts = $banks_accounts->map(function ($account) {

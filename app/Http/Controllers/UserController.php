@@ -183,17 +183,17 @@ class UserController extends Controller
                 if ($field === 'email') {
                     $user->$field = $user->email;
                 }
-                if($field === 'country_id'){
+                if ($field === 'country_id') {
                     $user->$field = $user->country_id;
                 }
-                if($field === 'role_id'){
+                if ($field === 'role_id') {
                     $user->$field = $user->role_id;
                 }
             }
             $user->save();
+
             return response()->json(['message' => 'exito'], 201);
-        }
-        else if($currentUser->id == $id){
+        } elseif ($currentUser->id == $id) {
             $messages = [
                 'name.required' => 'El nombre es requerido',
                 'email.unique' => 'Usuario ya registrado',
@@ -208,7 +208,7 @@ class UserController extends Controller
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'password' => 'min:8|max:16|confirmed',
-                'image' => 'image'
+                'image' => 'image',
             ], $messages);
 
             if (isset($validatedData['image'])) {
@@ -224,10 +224,10 @@ class UserController extends Controller
                 if ($field === 'email') {
                     $user->$field = $user->email;
                 }
-                if($field === 'country_id'){
+                if ($field === 'country_id') {
                     $user->$field = $user->country_id;
                 }
-                if($field === 'role_id'){
+                if ($field === 'role_id') {
                     $user->$field = $user->role_id;
                 }
             }
@@ -235,6 +235,7 @@ class UserController extends Controller
 
             return response()->json(['message' => 'exito'], 201);
         }
+
         return response()->json(['message' => 'forbiden'], 401);
 
     }

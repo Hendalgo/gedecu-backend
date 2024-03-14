@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Validator;
 
 class SubreportController extends Controller
 {
-    public function validate_subreport(Request $request){
+    public function validate_subreport(Request $request)
+    {
         $request->validate([
             'subreports' => 'required|array',
         ]);
@@ -62,10 +63,12 @@ class SubreportController extends Controller
             // Save the subreport as a validated subreport
             $validatedSubreports[] = $subreport;
         }
+
         return $validatedSubreports;
     }
 
-    public function validate_without_request($request){
+    public function validate_without_request($request)
+    {
         Validator::make($request, [
             'subreports' => 'required|array',
         ])->validate();
@@ -119,6 +122,7 @@ class SubreportController extends Controller
             // Save the subreport as a validated subreport
             $validatedSubreports[] = $subreport;
         }
+
         return $validatedSubreports;
 
     }

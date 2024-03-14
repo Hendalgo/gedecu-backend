@@ -236,7 +236,6 @@ class ReportController extends Controller
         $currentUser = User::find(auth()->user()->id);
         $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
 
-        
         if ($currentUser->role->id === 1) {
             return response()->json($report, 200);
         } else {
@@ -255,25 +254,28 @@ class ReportController extends Controller
         ])->validate();
 
         $subreport = Subreport::with('data')->findOrFail($id);
-        $report = Report::findOrFail($subreport->report_id); 
+        $report = Report::findOrFail($subreport->report_id);
         $subreportsCount = $report->subreports()->count();
         $sub = $this->KeyMapValue->transformElement($subreport)[0];
         $currentUser = User::find(auth()->user()->id);
-        if($currentUser->role->id === 1){
+        if ($currentUser->role->id === 1) {
 
             //Undo the amount of the subreport
             $report_type = ReportType::find($report->type_id);
             $report_type_config = json_decode($report_type->meta_data, true);
             $this->add_or_substract_amount($sub->data, $report_type_config, $report_type, $report, 'undo');
-            
-            if($subreportsCount === 1){
+
+            if ($subreportsCount === 1) {
                 $report->delete();
+
                 return response()->json(['message' => 'Reporte eliminado'], 200);
             }
 
             $subreport->delete();
+
             return response()->json(['message' => 'Subreporte eliminado'], 200);
         }
+
         return response()->json(['message' => 'forbiden'], 401);
 
     }
@@ -290,7 +292,7 @@ class ReportController extends Controller
 
         $reportValidate = new SubreportController();
         $reportValidate->validate_without_request([...$report->toArray(), 'subreports' => $subreports]);
-        
+
         $report->load('subreports');
 
         //Validate if the report is editable
@@ -304,11 +306,11 @@ class ReportController extends Controller
             ])->validate();
         }
 
-        $edited = DB::transaction(function() use ($subreports, $report){
+        $edited = DB::transaction(function () use ($subreports, $report) {
             foreach ($subreports as $subreport) {
 
                 //Undo the amount of the subreport
-                
+
                 //Last subreport data
                 $sub = Subreport::findOrFail($subreport['id']);
                 $auxSub = Subreport::with('data')->findOrFail($subreport['id']);
@@ -340,7 +342,6 @@ class ReportController extends Controller
                 //Add or substract the amount to the bank account
                 $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update');
             }
-
 
             return true;
         });
@@ -408,7 +409,7 @@ class ReportController extends Controller
     }
 
     private function add_or_substract_amount($subreport, $report_type_config, $report_type, $report, $operation)
-    {   
+    {
         $amount = $subreport['amount'];
         $currency = $subreport['currency_id'];
 
@@ -421,8 +422,7 @@ class ReportController extends Controller
         }
         if ($report_type->type === 'income' && $operation === 'undo') {
             $amount = $amount * -1;
-        }
-        else if ($report_type->type === 'expense') {
+        } elseif ($report_type->type === 'expense') {
             $amount = $amount * -1;
         }
         if (array_key_exists('user_balance', $report_type_config)) {

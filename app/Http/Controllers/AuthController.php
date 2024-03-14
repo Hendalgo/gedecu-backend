@@ -21,7 +21,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            
+
             $request->validate([
                 'email' => 'required|email',
                 'password' => 'required',
@@ -81,6 +81,7 @@ class AuthController extends Controller
         $user = auth()->user();
         $user->load('country.currency', 'balance.currency', 'store');
         $user->load('role');
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
@@ -88,19 +89,22 @@ class AuthController extends Controller
             'user' => $user,
         ]);
     }
-    public function refreshToken() {
-        
+
+    public function refreshToken()
+    {
+
         $token = JWTAuth::getToken();
-        
-        if (!$token) {
+
+        if (! $token) {
             return response()->json(['error' => 'Token not provided'], 401);
         }
-    
+
         try {
             $newToken = JWTAuth::refresh($token);
         } catch (TokenInvalidException $e) {
             return response()->json(['error' => 'Token invalid'], 401);
         }
+
         return $this->responseWithToken($newToken);
     }
 }
