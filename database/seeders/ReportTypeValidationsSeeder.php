@@ -902,5 +902,12 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 38,
         ]);
 
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean|is_false',
+            'validation_role' => 'all',
+            'report_type_id' => 38,
+        ]);
+
     }
 }
