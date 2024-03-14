@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Report;
 use App\Models\ReportTypeValidations;
 use Illuminate\Database\Seeder;
 
@@ -876,12 +877,10 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 36,
         ]);
 
-        ReportTypeValidations::create([
-            'name' => 'account_id',
-            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
-            'validation_role' => 'all',
-            'report_type_id' => 37,
-        ]);
+        
+
+        /*Nomina*/
+
         ReportTypeValidations::create([
             'name' => 'amount',
             'validation' => 'required|numeric',
@@ -889,19 +888,38 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 37,
         ]);
         ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 37,
+        ]);
+        ReportTypeValidations::create([
             'name' => 'isDuplicated',
-            'validation' => 'required|boolean',
+            'validation' => 'required|boolean|is_false',
             'validation_role' => 'all',
             'report_type_id' => 37,
         ]);
 
+        /*Comisiones por giros */
+
+        ReportTypeValidations::create([
+            'name' => 'account_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 38,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 38,
+        ]);
         ReportTypeValidations::create([
             'name' => 'amount',
             'validation' => 'required|numeric',
             'validation_role' => 'all',
             'report_type_id' => 38,
         ]);
-
         ReportTypeValidations::create([
             'name' => 'isDuplicated',
             'validation' => 'required|boolean|is_false',
