@@ -6,6 +6,9 @@ class KeyValueMap
 {
     public function transformElement($items)
     {
+        if ($items instanceof \Illuminate\Database\Eloquent\Model) {
+            $items = collect([$items]);
+        }
         $items->each(function ($item) {
             $data = [];
             foreach ($item->data as $item_data) {

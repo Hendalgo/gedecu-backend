@@ -87,25 +87,39 @@ class StatisticsController extends Controller
     {
         $user = User::with('store')->find(auth()->user()->id);
         $banks_accounts = BankAccount::query();
+        $banks_accounts_type3 = BankAccount::query();
+
         if ($user->role_id == 2) {
             $banks_accounts->where('user_id', $user->id);
+            $banks_accounts_type3->where('user_id', $user->id);
         }
         if ($user->role_id == 3) {
             //Check if the user has a store
-
             if ($user->store) {
                 $store = $user->store->id;
                 if ($store) {
                     $banks_accounts->where('store_id', $store);
+                    $banks_accounts_type3->where('store_id', $store);
                 } else {
                     $banks_accounts->where('user_id', $user->id);
+                    $banks_accounts_type3->where('user_id', $user->id);
                 }
             }
         }
+
         $banks_accounts = $banks_accounts->where('delete', false)->selectRaw('currency_id, SUM(balance) as total')
+            ->where('account_type_id', '!=', 3)
             ->groupBy('currency_id')
             ->with('currency')
             ->get();
+
+        $banks_accounts_type3 = $banks_accounts_type3->where('delete', false)->selectRaw('name, currency_id, SUM(balance) as total')
+            ->where('account_type_id', 3)
+            ->groupBy('currency_id', 'name')
+            ->with('currency')
+            ->get();
+        
+        $banks_accounts = $banks_accounts->concat($banks_accounts_type3);
 
         $banks_accounts = $banks_accounts->map(function ($account) {
             $accountArray = $account->toArray();
@@ -128,6 +142,7 @@ class StatisticsController extends Controller
         });
 
         return response()->json($banks_accounts);
+
     }
 
     public function getTotalByBank()
