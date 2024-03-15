@@ -333,21 +333,6 @@ class ReportController extends Controller
         $amount = $subreport['amount'];
         $currency = $subreport['currency_id'];
 
-        if (array_key_exists('convert_amount', $report_type_config)) {
-            $amount = $this->calculateAmount($subreport);
-            $currency = $subreport->conversionCurrency_id;
-        }
-        if ($report_type->type === 'neutro') {
-            return;
-        }
-        if ($report_type->type === 'income' && $operation === 'undo') {
-            $amount = $amount * -1;
-        } elseif ($report_type->type === 'expense' && $operation === 'update') {
-            $amount = $amount * -1;
-        }
-        else if ($report_type->type === 'expense' && $operation === 'create') {
-            $amount = $amount * -1;
-        }
         if ($report_type->id == 42) {
             $wallet = BankAccount::find($subreport['wallet_id']);
             $bank = BankAccount::find($subreport['account_id']);
@@ -367,7 +352,7 @@ class ReportController extends Controller
                 throw new \Exception('No se encontró el local del usuario');
             }
             foreach ($store->accounts as $account) {
-                if ($account->account_type_id == 3 && $account->currency_id == $currency) {
+                if ($account->account_type_id == 3) {
                     $account->balance -= $convertedAmount;
                     $account->save();
                 }
@@ -376,6 +361,21 @@ class ReportController extends Controller
             $wallet->balance = $wallet->balance + $amount;
             $wallet->save();
             return;
+        }
+        if (array_key_exists('convert_amount', $report_type_config)) {
+            $amount = $this->calculateAmount($subreport);
+            $currency = $subreport['conversionCurrency_id'];
+        }
+        if ($report_type->type === 'neutro') {
+            return;
+        }
+        if ($report_type->type === 'income' && $operation === 'undo') {
+            $amount = $amount * -1;
+        } elseif ($report_type->type === 'expense' && $operation === 'update') {
+            $amount = $amount * -1;
+        }
+        else if ($report_type->type === 'expense' && $operation === 'create') {
+            $amount = $amount * -1;
         }
 
         if (array_key_exists('user_balance', $report_type_config)) {

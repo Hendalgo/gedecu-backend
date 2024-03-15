@@ -993,7 +993,7 @@ class ReportTypeValidationsSeeder extends Seeder
         ]);
         ReportTypeValidations::create([
             'name' => 'isDuplicated',
-            'validation' => 'required|boolean',
+            'validation' => 'required|boolean|is_false',
             'validation_role' => 'all',
             'report_type_id' => 40
         ]);
@@ -1026,7 +1026,7 @@ class ReportTypeValidationsSeeder extends Seeder
         ]);
         ReportTypeValidations::create([
             'name' => 'isDuplicated',
-            'validation' => 'required|boolean',
+            'validation' => 'required|boolean|is_false',
             'validation_role' => 'all',
             'report_type_id' => 41
         ]);
@@ -1070,7 +1070,7 @@ class ReportTypeValidationsSeeder extends Seeder
         ]);
         ReportTypeValidations::create([
             'name' => 'isDuplicated',
-            'validation' => 'required|boolean',
+            'validation' => 'required|boolean|is_false',
             'validation_role' => 'all',
             'report_type_id' => 42
         ]);
@@ -1108,7 +1108,7 @@ class ReportTypeValidationsSeeder extends Seeder
         ]);
         ReportTypeValidations::create([
             'name' => 'isDuplicated',
-            'validation' => 'required|boolean',
+            'validation' => 'required|boolean|is_false',
             'validation_role' => 'all',
             'report_type_id' => 43
         ]);
