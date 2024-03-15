@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Report;
+use App\Models\ReportType;
 use App\Models\ReportTypeValidations;
 use Illuminate\Database\Seeder;
 
@@ -927,5 +928,178 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 38,
         ]);
 
+        /*Billetera Jefe*/
+        ReportTypeValidations::create([
+            'name' => 'user_id',
+            'validation' => 'required|exists:users,id|user_role:7',
+            'validation_role' => 'all',
+            'report_type_id' => 39
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 39
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 39
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'account_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 39
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean|is_false',
+            'validation_role' => 'all',
+            'report_type_id' => 39
+        ]);
+
+        /*Billetera Cliente (Transferencias)*/
+        ReportTypeValidations::create([
+            'name' => 'account_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'rate',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'conversionCurrency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+
+        /*Billetera Cliente (Efectivo)*/
+
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 41
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 41
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'rate',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 41
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'conversionCurrency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 40
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean',
+            'validation_role' => 'all',
+            'report_type_id' => 41
+        ]);
+
+        /*Billetera Cliente Egreso (Transferencias)*/
+
+        ReportTypeValidations::create([
+            'name' => 'account_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'rate',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'conversionCurrency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
+
+        /*Billetera Cliente Egreso (Efectivo)*/
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 43
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 43
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'rate',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 43
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'conversionCurrency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 43
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean',
+            'validation_role' => 'all',
+            'report_type_id' => 43
+        ]);
     }
 }
