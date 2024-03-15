@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\Report;
 use App\Models\ReportType;
@@ -130,89 +131,8 @@ class ReportController extends Controller
                     $this->create_subreport($validatedSubreports, $report, $report_type_config);
 
                     //Add or substract the amount to the bank account
-                    if ($report_type->type === 'income') {
-                        foreach ($validatedSubreports as $subreport) {
-                            $amount = $subreport['amount'];
-                            $currency = $subreport['currency_id'];
-                            if (array_key_exists('convert_amount', $report_type_config)) {
-                                $amount = $this->calculateAmount($subreport);
-                                $currency = $subreport['conversionCurrency_id'];
-                            }
-                            if (array_key_exists('user_balance', $report_type_config)) {
-                                $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
-                                if (! $userBalance) {
-                                    throw new \Exception('No se encontró el balance del usuario');
-                                }
-                                $userBalance->balance += $amount;
-                                $userBalance->save();
-                            } elseif (array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)) {
-                                //This is a traspaso
-                                $senderAccount = BankAccount::find($subreport['senderAccount_id']);
-                                $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
-                                $senderAccount->balance = $senderAccount->balance - $amount;
-                                $receiverAccount->balance = $receiverAccount->balance + $amount;
-                                $senderAccount->save();
-                                $receiverAccount->save();
-                            } elseif (array_key_exists('account_id', $subreport)) {
-                                //Update bank account
-                                $bankAccount = BankAccount::find($subreport['account_id']);
-                                $bankAccount->balance = $bankAccount->balance + $amount;
-                                $bankAccount->save();
-                            } elseif (! array_key_exists('account_id', $subreport)) {
-                                $store = Store::with('accounts')->where('user_id', auth()->user()->id)->first();
-                                if (! $store) {
-                                    throw new \Exception('No se encontró el local del usuario');
-                                }
-                                foreach ($store->accounts as $account) {
-                                    if ($account->account_type_id == 3 && $account->currency_id == $currency) {
-                                        $account->balance += $amount;
-                                        $account->save();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if ($report_type->type === 'expense') {
-                        foreach ($validatedSubreports as $subreport) {
-                            $amount = $subreport['amount'];
-                            $currency = $subreport['currency_id'];
-                            if (array_key_exists('convert_amount', $report_type_config)) {
-                                $amount = $this->calculateAmount($subreport);
-                                $currency = $subreport['conversionCurrency_id'];
-                            }
-                            if (array_key_exists('user_balance', $report_type_config)) {
-                                $userBalance = UserBalance::where('user_id', auth()->user()->id)->first();
-                                if (! $userBalance) {
-                                    throw new \Exception('No se encontró el balance del usuario');
-                                }
-                                $userBalance->balance -= $amount;
-                                $userBalance->save();
-                            } elseif (array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)) {
-                                //This is a traspaso
-                                $senderAccount = BankAccount::find($subreport['senderAccount_id']);
-                                $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
-                                $senderAccount->balance = $senderAccount->balance - $amount;
-                                $receiverAccount->balance = $receiverAccount->balance + $amount;
-                                $senderAccount->save();
-                                $receiverAccount->save();
-                            } elseif (array_key_exists('account_id', $subreport)) {
-                                //Update bank account
-                                $bankAccount = BankAccount::find($subreport['account_id']);
-                                $bankAccount->balance = $bankAccount->balance - $amount;
-                                $bankAccount->save();
-                            } elseif (! array_key_exists('account_id', $subreport)) {
-                                $store = Store::with('accounts')->where('user_id', auth()->user()->id)->first();
-                                if (! $store) {
-                                    throw new \Exception('No se encontró el local del usuario');
-                                }
-                                foreach ($store->accounts as $account) {
-                                    if ($account->account_type_id == 3 && $account->currency_id == $currency) {
-                                        $account->balance -= $amount;
-                                        $account->save();
-                                    }
-                                }
-                            }
-                        }
+                    foreach ($validatedSubreports as $subreport) {
+                        $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'create');
                     }
                 });
 
@@ -425,6 +345,39 @@ class ReportController extends Controller
         } elseif ($report_type->type === 'expense' && $operation === 'update') {
             $amount = $amount * -1;
         }
+        else if ($report_type->type === 'expense' && $operation === 'create') {
+            $amount = $amount * -1;
+        }
+        if ($report_type->id == 42) {
+            $wallet = BankAccount::find($subreport['wallet_id']);
+            $bank = BankAccount::find($subreport['account_id']);
+            $convertedAmount = $this->calculateAmount($subreport);
+            $wallet->balance = $wallet->balance + $amount;
+            $bank->balance = $bank->balance - $convertedAmount;
+            
+            $wallet->save();
+            $bank->save();
+
+            return;
+        }
+        else if ($report_type->id ==43){
+            $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
+            $convertedAmount = $this->calculateAmount($subreport);
+            if (! $store) {
+                throw new \Exception('No se encontró el local del usuario');
+            }
+            foreach ($store->accounts as $account) {
+                if ($account->account_type_id == 3 && $account->currency_id == $currency) {
+                    $account->balance -= $convertedAmount;
+                    $account->save();
+                }
+            }
+            $wallet = BankAccount::find($subreport['wallet_id']);
+            $wallet->balance = $wallet->balance + $amount;
+            $wallet->save();
+            return;
+        }
+
         if (array_key_exists('user_balance', $report_type_config)) {
             $userBalance = UserBalance::where('user_id', $report->user_id)->first();
             if (! $userBalance) {

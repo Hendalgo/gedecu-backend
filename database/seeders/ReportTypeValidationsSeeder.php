@@ -1032,7 +1032,12 @@ class ReportTypeValidationsSeeder extends Seeder
         ]);
 
         /*Billetera Cliente Egreso (Transferencias)*/
-
+        ReportTypeValidations::create([
+            'name' => 'wallet_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 42
+        ]);
         ReportTypeValidations::create([
             'name' => 'account_id',
             'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
@@ -1071,6 +1076,12 @@ class ReportTypeValidationsSeeder extends Seeder
         ]);
 
         /*Billetera Cliente Egreso (Efectivo)*/
+        ReportTypeValidations::create([
+            'name' => 'wallet_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 43
+        ]);
         ReportTypeValidations::create([
             'name' => 'amount',
             'validation' => 'required|numeric',
