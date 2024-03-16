@@ -81,7 +81,7 @@ class InconsistenceController extends Controller
             $subreports = $subreports->where('inconsistences.verified', 0);
         }
         if ($search) {
-            $subreports = $subreports->when($search, function ($query, $search) {
+            $subreports = $subreports->where(function ($query) use ($search){
                 return $query->where('data', 'like', '%'.$search.'%')
                     ->orWhereHas('report.user.store', function ($query) use ($search) {
                         $query->where('name', 'like', '%'.$search.'%')
