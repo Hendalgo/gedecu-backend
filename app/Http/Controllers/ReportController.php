@@ -338,8 +338,8 @@ class ReportController extends Controller
             $bank = BankAccount::find($subreport['account_id']);
             $convertedAmount = $this->calculateAmount($subreport);
 
-            $amount = $operation === 'undo' || $operation === 'update' ? $amount * -1 : $amount;
-            $convertedAmount = $operation === 'undo' || $operation === 'update' ? $convertedAmount * -1 : $convertedAmount;
+            $amount = $operation === 'undo' ? $amount * -1 : $amount;
+            $convertedAmount = $operation === 'undo' ? $convertedAmount * -1 : $convertedAmount;
 
             $wallet->balance = $wallet->balance + $amount;
             $bank->balance = $bank->balance - $convertedAmount;
@@ -353,8 +353,8 @@ class ReportController extends Controller
             $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
             $convertedAmount = $this->calculateAmount($subreport);
 
-            $amount = $operation === 'undo' || $operation === 'update' ? $amount * -1 : $amount;
-            $convertedAmount = $operation === 'undo' || $operation === 'update' ? $convertedAmount * -1 : $convertedAmount;
+            $amount = $operation === 'undo' ? $amount * -1 : $amount;
+            $convertedAmount = $operation === 'undo' ? $convertedAmount * -1 : $convertedAmount;
 
             if (! $store) {
                 throw new \Exception('No se encontró el local del usuario');
