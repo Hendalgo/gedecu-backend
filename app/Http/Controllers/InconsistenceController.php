@@ -57,18 +57,13 @@ class InconsistenceController extends Controller
         $date = $request->input('date');
         $per_page = $request->input('per_page', 10);
         $paginate = $request->input('paginate', 'yes');
+        $verified = $request->input('verified');
 
         //Get subreports that are not verified on the inconsistencies table
         $subreports = Subreport::join('inconsistences', 'subreports.id', '=', 'inconsistences.subreport_id')
             ->select('subreports.*')
-            ->where('inconsistences.verified', 0)
             ->with('report.type', 'data', 'report.user.store');
 
-        if ($paginate == 'yes') {
-            $subreports = $subreports->paginate($per_page);
-        } else {
-            $subreports = $subreports->get();
-        }
 
         //If the date is set, then filter the subreports by date
         if ($date) {
@@ -79,10 +74,15 @@ class InconsistenceController extends Controller
                 $query->where('id', $type);
             });
         }
+        if ($verified === 'yes') {
+            $subreports = $subreports->where('inconsistences.verified', 1);
+        }
+        if ($verified === 'no') {
+            $subreports = $subreports->where('inconsistences.verified', 0);
+        }
         if ($search) {
             $subreports = $subreports->when($search, function ($query, $search) {
                 return $query->where('data', 'like', '%'.$search.'%')
-                    ->orWhere('created_at', 'like', '%'.$search.'%')
                     ->orWhereHas('report.user.store', function ($query) use ($search) {
                         $query->where('name', 'like', '%'.$search.'%')
                             ->orWhere('location', 'like', '%'.$search.'%');
@@ -97,6 +97,11 @@ class InconsistenceController extends Controller
             $subreports = $subreports->whereBetween('subreports.created_at', [$since, $until]);
         }
 
+        if ($paginate == 'yes') {
+            $subreports = $subreports->paginate($per_page);
+        } else {
+            $subreports = $subreports->get();
+        }
         return response()->json($subreports);
     }
 

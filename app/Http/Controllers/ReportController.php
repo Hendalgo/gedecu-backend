@@ -266,8 +266,8 @@ class ReportController extends Controller
             return true;
         });
 
-        /* $report->editable = 0;
-        $report->save(); */
+        $report->editable = 0;
+        $report->save();
 
         return response()->json(['message' => 'Reporte editado'], 200);
     }
