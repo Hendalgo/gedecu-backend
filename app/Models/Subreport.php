@@ -28,7 +28,7 @@ class Subreport extends Model
         return $this->belongsTo('\App\Models\Currency', 'currency_id');
     }
 
-    public function inconsistences()
+    public function inconsistence()
     {
         return $this->hasOne('\App\Models\Inconsistence', 'subreport_id');
     }

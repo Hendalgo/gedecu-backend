@@ -62,7 +62,7 @@ class InconsistenceController extends Controller
         //Get subreports that are not verified on the inconsistencies table
         $subreports = Subreport::join('inconsistences', 'subreports.id', '=', 'inconsistences.subreport_id')
             ->select('subreports.*', 'inconsistences.id as inconsistence_id')
-            ->with('report.type', 'data', 'report.user.store');
+            ->with('report.type', 'data', 'report.user.store', 'inconsistence');
 
 
         //If the date is set, then filter the subreports by date
