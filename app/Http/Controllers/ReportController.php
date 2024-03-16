@@ -337,6 +337,10 @@ class ReportController extends Controller
             $wallet = BankAccount::find($subreport['wallet_id']);
             $bank = BankAccount::find($subreport['account_id']);
             $convertedAmount = $this->calculateAmount($subreport);
+
+            $amount = $operation === 'undo' || $operation === 'update' ? $amount * -1 : $amount;
+            $convertedAmount = $operation === 'undo' || $operation === 'update' ? $convertedAmount * -1 : $convertedAmount;
+
             $wallet->balance = $wallet->balance + $amount;
             $bank->balance = $bank->balance - $convertedAmount;
             
@@ -348,6 +352,10 @@ class ReportController extends Controller
         else if ($report_type->id ==43){
             $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
             $convertedAmount = $this->calculateAmount($subreport);
+
+            $amount = $operation === 'undo' || $operation === 'update' ? $amount * -1 : $amount;
+            $convertedAmount = $operation === 'undo' || $operation === 'update' ? $convertedAmount * -1 : $convertedAmount;
+
             if (! $store) {
                 throw new \Exception('No se encontró el local del usuario');
             }
@@ -389,8 +397,8 @@ class ReportController extends Controller
             //This is a traspaso
             $senderAccount = BankAccount::find($subreport['senderAccount_id']);
             $receiverAccount = BankAccount::find($subreport['receiverAccount_id']);
-            $senderAccount->balance = $senderAccount->balance + $amount;
-            $receiverAccount->balance = $receiverAccount->balance - $amount;
+            $senderAccount->balance = $senderAccount->balance - $amount;
+            $receiverAccount->balance = $receiverAccount->balance + $amount;
             $senderAccount->save();
             $receiverAccount->save();
         } elseif (array_key_exists('account_id', $subreport)) {
