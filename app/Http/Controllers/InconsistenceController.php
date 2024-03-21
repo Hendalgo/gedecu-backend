@@ -258,7 +258,7 @@ class InconsistenceController extends Controller
     {
 
         $toCompare = Subreport::where('duplicate', false)
-            ->whereDoesntHave('inconsistences', function ($query) {
+            ->whereDoesntHave('inconsistence', function ($query) {
                 $query->where('verified', 1);
             })
             ->whereBetween('created_at', [$report->created_at->subDay(), $report->created_at])
