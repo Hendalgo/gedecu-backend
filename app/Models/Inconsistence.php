@@ -17,6 +17,10 @@ class Inconsistence extends Model
 
     public function subreport()
     {
-        return $this->belongsTo(Subreport::class);
+        return $this->belongsTo(Subreport::class, 'subreport_id');
+    }
+    public function associated()
+    {
+        return $this->belongsTo(Subreport::class, 'associated_id');
     }
 }
