@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Inconsistence;
 use App\Models\Subreport;
 use App\Services\KeyValueMap;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class InconsistenceController extends Controller
@@ -281,7 +282,6 @@ class InconsistenceController extends Controller
             ->whereDoesntHave('inconsistence', function ($query) {
                 $query->where('verified', 1);
             })
-            ->whereBetween('created_at', [$report->created_at->subDay(), $report->created_at])
             ->with('report.type', 'data')
             ->get()
             ->where('report.type.id', $report->type->associated_type_id);
@@ -304,8 +304,7 @@ class InconsistenceController extends Controller
 
                 $valueData = json_decode($value->data, true);
                 $subData = json_decode($sub->data, true);
-
-                if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount']) {
+                if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) < 24){
                     return true;
                 }
 
