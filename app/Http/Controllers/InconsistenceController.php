@@ -63,7 +63,7 @@ class InconsistenceController extends Controller
         //Get subreports that are not verified on the inconsistencies table
         $subreports = Subreport::join('inconsistences', 'subreports.id', '=', 'inconsistences.subreport_id')
             ->select('subreports.*', 'inconsistences.id as inconsistence_id')
-            ->with('report.type', 'report.user.store', 'inconsistence.associated.data', 'inconsistence.associated.report.user.store', 'inconsistence.associated.report.user.store', 'inconsistence.associated.report.type');
+            ->with('report.type', 'data','report.user.store', 'inconsistence.associated.data', 'inconsistence.associated.report.user.store', 'inconsistence.associated.report.user.store', 'inconsistence.associated.report.type');
 
 
         //If the date is set, then filter the subreports by date
@@ -103,9 +103,9 @@ class InconsistenceController extends Controller
         } else {
             $subreports = $subreports->get();
         }
+        $subreports = $this->keyValueMap->transformElement($subreports);
         if($paginate === 'yes') {
             $formatedSubreports = $subreports->map(function ($subreport) {
-                $subreport->data = json_decode($subreport->data);
                 if($subreport->inconsistence->associated){
                     $subreport->inconsistence->associated = $this->keyValueMap->transformElement($subreport->inconsistence->associated);
                 }
@@ -115,7 +115,6 @@ class InconsistenceController extends Controller
         }
         else{
             $formatedSubreports = $subreports->map(function ($subreport) {
-                $subreport->data = json_decode($subreport->data);
                 if($subreport->inconsistence->associated){
                     $subreport->inconsistence->associated = $this->keyValueMap->transformElement($subreport->inconsistence->associated);
                 }
