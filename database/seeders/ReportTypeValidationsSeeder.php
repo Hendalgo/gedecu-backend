@@ -680,12 +680,6 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 28,
         ]);
         ReportTypeValidations::create([
-            'name' => 'rate',
-            'validation' => 'required|numeric',
-            'validation_role' => 'all',
-            'report_type_id' => 28,
-        ]);
-        ReportTypeValidations::create([
             'name' => 'supplier_id',
             'validation' => 'required|exists:users,id|user_role:4',
             'validation_role' => 'all',
@@ -997,6 +991,12 @@ class ReportTypeValidationsSeeder extends Seeder
             'validation_role' => 'all',
             'report_type_id' => 40
         ]);
+        ReportTypeValidations::create([
+            'name' => 'wallet_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
+            'validation_role' => 'all',
+            'report_type_id' => 41
+        ]);
 
         /*Billetera Cliente (Efectivo)*/
 
@@ -1027,6 +1027,12 @@ class ReportTypeValidationsSeeder extends Seeder
         ReportTypeValidations::create([
             'name' => 'isDuplicated',
             'validation' => 'required|boolean|is_false',
+            'validation_role' => 'all',
+            'report_type_id' => 41
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'wallet_id',
+            'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
             'validation_role' => 'all',
             'report_type_id' => 41
         ]);

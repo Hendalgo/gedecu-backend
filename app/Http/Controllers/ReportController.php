@@ -332,7 +332,38 @@ class ReportController extends Controller
     {
         $amount = $subreport['amount'];
         $currency = $subreport['currency_id'];
+        if($report_type->id == 41){
+            $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
+            $convertedAmount = $this->calculateAmount($subreport);
+            $amount = $operation === 'undo' ? $amount * -1 : $amount;
+            $convertedAmount = $operation === 'undo' ? $convertedAmount * -1 : $convertedAmount;
+            if (! $store) {
+                throw new \Exception('No se encontró el local del usuario');
+            }
+            foreach ($store->accounts as $account) {
+                if ($account->account_type_id == 3) {
+                    $account->balance += $convertedAmount;
+                    $account->save();
+                }
+            }
+            return;
+        }
+        else if ($report_type->id == 40) {
+            $wallet = BankAccount::find($subreport['wallet_id']);
+            $bank = BankAccount::find($subreport['account_id']);
+            $convertedAmount = $this->calculateAmount($subreport);
 
+            $amount = $operation === 'undo' ? $amount * -1 : $amount;
+            $convertedAmount = $operation === 'undo' ? $convertedAmount * -1 : $convertedAmount;
+
+            $wallet->balance = $wallet->balance - $amount;
+            $bank->balance = $bank->balance + $convertedAmount;
+            
+            $wallet->save();
+            $bank->save();
+
+            return;
+        }
         if ($report_type->id == 42) {
             $wallet = BankAccount::find($subreport['wallet_id']);
             $bank = BankAccount::find($subreport['account_id']);
