@@ -308,7 +308,7 @@ class InconsistenceController extends Controller
 
                 $valueData = json_decode($value->data, true);
                 $subData = json_decode($sub->data, true);
-                if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) < 24){
+                if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24){
                     return true;
                 }
 
