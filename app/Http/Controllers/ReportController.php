@@ -348,7 +348,7 @@ class ReportController extends Controller
             }
             
             $wallet = BankAccount::find($subreport['wallet_id']);
-            $wallet->balance = $wallet->balance + $amount;
+            $wallet->balance = $wallet->balance - $amount;
             $wallet->save();
             return;
         }
