@@ -53,7 +53,7 @@ class ReportController extends Controller
 
         if (! $user && $currentUser->role->id === 1) {
             $query = $query->leftJoin('users', 'reports.user_id', '=', 'users.id')
-                ->select('users.id as user_id', 'users.name as user_name', 'users.email', DB::raw('MAX(reports.created_at) as report_date'))
+                ->select('users.id as user_id', 'users.name as user_name', 'users.email', DB::raw('DATE_FORMAT(MAX(reports.created_at), "%Y-%m-%dT%T.000000Z") as report_date'))
                 ->orderByDesc('report_date')
                 ->groupBy('users.id', 'users.name', 'users.email');
 

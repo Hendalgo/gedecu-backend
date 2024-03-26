@@ -58,6 +58,8 @@ class InconsistenceController extends Controller
         $date = $request->input('date');
         $per_page = $request->input('per_page', 10);
         $paginate = $request->input('paginate', 'yes');
+        $order_by = $request->input('order_by', 'created_at');
+        $order = $request->input('order', 'desc');
         $verified = $request->input('verified');
 
         //Get subreports that are not verified on the inconsistencies table
@@ -69,6 +71,9 @@ class InconsistenceController extends Controller
         //If the date is set, then filter the subreports by date
         if ($date) {
             $subreports = $subreports->whereDate('subreports.created_at', $date);
+        }
+        if ($order_by) {
+            $subreports = $subreports->orderByDesc('subreports.'.$order_by);
         }
         if ($type) {
             $subreports = $subreports->whereHas('report.type', function ($query) use ($type) {
