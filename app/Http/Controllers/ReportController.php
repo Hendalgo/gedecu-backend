@@ -346,6 +346,10 @@ class ReportController extends Controller
                     $account->save();
                 }
             }
+            
+            $wallet = BankAccount::find($subreport['wallet_id']);
+            $wallet->balance = $wallet->balance + $amount;
+            $wallet->save();
             return;
         }
         else if ($report_type->id == 40) {
