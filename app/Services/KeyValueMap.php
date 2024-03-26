@@ -4,9 +4,9 @@ namespace App\Services;
 
 class KeyValueMap
 {
-    public function transformElement($items)
+    public function transformElement($items, $instance = true)
     {
-        if ($items instanceof \Illuminate\Database\Eloquent\Model) {
+        if ($items instanceof \Illuminate\Database\Eloquent\Model && $instance) {
             $items = collect([$items]);
         }
         $items->each(function ($item) {

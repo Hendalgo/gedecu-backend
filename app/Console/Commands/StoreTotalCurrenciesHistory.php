@@ -29,7 +29,13 @@ class StoreTotalCurrenciesHistory extends Command
             $currency_history = TotalCurrenciesHistory::where('currency_id', $currency->currency_id)
                 ->latest('created_at')
                 ->first();
-            if ($currency_history->total != $currency->total) {
+            if (!$currency_history) {
+                TotalCurrenciesHistory::create([
+                    'currency_id' => $currency->currency_id,
+                    'total' => $currency->total,
+                ]);
+            }
+            else if ($currency_history->total != $currency->total) {
                 TotalCurrenciesHistory::create([
                     'currency_id' => $currency->currency_id,
                     'total' => $currency->total,

@@ -107,7 +107,7 @@ class InconsistenceController extends Controller
         if($paginate === 'yes') {
             $formatedSubreports = $subreports->map(function ($subreport) {
                 if($subreport->inconsistence->associated){
-                    $subreport->inconsistence->associated = $this->keyValueMap->transformElement($subreport->inconsistence->associated);
+                    $subreport->inconsistence->associated = $this->keyValueMap->transformElement($subreport->inconsistence->associated, false);
                 }
                 return $subreport;
             });
@@ -116,7 +116,7 @@ class InconsistenceController extends Controller
         else{
             $formatedSubreports = $subreports->map(function ($subreport) {
                 if($subreport->inconsistence->associated){
-                    $subreport->inconsistence->associated = $this->keyValueMap->transformElement($subreport->inconsistence->associated);
+                    $subreport->inconsistence->associated = $this->keyValueMap->transformElement($subreport->inconsistence->associated, false);
                 }
                 return $subreport;
             });

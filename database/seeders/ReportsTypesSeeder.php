@@ -89,7 +89,7 @@ class ReportsTypesSeeder extends Seeder
                 'id' => 7,
                 'name' => 'Traspasos',
                 'description' => null,
-                'type' => 'expense',
+                'type' => 'income',
                 'config' => '{"styles":{"color":"#58151C","borderColor":"#F1AEB5","backgroundColor":"#F8D7DA"}}',
                 'delete' => 0,
                 'created_at' => '2023-11-09 06:21:08',
