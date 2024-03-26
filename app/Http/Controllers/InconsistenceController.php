@@ -58,8 +58,8 @@ class InconsistenceController extends Controller
         $date = $request->input('date');
         $per_page = $request->input('per_page', 10);
         $paginate = $request->input('paginate', 'yes');
-        $order_by = $request->input('order_by', 'created_at');
-        $order = $request->input('order', 'desc');
+        $order_by = $request->input('order', 'desc');
+        $order = $request->input('order_by', 'created_at');
         $verified = $request->input('verified');
 
         //Get subreports that are not verified on the inconsistencies table
