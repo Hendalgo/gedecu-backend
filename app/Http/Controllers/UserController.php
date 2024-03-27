@@ -281,10 +281,12 @@ class UserController extends Controller
         $balances = UserBalance::query()
             ->leftjoin('users', 'users.id', '=', 'user_balances.user_id')
             ->leftjoin('currencies', 'currencies.id', '=', 'user_balances.currency_id')
-            ->where('users.role_id', 5)
             ->select('user_balances.*', 'users.name as user_name', 'currencies.name as currency_name')
             ->groupBy('user_balances.id');
 
+        if($currentUser->role->id !== 1){
+            $balances = $balances->where('users.id', $currentUser->id);
+        }
         if ($search) {
             $balances = $balances
                 ->select('user_balances.*', 'users.name as user_name', 'currencies.name as currency_name')

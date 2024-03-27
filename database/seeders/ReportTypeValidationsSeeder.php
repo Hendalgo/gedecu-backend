@@ -1118,5 +1118,31 @@ class ReportTypeValidationsSeeder extends Seeder
             'validation_role' => 'all',
             'report_type_id' => 43
         ]);
+
+        /*Otros (Efectivo)*/
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 44
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 44
+        ]);
+        ReportTypeValidations::create([
+            'name'=> 'motive',
+            'validation' => 'required',
+            'validation_role' => 'all',
+            'report_type_id' => 44
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean|is_false',
+            'validation_role' => 'all',
+            'report_type_id' => 44
+        ]);
     }
 }

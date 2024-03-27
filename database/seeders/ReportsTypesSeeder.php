@@ -529,6 +529,18 @@ class ReportsTypesSeeder extends Seeder
                 'updated_at' => '2024-01-17 04:18:57',
                 'country' => 1,
                 'meta_data' => '{"name":"Billetera Cliente (Efectivo)","type":"1"}',
+            ],
+            [
+                'id' => 44,
+                'name' => 'Otros (Efectivo)',
+                'description' => '',
+                'type' => 'expense',
+                'config' => '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
+                'delete' => 0,
+                'created_at' => '2024-01-17 04:18:57',
+                'updated_at' => '2024-01-17 04:18:57',
+                'country' => 1,
+                'meta_data' => '{"name":"Otros (Efectivo)","type":"2"}',
             ]
         ];
         ReportType::insert($reportTypes);
