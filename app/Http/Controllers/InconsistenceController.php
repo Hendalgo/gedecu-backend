@@ -235,13 +235,15 @@ class InconsistenceController extends Controller
                 //The bank account from the subreport should be the same as the bank account from the
                 $subData = json_decode($sub->data, true);
                 $itemData = json_decode($item->data, true);
-                $store = '';
+                $store = null;
                 if (auth()->user()){
                     $store = auth()->user()->load('store')->store->id;
                 }
                 else{
-                    $parent = Subreport::with('report')->find($sub->id);
-                    $store = Store::find($parent->report->user_id)->id;
+                    $parent = Subreport::with('report.user.store')->find($sub->id);
+                    if($parent->report->user->store){
+                        $store = $parent->report->user->store->id;
+                    }
                 }
                 if ($subData['user_id'] == $item->report->user_id && $subData['rate'] == $itemData['rate'] &&  Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $store == $itemData['store_id']) {
                    /*The bank account from the subreport should be the same as the bank account from the
@@ -286,7 +288,12 @@ class InconsistenceController extends Controller
                 } else {
                     $itemData = $item->data;
                 }
-                
+                $store = null;
+
+                $parent = Subreport::with('report.user.store')->find($item->id);
+                if($parent->report->user->store){
+                    $store = $parent->report->user->store->id;
+                }
                 if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && ($subData['amount'] != $itemData['amount'] || $subData['transferences_quantity'] != $itemData['transferences_quantity'])){
                     $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
                     if($bankAccount->bank->id == $bank->id){
