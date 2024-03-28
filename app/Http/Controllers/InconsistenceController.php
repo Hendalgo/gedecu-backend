@@ -312,7 +312,7 @@ class InconsistenceController extends Controller
                 if($parent->report->user->store){
                     $store = $parent->report->user->store->id;
                 }
-                if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && ($subData['amount'] != $itemData['amount'] || $subData['transferences_quantity'] != $itemData['transferences_quantity'])){
+                if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && ($subData['amount'] != $itemData['amount'] || $subData['transferences_quantity'] != $itemData['transferences_quantity']) && $store == $subData['store_id']){
                     $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
                     if($bankAccount->bank->id == $bank->id){
                         $amount += $itemData['amount'];
@@ -331,14 +331,15 @@ class InconsistenceController extends Controller
             $filtered = $filtered->filter(function ($item) use ($sub, $bank, $subData, $amount, $transferences_quantity){
                 $data = json_decode($item->data, true);
                 $user = '';
+                $store = null;
                 if (auth()->user()){
                     $user = auth()->user()->id;
                 }
-                else{
-                    $parent = Subreport::with('report')->find($sub->id);
-                    $user = $parent->report->user_id;
+                $parent = Subreport::with('report')->find($sub->id);
+                if($parent->report->user->store){
+                    $store = $parent->report->user->store->id;
                 }
-                if($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id']){
+                if($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id'] && $store == $data['store_id']){
                     return true;
                 }
             });
