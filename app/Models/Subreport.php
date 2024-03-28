@@ -34,7 +34,7 @@ class Subreport extends Model
             'inconsistences', // Intermediate table
             'associated_id', // Foreign key current model
             'subreport_id' // Foreign key related model
-        );
+        )->withPivot('verified');
     }
     public function data()
     {

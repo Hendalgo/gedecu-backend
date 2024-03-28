@@ -36,13 +36,10 @@ class InconsistenceController extends Controller
         if (auth()->user()->role_id != 1) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        $inconsistence = Inconsistence::find($id);
+        $inconsistence = Inconsistence::where('associated_id', $id)->update(['verified' => 1]);
         if (! $inconsistence) {
             return response()->json(['error' => 'Inconsistence not found'], 404);
         }
-        $inconsistence->verified = 1;
-        $inconsistence->save();
-
         return response()->json($inconsistence);
     }
 
