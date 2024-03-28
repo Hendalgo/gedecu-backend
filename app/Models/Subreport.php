@@ -28,11 +28,14 @@ class Subreport extends Model
         return $this->belongsTo('\App\Models\Currency', 'currency_id');
     }
 
-    public function inconsistence()
+    public function inconsistences()
     {
-        return $this->hasOne('\App\Models\Inconsistence', 'subreport_id');
+        return $this->belongsToMany('\App\Models\Subreport', 
+            'inconsistences', // Intermediate table
+            'associated_id', // Foreign key current model
+            'subreport_id' // Foreign key related model
+        );
     }
-
     public function data()
     {
         return $this->hasMany('\App\Models\SubreportData', 'subreport_id');

@@ -11,16 +11,17 @@ class Inconsistence extends Model
 
     protected $fillable = [
         'subreport_id',
+        'associated_id',
         'verified',
         'data',
     ];
 
     public function subreport()
     {
-        return $this->belongsTo(Subreport::class, 'subreport_id');
-    }
-    public function associated()
-    {
-        return $this->belongsTo(Subreport::class, 'associated_id');
+        return $this->belongsToMany(Subreport::class, 
+            'inconsistences', // Intermediate table
+            'associated_id', // Foreign key current model
+            'subreport_id' // Foreign key related model
+        );
     }
 }
