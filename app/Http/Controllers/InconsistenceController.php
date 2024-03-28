@@ -89,9 +89,17 @@ class InconsistenceController extends Controller
         if ($date) {
             $subreports = $subreports->where('subreports.created_at', 'like', '%' . $date . '%');
         }
-        if ($verified) {
-            $subreports = $subreports->where('inconsistences.verified', $verified);
+        if ($verified == strtolower('yes')) {
+            $subreports = $subreports->whereHas('inconsistences', function ($query) {
+                $query->where('inconsistences.verified', true);
+            });
         }
+        else if ($verified == strtolower('no')) {
+            $subreports = $subreports->whereHas('inconsistences', function ($query) {
+                $query->where('inconsistences.verified', false);
+            });
+        }
+
         if ($paginate == 'no') {
             $subreports = $subreports->get();
         } else {
