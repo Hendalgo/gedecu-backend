@@ -25,6 +25,7 @@ class KeyValueMap
 
         return $items;
     }
+
     public function transformElementWithoutInstance($items)
     {
         $items->each(function ($item) {

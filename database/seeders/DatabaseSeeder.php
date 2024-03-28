@@ -36,6 +36,6 @@ class DatabaseSeeder extends Seeder
         User::factory(50)->create();
         Store::factory(30)->create();
         BankAccount::factory(10)->create(); */
-        
+
     }
 }

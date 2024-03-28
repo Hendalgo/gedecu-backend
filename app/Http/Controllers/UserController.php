@@ -284,7 +284,7 @@ class UserController extends Controller
             ->select('user_balances.*', 'users.name as user_name', 'currencies.name as currency_name')
             ->groupBy('user_balances.id');
 
-        if($currentUser->role->id !== 1){
+        if ($currentUser->role->id !== 1) {
             $balances = $balances->where('users.id', $currentUser->id);
         }
         if ($search) {

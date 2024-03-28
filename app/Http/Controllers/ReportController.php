@@ -332,7 +332,7 @@ class ReportController extends Controller
     {
         $amount = $subreport['amount'];
         $currency = $subreport['currency_id'];
-        if($report_type->id == 41){
+        if ($report_type->id == 41) {
             $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
             $convertedAmount = $this->calculateAmount($subreport);
             $amount = $operation === 'undo' ? $amount * -1 : $amount;
@@ -346,13 +346,13 @@ class ReportController extends Controller
                     $account->save();
                 }
             }
-            
+
             $wallet = BankAccount::find($subreport['wallet_id']);
             $wallet->balance = $wallet->balance - $amount;
             $wallet->save();
+
             return;
-        }
-        else if ($report_type->id == 40) {
+        } elseif ($report_type->id == 40) {
             $wallet = BankAccount::find($subreport['wallet_id']);
             $bank = BankAccount::find($subreport['account_id']);
             $convertedAmount = $this->calculateAmount($subreport);
@@ -362,7 +362,7 @@ class ReportController extends Controller
 
             $wallet->balance = $wallet->balance - $amount;
             $bank->balance = $bank->balance + $convertedAmount;
-            
+
             $wallet->save();
             $bank->save();
 
@@ -378,13 +378,12 @@ class ReportController extends Controller
 
             $wallet->balance = $wallet->balance + $amount;
             $bank->balance = $bank->balance - $convertedAmount;
-            
+
             $wallet->save();
             $bank->save();
 
             return;
-        }
-        else if ($report_type->id ==43){
+        } elseif ($report_type->id == 43) {
             $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
             $convertedAmount = $this->calculateAmount($subreport);
 
@@ -403,6 +402,7 @@ class ReportController extends Controller
             $wallet = BankAccount::find($subreport['wallet_id']);
             $wallet->balance = $wallet->balance + $amount;
             $wallet->save();
+
             return;
         }
         if (array_key_exists('convert_amount', $report_type_config)) {
@@ -416,8 +416,7 @@ class ReportController extends Controller
             $amount = $amount * -1;
         } elseif ($report_type->type === 'expense' && $operation === 'update') {
             $amount = $amount * -1;
-        }
-        else if ($report_type->type === 'expense' && $operation === 'create') {
+        } elseif ($report_type->type === 'expense' && $operation === 'create') {
             $amount = $amount * -1;
         }
 

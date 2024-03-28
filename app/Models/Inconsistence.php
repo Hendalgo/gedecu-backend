@@ -18,7 +18,7 @@ class Inconsistence extends Model
 
     public function subreport()
     {
-        return $this->belongsToMany(Subreport::class, 
+        return $this->belongsToMany(Subreport::class,
             'inconsistences', // Intermediate table
             'associated_id', // Foreign key current model
             'subreport_id' // Foreign key related model
