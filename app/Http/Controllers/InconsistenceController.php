@@ -6,6 +6,7 @@ use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\Inconsistence;
 use App\Models\Report;
+use App\Models\Store;
 use App\Models\Subreport;
 use App\Services\KeyValueMap;
 use Carbon\Carbon;
@@ -39,7 +40,6 @@ class InconsistenceController extends Controller
         if (! $inconsistence) {
             return response()->json(['error' => 'Inconsistence not found'], 404);
         }
-
         return response()->json($inconsistence);
     }
 
@@ -63,51 +63,55 @@ class InconsistenceController extends Controller
         $order = $request->input('order_by', 'desc');
         $verified = $request->input('verified');
 
-        $subreports = Subreport::where(function ($query) {
-            $query->whereHas('inconsistences')
-                ->orWhereHas('inconsistences', function ($subQuery) {
-                    $subQuery->whereNull('associated_id')
-                        ->where('subreport_id', '!=', null);
+
+        $subreports = Subreport::query();
+        
+        if ($search) {
+            $subreports = $subreports->where(function ($query) use ($search) {
+                $query->whereHas('data', function ($subQuery) use ($search) {
+                    $subQuery->where('value', 'like', '%' . $search . '%');
+                })->orWhereHas('inconsistences.data', function ($subQuery) use ($search) {
+                    $subQuery->where('value', 'like', '%' . $search . '%');
                 });
-        })
-            ->with(['report' => function ($query) {
-                $query->with('type', 'user.store', 'user.role');
-            },
-                'data',
-                'inconsistences' => function ($query) {
-                    $query->with('data', 'report.user.store', 'report.type', 'report.user.role');
-                }])
-            ->orderBy($order_by, $order);
+            });
+        }
+        
         if ($since) {
             $subreports = $subreports->where('subreports.created_at', '>=', $since);
         }
         if ($until) {
             $subreports = $subreports->where('subreports.created_at', '<=', $until);
         }
-        if ($search) {
-            $subreports = $subreports->where(function ($query) use ($search) {
-                $query->whereHas('data', function ($subQuery) use ($search) {
-                    $subQuery->where('value', 'like', '%'.$search.'%');
-                })->orWhereHas('inconsistences.data', function ($subQuery) use ($search) {
-                    $subQuery->where('value', 'like', '%'.$search.'%');
-                });
-            });
-        }
         if ($type) {
             $subreports = $subreports->where('subreports.type_id', $type);
         }
         if ($date) {
-            $subreports = $subreports->where('subreports.created_at', 'like', '%'.$date.'%');
+            $subreports = $subreports->where('subreports.created_at', 'like', '%' . $date . '%');
         }
         if ($verified == strtolower('yes')) {
             $subreports = $subreports->whereHas('inconsistences', function ($query) {
                 $query->where('inconsistences.verified', true);
             });
-        } elseif ($verified == strtolower('no')) {
+        }
+        else if ($verified == strtolower('no')) {
             $subreports = $subreports->whereHas('inconsistences', function ($query) {
                 $query->where('inconsistences.verified', false);
             });
         }
+
+        $subreports->whereExists(function($query){
+            $query->select('*')
+                ->from('inconsistences')
+                ->whereColumn('inconsistences.associated_id', 'subreports.id');
+        })
+        ->with(['report' => function ($query) {
+            $query->with('type', 'user.store', 'user.role');
+        },
+        'data',
+        'inconsistences' => function ($query) {
+            $query->with('data', 'report.user.store', 'report.type', 'report.user.role');
+        }])
+        ->orderBy($order_by, $order);
 
         if ($paginate == 'no') {
             $subreports = $subreports->get();
@@ -118,7 +122,6 @@ class InconsistenceController extends Controller
         $subreports->each(function ($subreport) {
             $subreport->inconsistences = $this->keyValueMap->transformElement($subreport->inconsistences);
         });
-
         return response()->json($subreports);
     }
 
@@ -251,30 +254,31 @@ class InconsistenceController extends Controller
                 $subData = json_decode($sub->data, true);
                 $itemData = json_decode($item->data, true);
                 $store = null;
-                if (auth()->user()) {
+                if (auth()->user()){
                     $store = auth()->user()->load('store')->store->id;
-                } else {
+                }
+                else{
                     $parent = Subreport::with('report.user.store')->find($sub->id);
-                    if ($parent->report->user->store) {
+                    if($parent->report->user->store){
                         $store = $parent->report->user->store->id;
                     }
                 }
-                if ($subData['user_id'] == $item->report->user_id && $subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $store == $itemData['store_id']) {
-                    /*The bank account from the subreport should be the same as the bank account from the
-                     * inconsistency
-                     */
-                    $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
-                    if ($bankAccount->bank->id == $subData['bank_id']) {
-                        return true;
-                    }
+                if ($subData['user_id'] == $item->report->user_id && $subData['rate'] == $itemData['rate'] &&  Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $store == $itemData['store_id']) {
+                   /*The bank account from the subreport should be the same as the bank account from the
+                    * inconsistency
+                    */ 
+                   $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
+                   if($bankAccount->bank->id == $subData['bank_id']){
+                       return true;
+                   }
                 }
-
+                
                 return false;
             });
 
             /*Group the filtered collection by report id */
             $filtered = $filtered->groupBy('report_id');
-            $filtered = $filtered->filter(function ($item) use ($sub) {
+            $filtered = $filtered->filter(function ($item) use ($sub){
                 $amount = 0;
                 $transferences_quantity = 0;
                 $subData = json_decode($sub->data, true);
@@ -283,19 +287,19 @@ class InconsistenceController extends Controller
                     $amount += $data['amount'];
                     $transferences_quantity += $data['transferences_quantity'];
                 }
-                if ($amount == $subData['amount'] && $transferences_quantity == $subData['transferences_quantity']) {
+                if($amount == $subData['amount'] && $transferences_quantity == $subData['transferences_quantity']){
                     return true;
                 }
-
                 return false;
             });
             $filtered = $filtered->flatten();
-        } elseif ($type == 4) {
+        }
+        else if ($type == 4){
             $subData = json_decode($sub->data, true);
             $amount = 0;
             $bank = BankAccount::with('bank')->find($subData['account_id'])->bank;
             $transferences_quantity = 0;
-            $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $bank) {
+            $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $bank){
                 $subData = json_decode($sub->data, true);
                 if (gettype($item->data) == 'string') {
                     $itemData = json_decode($item->data, true);
@@ -305,41 +309,41 @@ class InconsistenceController extends Controller
                 $store = null;
 
                 $parent = Subreport::with('report.user.store')->find($item->id);
-                if ($parent->report->user->store) {
+                if($parent->report->user->store){
                     $store = $parent->report->user->store->id;
                 }
-                if ($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && ($subData['amount'] != $itemData['amount'] || $subData['transferences_quantity'] != $itemData['transferences_quantity'])) {
+                if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && ($subData['amount'] != $itemData['amount'] || $subData['transferences_quantity'] != $itemData['transferences_quantity'])){
                     $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
-                    if ($bankAccount->bank->id == $bank->id) {
+                    if($bankAccount->bank->id == $bank->id){
                         $amount += $itemData['amount'];
                         $transferences_quantity += $itemData['transferences_quantity'];
-
                         return true;
                     }
-
+                    
                 }
-
                 return false;
             });
             $amount += $subData['amount'];
             $transferences_quantity += $subData['transferences_quantity'];
 
-            $filtered = $filtered->filter(function ($item) use ($sub, $bank, $subData, $amount, $transferences_quantity) {
+            
+
+            $filtered = $filtered->filter(function ($item) use ($sub, $bank, $subData, $amount, $transferences_quantity){
                 $data = json_decode($item->data, true);
                 $user = '';
-                if (auth()->user()) {
+                if (auth()->user()){
                     $user = auth()->user()->id;
-                } else {
+                }
+                else{
                     $parent = Subreport::with('report')->find($sub->id);
                     $user = $parent->report->user_id;
                 }
-                if ($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id']) {
+                if($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id']){
                     return true;
                 }
             });
             $filtered = $filtered->flatten();
         }
-
         return $this->check_if_have_matches($filtered, $sub);
     }
 
@@ -365,18 +369,18 @@ class InconsistenceController extends Controller
             //if the subreport is duplicated, then skip it
             $sub->data = json_encode($sub->data);
             //Filter the subreports that have the same currency and amount
-            if ($report->type->id != 4 && $report->type->id != 23) {
+            if($report->type->id != 4 && $report->type->id != 23){
                 $filtered = $toCompare->filter(function ($value, $key) use ($sub) {
 
                     $valueData = json_decode($value->data, true);
                     $subData = json_decode($sub->data, true);
-                    if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24) {
+                    if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24){
                         return true;
                     }
-
+    
                     return false;
                 });
-            } else {
+            }else{
                 $filtered = $toCompare;
             }
             $this->invoke($filtered, $sub, $report->type->id, $subreports);
@@ -388,7 +392,7 @@ class InconsistenceController extends Controller
 
         if ($filtered->isEmpty()) {
             $inconsistence = Inconsistence::create([
-                'subreport_id' => $sub->id,
+                'associated_id' => $sub->id,
             ]);
             if (! $inconsistence->id) {
                 throw new \Exception('Error creating the inconsistency');
@@ -401,7 +405,7 @@ class InconsistenceController extends Controller
             /*If the filtered collection is not empty, then the subreport is consistent*/
             $inconsistence = Inconsistence::where('subreport_id', $item->id)->latest('created_at')->first();
 
-            if ($count == 1 && $inconsistence) {
+            if($count == 1 && $inconsistence){
                 $inconsistence->delete();
                 $inconsistence = null;
             }
@@ -410,20 +414,21 @@ class InconsistenceController extends Controller
                 if ($inconsistence->associated_id == null && $inconsistence->associated_id != $sub->id) {
                     $inconsistence->associated_id = $sub->id;
                     $inconsistence->save();
-                } elseif ($inconsistence->associated_id != $sub->id) {
-                    $inconsistence = Inconsistence::create([
+                } 
+                else if ($inconsistence->associated_id != $sub->id){
+                   $inconsistence= Inconsistence::create([
                         'subreport_id' => $sub->id,
                         'associated_id' => $item->id,
                     ]);
                 }
-            } else {
+            }
+            else{
                 $inconsistence = Inconsistence::create([
                     'subreport_id' => $sub->id,
                     'associated_id' => $item->id,
                 ]);
             }
         });
-
         return true;
     }
 }
