@@ -393,7 +393,7 @@ class InconsistenceController extends Controller
 
         if ($filtered->isEmpty()) {
             $inconsistence = Inconsistence::create([
-                'associated_id' => $sub->id,
+                'subreport_id' => $sub->id,
             ]);
             if (! $inconsistence->id) {
                 throw new \Exception('Error creating the inconsistency');
@@ -406,7 +406,7 @@ class InconsistenceController extends Controller
             /*If the filtered collection is not empty, then the subreport is consistent*/
             $inconsistence = Inconsistence::where('subreport_id', $item->id)->latest('created_at')->first();
 
-            if($count == 1 && $inconsistence){
+            if($count > 1 && $inconsistence){
                 $inconsistence->delete();
                 $inconsistence = null;
             }

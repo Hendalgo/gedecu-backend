@@ -33,13 +33,15 @@ class FixInconsistences extends Command
             /**Empty Inconsistences table */
             DB::table('inconsistences')->truncate();
             $reports = Report::with('subreports.data')->get();
+            $count = count($reports);
             foreach ($reports as $report) {
                 /**Format subreport data */
                 $subreports = (new KeyValueMap())->transformElement($report->subreports);
                 $newInconsistences = new InconsistenceController();
                 $newInconsistences->check_inconsistences($report, $subreports);
-                $this->info('Inconsistences checked for report ' . $report->id);
+                $this->info('Inconsistences checked for report ' . $report->id . ' (' . $count-- . ' remaining)');
             }
+            $this->alert('Inconsistences checked for all reports');
         });
     }
 }
