@@ -32,8 +32,8 @@ class Subreport extends Model
     {
         return $this->belongsToMany('\App\Models\Subreport',
             'inconsistences', // Intermediate table
-            'associated_id', // Foreign key current model
-            'subreport_id' // Foreign key related model
+            'subreport_id', // Foreign key current model
+            'associated_id' // Foreign key related model
         )->withPivot('verified');
     }
 

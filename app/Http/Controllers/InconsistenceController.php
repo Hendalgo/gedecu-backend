@@ -36,7 +36,7 @@ class InconsistenceController extends Controller
         if (auth()->user()->role_id != 1) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-        $inconsistence = Inconsistence::where('associated_id', $id)->update(['verified' => 1]);
+        $inconsistence = Inconsistence::where('subreport_id', $id)->update(['verified' => 1]);
         if (! $inconsistence) {
             return response()->json(['error' => 'Inconsistence not found'], 404);
         }
@@ -102,7 +102,7 @@ class InconsistenceController extends Controller
         $subreports->whereExists(function($query){
             $query->select('*')
                 ->from('inconsistences')
-                ->whereColumn('inconsistences.associated_id', 'subreports.id');
+                ->whereColumn('inconsistences.subreport_id', 'subreports.id');
         })
         ->with(['report' => function ($query) {
             $query->with('type', 'user.store', 'user.role');
