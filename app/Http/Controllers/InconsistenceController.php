@@ -299,20 +299,15 @@ class InconsistenceController extends Controller
             $amount = 0;
             $bank = BankAccount::with('bank')->find($subData['account_id'])->bank;
             $transferences_quantity = 0;
-            $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $bank){
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $bank){
                 $subData = json_decode($sub->data, true);
                 if (gettype($item->data) == 'string') {
                     $itemData = json_decode($item->data, true);
                 } else {
                     $itemData = $item->data;
                 }
-                $store = null;
 
-                $parent = Subreport::with('report.user.store')->find($item->id);
-                if($parent->report->user->store){
-                    $store = $parent->report->user->store->id;
-                }
-                if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && ($subData['amount'] != $itemData['amount'] || $subData['transferences_quantity'] != $itemData['transferences_quantity']) && $store == $subData['store_id']){
+                if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && $sub->id != $item->id){
                     $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
                     if($bankAccount->bank->id == $bank->id){
                         $amount += $itemData['amount'];
@@ -330,16 +325,20 @@ class InconsistenceController extends Controller
 
             $filtered = $filtered->filter(function ($item) use ($sub, $bank, $subData, $amount, $transferences_quantity){
                 $data = json_decode($item->data, true);
+                $subData = json_decode($sub->data, true);
                 $user = '';
                 $store = null;
+                $parent = Subreport::with('report')->find($item->id);
+                
                 if (auth()->user()){
                     $user = auth()->user()->id;
+                }else{
+                    $user = Subreport::with('report.user')->find($sub->id)->report->user->id;
                 }
-                $parent = Subreport::with('report')->find($sub->id);
                 if($parent->report->user->store){
                     $store = $parent->report->user->store->id;
                 }
-                if($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id'] && $store == $data['store_id']){
+                if($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id'] && $store == $subData['store_id']){
                     return true;
                 }
             });
@@ -390,7 +389,6 @@ class InconsistenceController extends Controller
 
     private function check_if_have_matches($filtered, $sub)
     {
-
         if ($filtered->isEmpty()) {
             $inconsistence = Inconsistence::create([
                 'subreport_id' => $sub->id,
@@ -404,24 +402,18 @@ class InconsistenceController extends Controller
         $count = $filtered->count();
         $filtered->each(function ($item) use ($sub, $count) {
             /*If the filtered collection is not empty, then the subreport is consistent*/
-            $inconsistence = Inconsistence::where('subreport_id', $item->id)->latest('created_at')->first();
+            $inconsistence = Inconsistence::where('subreport_id', $item->id)->where(function($query) use ($sub){
+                $query->where('associated_id', $sub->id)->orWhere('associated_id', null);
+            })->latest('created_at')->first();
 
             if($count > 1 && $inconsistence){
                 $inconsistence->delete();
                 $inconsistence = null;
             }
 
-            if ($inconsistence) {
-                if ($inconsistence->associated_id == null && $inconsistence->associated_id != $sub->id) {
-                    $inconsistence->associated_id = $sub->id;
-                    $inconsistence->save();
-                } 
-                else if ($inconsistence->associated_id != $sub->id){
-                   $inconsistence= Inconsistence::create([
-                        'subreport_id' => $sub->id,
-                        'associated_id' => $item->id,
-                    ]);
-                }
+            if ($inconsistence){
+                $inconsistence->associated_id = $sub->id;
+                $inconsistence->save();
             }
             else{
                 $inconsistence = Inconsistence::create([
