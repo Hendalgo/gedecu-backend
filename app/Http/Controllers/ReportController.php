@@ -225,7 +225,6 @@ class ReportController extends Controller
                 'id' => 'required|exists:subreports,id,report_id,'.$id,
             ])->validate();
         }
-
         $edited = DB::transaction(function () use ($subreports, $report) {
             foreach ($subreports as $subreport) {
 
@@ -261,8 +260,13 @@ class ReportController extends Controller
 
                 //Add or substract the amount to the bank account
                 $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update');
+                
             }
 
+            $inconsistence = new InconsistenceController();
+            $report->subreports = $report->subreports()->get();
+            $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
+            $inconsistence->check_inconsistences($report, $report->subreports);
             return true;
         });
 
