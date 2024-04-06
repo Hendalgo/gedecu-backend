@@ -64,7 +64,7 @@ class InconsistenceController extends Controller
 
         $subreports = Report::with([
             'type', 
-            'user', 
+            'user.store', 
             'subreports' => function ($query) {
                     $query->with('data', 'inconsistences');
                 }   
