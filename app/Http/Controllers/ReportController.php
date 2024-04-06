@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bank;
 use App\Models\BankAccount;
+use App\Models\Inconsistence;
 use App\Models\Report;
 use App\Models\ReportType;
 use App\Models\RoleReportPermission;
@@ -260,19 +261,20 @@ class ReportController extends Controller
 
                 //Add or substract the amount to the bank account
                 $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update');
-                
+                // Delete Inconsistences
+                Inconsistence::where('subreport_id', $subreport['id'])->delete();
+                //update to null the associated_id of the inconsistences
+                Inconsistence::where('associated_id', $subreport['id'])->update(['associated_id' => null]);
             }
-
+            
+            $report->editable = 0;
+            $report->save();
             $inconsistence = new InconsistenceController();
             $report->subreports = $report->subreports()->get();
             $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
             $inconsistence->check_inconsistences($report, $report->subreports);
             return true;
         });
-
-        $report->editable = 0;
-        $report->save();
-
         return response()->json(['message' => 'Reporte editado'], 200);
     }
 
