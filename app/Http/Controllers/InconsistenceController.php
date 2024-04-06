@@ -112,6 +112,7 @@ class InconsistenceController extends Controller
             });
         }
 
+        $subreports = $subreports->orderBy($order_by, $order);
         if ($paginate == 'no') {
             $subreports = $subreports->get();
             $subreports->each(function ($report) {
