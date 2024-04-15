@@ -316,12 +316,6 @@ class RoleReportPermissionSeeder extends Seeder
             ],
             [
                 'role_id' => 5,
-                'report_type_id' => 26,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
-            [
-                'role_id' => 5,
                 'report_type_id' => 27,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
@@ -341,6 +335,18 @@ class RoleReportPermissionSeeder extends Seeder
             [
                 'role_id' => 5,
                 'report_type_id' => 30,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'role_id' => 5,
+                'report_type_id' => 45,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'role_id' => 5,
+                'report_type_id' => 46,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],

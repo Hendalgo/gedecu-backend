@@ -707,8 +707,9 @@ class ReportTypeValidationsSeeder extends Seeder
             'validation_role' => 'all',
             'report_type_id' => 29,
         ]);
+        /*Entrega a caja*/
         ReportTypeValidations::create([
-            'name' => 'supplier_id',
+            'name' => 'user_id',
             'validation' => 'required|exists:users,id|user_role:6',
             'validation_role' => 'all',
             'report_type_id' => 30,
@@ -731,6 +732,66 @@ class ReportTypeValidationsSeeder extends Seeder
             'validation_role' => 'all',
             'report_type_id' => 30,
         ]);
+        /*Entrega efectivo (A jefe de depositante)*/
+        ReportTypeValidations::create([
+            'name' => 'user_id',
+            'validation' => 'required|exists:users,id|user_role:7',
+            'validation_role' => 'all',
+            'report_type_id' => 45,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'motive',
+            'validation' => 'required',
+            'validation_role' => 'all',
+            'report_type_id' => 45,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 45,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 45,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean|is_false',
+            'validation_role' => 'all',
+            'report_type_id' => 45,
+        ]);
+        
+        /*Gastos*/
+        ReportTypeValidations::create([
+            'name' => 'motive',
+            'validation' => 'required',
+            'validation_role' => 'all',
+            'report_type_id' => 46,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'amount',
+            'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 46,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'currency_id',
+            'validation' => 'required|exists:currencies,id',
+            'validation_role' => 'all',
+            'report_type_id' => 46,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'isDuplicated',
+            'validation' => 'required|boolean|is_false',
+            'validation_role' => 'all',
+            'report_type_id' => 46,
+        ]);
+
+
+        /** */
         ReportTypeValidations::create([
             'name' => 'store_id',
             'validation' => 'required|exists:stores,id',
