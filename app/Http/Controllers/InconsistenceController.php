@@ -133,25 +133,50 @@ class InconsistenceController extends Controller
 
     public function invoke($filtered, $sub, $type, $subreports)
     {
+        /**Grouped */
         if ($type == 1 || $type == 26) {
-            $this->proveedor_proveedor($filtered, $sub, $type);
+            $this->proveedor_proveedor($filtered, $sub, $type, $subreports);
         }
+        /*Grouped */
         if ($type == 2 || $type == 6) {
-            $this->helpG($filtered, $sub, $type);
+            $this->helpG($filtered, $sub, $type,  $subreports);
         }
+        /**Done group */
         if ($type == 23 || $type == 4) {
             $this->giro_local($filtered, $sub, $type, $subreports);
         }
+        /**Grouped */
         if ($type == 17 || $type == 27) {
-            $this->efectivo_depositante_entrega_efectivo($filtered, $sub, $type);
+            $this->efectivo_depositante_entrega_efectivo($filtered, $sub, $type, $subreports);
         }
+        /*Done group */
         if ($type == 15 || $type == 25) {
-            $this->ayuda_recibida_local_ayuda_realizada_local($filtered, $sub, $type);
+            $this->ayuda_recibida_local_ayuda_realizada_local($filtered, $sub, $type, $subreports);
         }
     }
 
-    private function ayuda_recibida_local_ayuda_realizada_local($filtered, $sub, $type)
+    /*Grouped */
+    private function ayuda_recibida_local_ayuda_realizada_local($filtered, $sub, $type, $subreport)
     {
+        $amount = 0;
+        $subData = json_decode($sub->data, true);
+        
+        //Get siblings of the current subreport
+        $subreport = $subreport->filter(function ($item) use ($sub, &$amount) {
+            $subData = json_decode($sub->data, true);
+            if (gettype($item->data) == 'string') {
+                $itemData = json_decode($item->data, true);
+            } else {
+                $itemData = $item->data;
+            }
+
+            if ($subData['store_id'] == $itemData['store_id'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id) {
+                $amount += $itemData['amount'];
+            }
+        });
+
+        $amount += $subData['amount'];
+
         $filtered = $filtered->filter(function ($item) use ($sub) {
             $itemData = json_decode($item->data, true);
             if ($itemData['store_id'] == $sub->report->user->store->id) {
@@ -161,13 +186,51 @@ class InconsistenceController extends Controller
             return false;
         });
 
+        //group the filtered collection by report id
+        $filtered = $filtered->groupBy('report_id');
+
+        $filtered = $filtered->filter(function ($item) use ($sub, $amount) {
+            $amountLocal = 0;
+            $subData = json_decode($sub->data, true);
+            foreach ($item as $subreport) {
+                $data = json_decode($subreport->data, true);
+                $amountLocal += $data['amount'];
+            }
+            if($amountLocal == $amount){
+                return true;
+            }
+            return false;
+        });
+
+        $filtered = $filtered->flatten();
+
         return $this->check_if_have_matches($filtered, $sub);
     }
 
-    private function efectivo_depositante_entrega_efectivo($filtered, $sub, $type)
+    private function efectivo_depositante_entrega_efectivo($filtered, $sub, $type, $subreports)
     {
         /*Entrega de efectivo encargado*/
         if ($type == 17) {
+
+            $amount = 0;
+            $subData = json_decode($sub->data, true);
+
+            //Get siblings of the current subreport
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount) {
+                $subData = json_decode($sub->data, true);
+                if (gettype($item->data) == 'string') {
+                    $itemData = json_decode($item->data, true);
+                } else {
+                    $itemData = $item->data;
+                }
+
+                if ($subData['user_id'] == $itemData['user_id'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id) {
+                    $amount += $itemData['amount'];
+                }
+            });
+
+            $amount += $subData['amount'];
+
             $filtered = $filtered->filter(function ($item) use ($sub) {
                 $subData = json_decode($sub->data, true);
                 /*The id of the selected user must coincide with the id of the user that
@@ -179,9 +242,49 @@ class InconsistenceController extends Controller
 
                 return false;
             });
+
+            //group the filtered collection by report id
+            $filtered = $filtered->groupBy('report_id');
+
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount) {
+                $amountLocal = 0;
+                $subData = json_decode($sub->data, true);
+                foreach ($item as $subreport) {
+                    $data = json_decode($subreport->data, true);
+                    $amountLocal += $data['amount'];
+                }
+                if($amountLocal == $amount){
+                    return true;
+                }
+                return false;
+            });
+
+            $filtered = $filtered->flatten();
         }
-        /*Efectivo depositante*/
+        /*Efectivo (Renamed to Entrega de local) depositante*/
         if ($type == 27) {
+            $amount = 0;
+            $subData = json_decode($sub->data, true);
+
+            //Get siblings of the current subreport
+
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount) {
+                $subData = json_decode($sub->data, true);
+                if (gettype($item->data) == 'string') {
+                    $itemData = json_decode($item->data, true);
+                } else {
+                    $itemData = $item->data;
+                }
+
+                if ($subData['store_id'] == $itemData['store_id'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id) {
+                    $amount += $itemData['amount'];
+                }
+            });
+
+            $amount += $subData['amount'];
+
+            /** */
+
             $filtered = $filtered->filter(function ($item) use ($sub) {
                 $subData = json_decode($sub->data, true);
                 $itemData = json_decode($item->data, true);
@@ -195,31 +298,103 @@ class InconsistenceController extends Controller
 
                 return false;
             });
+
+            //group the filtered collection by report id
+            $filtered = $filtered->groupBy('report_id');
+
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount) {
+                $amountLocal = 0;
+                $subData = json_decode($sub->data, true);
+                foreach ($item as $subreport) {
+                    $data = json_decode($subreport->data, true);
+                    $amountLocal += $data['amount'];
+                }
+                if($amountLocal == $amount){
+                    return true;
+                }
+                return false;
+            });
+
+            $filtered = $filtered->flatten();
         }
 
         return $this->check_if_have_matches($filtered, $sub);
     }
 
     /**Check Help Gestor received and sent */
-    private function helpG($filtered, $sub, $type)
+    private function helpG($filtered, $sub, $type, $subreports)
     {
+        $amount = 0;
+        $subData = json_decode($sub->data, true);
+        //Get siblings of the current subreport
+        $subreports = $subreports->filter(function ($item) use ($sub, &$amount) {
+            $subData = json_decode($sub->data, true);
+            if (gettype($item->data) == 'string') {
+                $itemData = json_decode($item->data, true);
+            } else {
+                $itemData = $item->data;
+            }
+
+            if ($subData['user_id'] == $itemData['user_id'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id) {
+                $amount += $itemData['amount'];
+            }
+        });
+
+        $amount += $subData['amount'];
+
         $filtered = $filtered->filter(function ($item) use ($sub) {
             $subData = json_decode($sub->data, true);
             if ($subData['user_id'] == $item->report->user_id) {
-                //Bank from bank account should be the same
                 return true;
             }
 
             return false;
         });
 
+        //group the filtered collection by report id
+        $filtered = $filtered->groupBy('report_id');
+
+        $filtered = $filtered->filter(function ($item) use ($sub, $amount) {
+            $amountLocal = 0;
+            $subData = json_decode($sub->data, true);
+            foreach ($item as $subreport) {
+                $data = json_decode($subreport->data, true);
+                $amountLocal += $data['amount'];
+            }
+            if($amountLocal == $amount){
+                return true;
+            }
+            return false;
+        });
+
+        $filtered = $filtered->flatten();
+
         return $this->check_if_have_matches($filtered, $sub);
     }
 
     /*Check Provider from Gestor type and Provider from provider */
-    private function proveedor_proveedor($filtered, $sub, $type)
+    private function proveedor_proveedor($filtered, $sub, $type, $subreports)
     {
         if ($type == 1) {
+            $amount = 0;
+            $subData = json_decode($sub->data, true);
+
+            //Get siblings of the current subreport
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount) {
+                $subData = json_decode($sub->data, true);
+                if (gettype($item->data) == 'string') {
+                    $itemData = json_decode($item->data, true);
+                } else {
+                    $itemData = $item->data;
+                }
+
+                if ($subData['supplier_id'] == $itemData['supplier_id'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id && $subData['account_id'] == $itemData['account_id']) {
+                    $amount += $itemData['amount'];
+                }
+            });
+
+            $amount += $subData['amount'];
+
             $filtered = $filtered->filter(function ($item) use ($sub) {
                 $subData = json_decode($sub->data, true);
                 $itemData = json_decode($item->data, true);
@@ -231,8 +406,42 @@ class InconsistenceController extends Controller
 
                 return false;
             });
+            //group the filtered collection by report id
+            $filtered = $filtered->groupBy('report_id');
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount) {
+                $amountLocal = 0;
+                $subData = json_decode($sub->data, true);
+                foreach ($item as $subreport) {
+                    $data = json_decode($subreport->data, true);
+                    $amountLocal += $data['amount'];
+                }
+                if($amountLocal == $amount){
+                    return true;
+                }
+                return false;
+            });
+            $filtered = $filtered->flatten();
         }
         if ($type == 26) {
+            $amount = 0;
+            $subData = json_decode($sub->data, true);
+
+            //Get siblings of the current subreport
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount) {
+                $subData = json_decode($sub->data, true);
+                if (gettype($item->data) == 'string') {
+                    $itemData = json_decode($item->data, true);
+                } else {
+                    $itemData = $item->data;
+                }
+
+                if ($subData['user_id'] == $itemData['user_id'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id && $subData['account_id'] == $itemData['account_id']) {
+                    $amount += $itemData['amount'];
+                }
+            });
+
+            $amount += $subData['amount'];
+
             $filtered = $filtered->filter(function ($item) use ($sub) {
                 $subData = json_decode($sub->data, true);
                 $itemData = json_decode($item->data, true);
@@ -252,9 +461,34 @@ class InconsistenceController extends Controller
         return $this->check_if_have_matches($filtered, $sub);
     }
 
+    /**Done group */
     private function giro_local($filtered, $sub, $type, $subreports)
     {
         if ($type == 23) {
+            $amount = 0;
+            $transferences_quantity = 0;
+            $subData = json_decode($sub->data, true);
+
+            //Get siblings of the current subreport
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity) {
+                $subData = json_decode($sub->data, true);
+                if (gettype($item->data) == 'string') {
+                    $itemData = json_decode($item->data, true);
+                } else {
+                    $itemData = $item->data;
+                }
+
+                if ($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['user_id'] == $itemData['user_id'] && $sub->id != $item->id && $subData['bank_id'] == $itemData['bank_id']) {
+                    $amount += $itemData['amount'];
+                    $transferences_quantity += $itemData['transferences_quantity'];
+                }
+            });
+
+            $amount += $subData['amount'];
+            $transferences_quantity += $subData['transferences_quantity'];
+
+            //Start to filter the possible matches
+
             $filtered = $filtered->filter(function ($item) use ($sub) {
                 //The bank account from the subreport should be the same as the bank account from the
                 $subData = json_decode($sub->data, true);
@@ -282,18 +516,19 @@ class InconsistenceController extends Controller
                 return false;
             });
 
+
             /*Group the filtered collection by report id */
             $filtered = $filtered->groupBy('report_id');
-            $filtered = $filtered->filter(function ($item) use ($sub){
-                $amount = 0;
-                $transferences_quantity = 0;
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount, $transferences_quantity) {
+                $amountLocal = 0;
+                $transferences_quantityLocal = 0;
                 $subData = json_decode($sub->data, true);
                 foreach ($item as $subreport) {
                     $data = json_decode($subreport->data, true);
-                    $amount += $data['amount'];
-                    $transferences_quantity += $data['transferences_quantity'];
+                    $amountLocal += $data['amount'];
+                    $transferences_quantityLocal += $data['transferences_quantity'];
                 }
-                if($amount == $subData['amount'] && $transferences_quantity == $subData['transferences_quantity']){
+                if($amountLocal == $amount && $transferences_quantityLocal == $transferences_quantity){
                     return true;
                 }
                 return false;
@@ -305,6 +540,8 @@ class InconsistenceController extends Controller
             $amount = 0;
             $bank = BankAccount::with('bank')->find($subData['account_id'])->bank;
             $transferences_quantity = 0;
+
+            //Get siblings of the current subreport 
             $subreports = $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $bank){
                 $subData = json_decode($sub->data, true);
                 if (gettype($item->data) == 'string') {
@@ -344,10 +581,29 @@ class InconsistenceController extends Controller
                 if($parent->report->user->store){
                     $store = $parent->report->user->store->id;
                 }
-                if($data['amount'] == $amount && $data['transferences_quantity'] == $transferences_quantity && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id'] && $store == $subData['store_id']){
+                if( Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id'] && $store == $subData['store_id']){
                     return true;
                 }
             });
+            // group the filtered collection by report id
+
+            $filtered = $filtered->groupBy('report_id');
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount, $transferences_quantity) {
+                $amountLocal = 0;
+                $transferences_quantityLocal = 0;
+                $subData = json_decode($sub->data, true);
+                foreach ($item as $subreport) {
+                    $data = json_decode($subreport->data, true);
+                    $amountLocal += $data['amount'];
+                    $transferences_quantity
+                    += $data['transferences_quantity'];
+                }
+                if($amountLocal == $amount && $transferences_quantityLocal == $transferences_quantity){
+                    return true;
+                }
+                return false;
+            });
+
             $filtered = $filtered->flatten();
         }
         return $this->check_if_have_matches($filtered, $sub);
@@ -380,7 +636,7 @@ class InconsistenceController extends Controller
 
                     $valueData = json_decode($value->data, true);
                     $subData = json_decode($sub->data, true);
-                    if ($valueData['currency_id'] === $subData['currency_id'] && $valueData['amount'] === $subData['amount'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24){
+                    if ($valueData['currency_id'] === $subData['currency_id'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24){
                         return true;
                     }
     
