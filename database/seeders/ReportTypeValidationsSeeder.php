@@ -108,6 +108,12 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 3,
         ]);
         ReportTypeValidations::create([
+            'name'=> 'bank_id',
+            'validation' => 'required|exists:banks,id',
+            'validation_role' => 'all',
+            'report_type_id' => 4,
+        ]);
+        ReportTypeValidations::create([
             'name' => 'store_id',
             'validation' => 'required|exists:stores,id',
             'validation_role' => 'all',
@@ -530,6 +536,12 @@ class ReportTypeValidationsSeeder extends Seeder
         ReportTypeValidations::create([
             'name' => 'currency_id',
             'validation' => 'required|numeric',
+            'validation_role' => 'all',
+            'report_type_id' => 23,
+        ]);
+        ReportTypeValidations::create([
+            'name' => 'store_id',
+            'validation' => 'required|exists:stores,id',
             'validation_role' => 'all',
             'report_type_id' => 23,
         ]);
