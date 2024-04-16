@@ -523,12 +523,16 @@ class InconsistenceController extends Controller
                 }
             }
             else{
+                $store_id = null;
+                if (array_key_exists('store_id', $itemData)) {
+                    $store_id = $itemData['store_id'];
+                }
                 if (auth()->user()){
                     $user = auth()->user()->id;
                 }else{
                     $user = Subreport::with('report.user')->find($sub->id)->report->user->id;
                 }
-                if($user != $itemData['user_id'] && $subData['store_id'] != $itemData['store_id']){
+                if($user != $itemData['user_id'] && $subData['store_id'] != $store_id){
                     return false;
                 }
             }
