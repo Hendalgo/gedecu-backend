@@ -504,6 +504,10 @@ class InconsistenceController extends Controller
             $subData = json_decode($sub->data, true);
             $itemData = json_decode($item->data, true);
             $store = null;
+            $bank_id = null;
+            if (array_key_exists('bank_id', $itemData)) {
+                $bank_id = $itemData['bank_id'];
+            }
             if($type == 23){
                 if (auth()->user()){
                     $store = auth()->user()->load('store')->store->id;
@@ -528,7 +532,7 @@ class InconsistenceController extends Controller
                     return false;
                 }
             }
-            if ($subData['rate'] == $itemData['rate'] &&  Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['bank_id'] == $itemData['bank_id']) {
+            if ($subData['rate'] == $itemData['rate'] &&  Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['bank_id'] == $bank_id) {
                 return true;
             }
             
