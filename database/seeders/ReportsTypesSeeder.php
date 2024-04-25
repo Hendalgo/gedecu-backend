@@ -573,6 +573,7 @@ class ReportsTypesSeeder extends Seeder
 
     private function update(): void
     {
+        
         /**
          * Proveedor - Proveedor
          */
@@ -582,6 +583,18 @@ class ReportsTypesSeeder extends Seeder
 
         $reportType = ReportType::find(26);
         $reportType->associated_type_id = 1;
+        $reportType->save();
+
+        /**
+         * Ayuda Recibida - Ayuda Realizada
+         */
+
+        $reportType = ReportType::find(2);
+        $reportType->associated_type_id = 6;
+        $reportType->save();
+
+        $reportType = ReportType::find(6);
+        $reportType->associated_type_id = 2;
         $reportType->save();
 
         /*

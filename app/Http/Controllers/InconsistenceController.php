@@ -561,77 +561,7 @@ class InconsistenceController extends Controller
             return false;
         });
         $filtered = $filtered->flatten();
-        /* else if ($type == 4){
-            $subData = json_decode($sub->data, true);
-            $amount = 0;
-            $bank = BankAccount::with('bank')->find($subData['account_id'])->bank;
-            $transferences_quantity = 0;
-
-            //Get siblings of the current subreport 
-            $subreports = $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $bank){
-                $subData = json_decode($sub->data, true);
-                if (gettype($item->data) == 'string') {
-                    $itemData = json_decode($item->data, true);
-                } else {
-                    $itemData = $item->data;
-                }
-
-                if($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['store_id'] == $itemData['store_id'] && $sub->id != $item->id){
-                    $bankAccount = BankAccount::with('bank')->find($itemData['account_id']);
-                    if($bankAccount->bank->id == $bank->id){
-                        $amount += $itemData['amount'];
-                        $transferences_quantity += $itemData['transferences_quantity'];
-                        return true;
-                    }
-                    
-                }
-                return false;
-            });
-            $amount += $subData['amount'];
-            $transferences_quantity += $subData['transferences_quantity'];
-
-            
-
-            $filtered = $filtered->filter(function ($item) use ($sub, $bank, $subData, $amount, $transferences_quantity){
-                $data = json_decode($item->data, true);
-                $subData = json_decode($sub->data, true);
-                $user = '';
-                $store = null;
-                $parent = Subreport::with('report')->find($item->id);
-                
-                if (auth()->user()){
-                    $user = auth()->user()->id;
-                }else{
-                    $user = Subreport::with('report.user')->find($sub->id)->report->user->id;
-                }
-                if($parent->report->user->store){
-                    $store = $parent->report->user->store->id;
-                }
-                if( Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $bank->id == $data['bank_id'] && $data['rate'] == $subData['rate'] && $user == $data['user_id'] && $store == $subData['store_id']){
-                    return true;
-                }
-            });
-            // group the filtered collection by report id
-
-            $filtered = $filtered->groupBy('report_id');
-            $filtered = $filtered->filter(function ($item) use ($sub, $amount, $transferences_quantity) {
-                $amountLocal = 0;
-                $transferences_quantityLocal = 0;
-                $subData = json_decode($sub->data, true);
-                foreach ($item as $subreport) {
-                    $data = json_decode($subreport->data, true);
-                    $amountLocal += $data['amount'];
-                    $transferences_quantity
-                    += $data['transferences_quantity'];
-                }
-                if($amountLocal == $amount && $transferences_quantityLocal == $transferences_quantity){
-                    return true;
-                }
-                return false;
-            });
-
-            $filtered = $filtered->flatten();
-        } */
+       
         return $this->check_if_have_matches($filtered, $sub);
     }
 
