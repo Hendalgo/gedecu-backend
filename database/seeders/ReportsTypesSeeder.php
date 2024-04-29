@@ -584,19 +584,7 @@ class ReportsTypesSeeder extends Seeder
         $reportType = ReportType::find(26);
         $reportType->associated_type_id = 1;
         $reportType->save();
-
-        /**
-         * Ayuda Recibida - Ayuda Realizada
-         */
-
-        $reportType = ReportType::find(2);
-        $reportType->associated_type_id = 6;
-        $reportType->save();
-
-        $reportType = ReportType::find(6);
-        $reportType->associated_type_id = 2;
-        $reportType->save();
-
+        
         /*
          * Giro - Local
          */
@@ -610,10 +598,10 @@ class ReportsTypesSeeder extends Seeder
 
         /*Ayuda Realizada Gestor - Ayuda Recibida Gestor*/
         $reportType = ReportType::find(6);
-        $reportType->associated_type_id = 15;
+        $reportType->associated_type_id = 2;
         $reportType->save();
 
-        $reportType = ReportType::find(15);
+        $reportType = ReportType::find(2);
         $reportType->associated_type_id = 6;
         $reportType->save();
 
