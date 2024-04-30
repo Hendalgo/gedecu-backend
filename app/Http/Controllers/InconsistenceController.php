@@ -66,7 +66,12 @@ class InconsistenceController extends Controller
             'type', 
             'user.store', 
             'subreports' => function ($query) {
-                    $query->with('data', 'inconsistences');
+                    $query->with([
+                        'data', 
+                        'inconsistences' => function ($query) {
+                            $query->whereNull('associated_id'); // Ignora las inconsistencias asociadas
+                        }
+                    ]);
                 }   
             ])
             ->whereHas('subreports', function ($query) {
@@ -75,7 +80,7 @@ class InconsistenceController extends Controller
                         ->from('inconsistences')
                         ->whereColumn('inconsistences.subreport_id', 'subreports.id')
                         ->where('inconsistences.verified', 0)
-                        ->where('inconsistences.associated_id', null);
+                        ->whereNull('inconsistences.associated_id');
                 });
             })
         ;
