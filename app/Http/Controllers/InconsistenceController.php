@@ -562,6 +562,9 @@ class InconsistenceController extends Controller
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->where('verified', 1);
             })
+            ->whereDoesntHave('inconsistences', function ($query) {
+                $query->whereNotNull('associated_id');
+            })
             ->with('report.type', 'data')
             ->get()
             ->where('report.type.id', $report->type->associated_type_id);
@@ -574,6 +577,17 @@ class InconsistenceController extends Controller
         }
 
         foreach ($subreports as $sub) {
+            
+            /**This subreport is alredy in inconsistences table skip */
+            $exists = Inconsistence::where(function($query) use ($sub){
+                $query->where('associated_id', $sub->id);
+            })->OrWhere(function ($query) use ($sub){
+                $query->where('subreport_id', $sub->id)->where('verified', 1);
+            })->first();
+
+            if($exists){
+                continue;
+            }
             //if the subreport is duplicated, then skip it
             $sub->data = json_encode($sub->data);
             //Filter the subreports that have the same currency and amount
