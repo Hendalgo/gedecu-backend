@@ -552,11 +552,6 @@ class InconsistenceController extends Controller
 
         $filtered = $filtered->flatten();
 
-        
-        
-        throw new \Exception('Error creating the inconsistency '.json_encode($filtered->toArray()));
-
-
         return $this->check_if_have_matches($filtered, $sub);
     }
 
