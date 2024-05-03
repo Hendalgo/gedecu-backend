@@ -96,7 +96,14 @@ class BankAccountController extends Controller
             return response()->json(['message' => 'No tiene acceso a estas cuentas'], 403);
         }
         if ($userParam) {
-            $bank_account = $bank_account->where('banks_accounts.user_id', $userParam);
+            $user = User::with('store', 'role')->find($userParam);
+
+            if ($user->role->id === 3) {
+                $bank_account = $bank_account->where('banks_accounts.store_id', $user->store->id);
+            }
+            else{
+                $bank_account = $bank_account->where('banks_accounts.user_id', $userParam);
+            }
         }
         if ($paginated === 'no') {
             $bank_account = $bank_account->with('bank.country', 'bank.type', 'currency', 'user', 'store.user')->get();
