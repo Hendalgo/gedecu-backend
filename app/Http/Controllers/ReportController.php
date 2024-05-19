@@ -157,7 +157,7 @@ class ReportController extends Controller
 
     public function show($id)
     {
-        $report = Report::with('type', 'user.role', 'subreports.data', 'subreports.inconsistences.data', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.user.role')->find($id);
+        $report = Report::with('type', 'user.role', 'subreports.data', 'subreports.inconsistences.data', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.type', 'subreports.inconsistences.report.user.store')->find($id);
         if (! $report) {
             return response()->json(['error' => 'No se encontró el reporte'], 404);
         }
