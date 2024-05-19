@@ -458,6 +458,22 @@ class InconsistenceController extends Controller
 
                 return false;
             });
+
+            $filtered = $filtered->groupBy('report_id');
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount) {
+                $amountLocal = 0;
+                $subData = json_decode($sub->data, true);
+                foreach ($item as $subreport) {
+                    $data = json_decode($subreport->data, true);
+                    $amountLocal += $data['amount'];
+                }
+                if($amountLocal == $amount){
+                    return true;
+                }
+                return false;
+            });
+
+            $filtered = $filtered->flatten();
         }
 
         //If the filtered collection is not empty, then the subreport is consistent and should mark
