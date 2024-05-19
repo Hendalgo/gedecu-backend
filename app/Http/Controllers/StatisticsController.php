@@ -174,6 +174,26 @@ class StatisticsController extends Controller
 
         return response()->json($banks_accounts);
     }
+
+    public function getTotalByBankBank($id){
+        if(auth()->user()->role_id != 1){
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $banks_accounts = BankAccount::query();
+
+        $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)
+            ->where('account_type_id', '!=', 3)
+            ->where('bank_id', $id)
+            ->selectRaw('bank_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+            ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
+            ->groupBy('bank_id', 'currency_id')
+            ->with('bank', 'currency', 'user.role', 'store', 'type')
+            ->get();
+
+        return response()->json($banks_accounts);
+    }
+
     public function getTotalByBankUser($id)
     {
         if(auth()->user()->role_id != 1){
