@@ -185,10 +185,10 @@ class StatisticsController extends Controller
         $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)
             ->where('account_type_id', '!=', 3)
             ->where('bank_id', $id)
-            ->selectRaw('bank_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+            ->selectRaw('user_id, store_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
             ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
-            ->groupBy('bank_id', 'currency_id')
-            ->with('bank', 'currency', 'user.role', 'store', 'type')
+            ->groupBy('user_id', 'store_id', 'currency_id')
+            ->with('user', 'store', 'currency')
             ->get();
 
         return response()->json($banks_accounts);
