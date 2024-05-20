@@ -188,7 +188,7 @@ class StatisticsController extends Controller
             ->selectRaw('user_id, store_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
             ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
             ->groupBy('user_id', 'store_id', 'currency_id')
-            ->with('user', 'store', 'currency')
+            ->with('user.role', 'store.user.role', 'currency')
             ->get();
 
         return response()->json($banks_accounts);
