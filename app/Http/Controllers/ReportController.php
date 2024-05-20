@@ -92,12 +92,17 @@ class ReportController extends Controller
         //If the user is admin and the request has a user id, get all reports from that user with subreports
         //else get the reports, with the subreport from current user
         if ($currentUser->role->id === 1) {
-            $query = $query->where('reports.user_id', $user)->with('type', 'subreports.inconsistences.data', 'user.role')->paginate(10);
+            $query = $query->where('reports.user_id', $user)->with('type', 'subreports.inconsistences.data', 'subreports.inconsistencesAssociated.data', 'user.role')->paginate(10);
 
             foreach ($query as $report) {
                 $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
                 foreach ($report->subreports as $subreport) {
-                    $subreport->inconsistences = $this->KeyMapValue->transformElement($subreport->inconsistences);
+                    $subreport->inconsistencesFinal = $subreport->inconsistences->concat($subreport->inconsistencesAssociated);
+                    $subreport->inconsistencesFinal = $this->KeyMapValue->transformElement($subreport->inconsistencesFinal);
+                    unset($subreport->inconsistences);
+                    unset($subreport->inconsistencesAssociated);
+                    $subreport->inconsistences = $subreport->inconsistencesFinal;
+                    unset($subreport->inconsistencesFinal);
                 }
             }
             
@@ -157,14 +162,19 @@ class ReportController extends Controller
 
     public function show($id)
     {
-        $report = Report::with('type', 'user.role', 'subreports.data', 'subreports.inconsistences.data', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.type', 'subreports.inconsistences.report.user.store')->find($id);
+        $report = Report::with('type', 'user.role', 'subreports.data', 'subreports.inconsistences.data', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.user.role', 'subreports.inconsistences.report.type', 'subreports.inconsistences.report.user.store', 'subreports.inconsistencesAssociated.data', 'subreports.inconsistencesAssociated.report.user.role', 'subreports.inconsistencesAssociated.report.user.role', 'subreports.inconsistencesAssociated.report.type', 'subreports.inconsistencesAssociated.report.user.store')->find($id);
         if (! $report) {
             return response()->json(['error' => 'No se encontró el reporte'], 404);
         }
         $currentUser = User::find(auth()->user()->id);
         $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
         foreach ($report->subreports as $subreport) {
-            $subreport->inconsistences = $this->KeyMapValue->transformElement($subreport->inconsistences);
+            $subreport->inconsistencesFinal = $subreport->inconsistences->concat($subreport->inconsistencesAssociated);
+            $subreport->inconsistencesFinal = $this->KeyMapValue->transformElement($subreport->inconsistencesFinal);
+            unset($subreport->inconsistences);
+            unset($subreport->inconsistencesAssociated);
+            $subreport->inconsistences = $subreport->inconsistencesFinal;
+            unset($subreport->inconsistencesFinal);
         }
         if ($currentUser->role->id === 1) {
             return response()->json($report, 200);
