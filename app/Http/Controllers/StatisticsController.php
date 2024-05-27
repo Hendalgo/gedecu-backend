@@ -120,6 +120,15 @@ class StatisticsController extends Controller
             ->get();
 
         $banks_accounts = $banks_accounts->concat($banks_accounts_type3);
+        if ($user->role_id == 1) {
+            $bank_account_with_cash = BankAccount::where('currency_id', 1)
+                ->where('delete', false)
+                ->selectRaw('name, currency_id, SUM(balance) as total')
+                ->groupBy('currency_id', 'name')
+                ->with('currency')
+                ->get();
+            $banks_accounts = $bank_account_with_cash->concat($banks_accounts);
+        }
 
         $banks_accounts = $banks_accounts->map(function ($account) {
             $accountArray = $account->toArray();
