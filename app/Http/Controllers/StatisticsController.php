@@ -121,7 +121,7 @@ class StatisticsController extends Controller
 
         $banks_accounts = $banks_accounts->concat($banks_accounts_type3);
         if ($user->role_id == 1) {
-            $bank_account_with_cash = BankAccount::where('currency_id', 1)
+            $bank_account_with_cash = BankAccount::where('currency_id', '!=', 2)
                 ->where('delete', false)
                 ->selectRaw('currency_id, SUM(balance) as total')
                 ->groupBy('currency_id')
