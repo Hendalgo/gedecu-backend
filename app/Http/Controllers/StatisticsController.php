@@ -113,7 +113,7 @@ class StatisticsController extends Controller
             ->with('currency')
             ->get();
 
-        $banks_accounts_type3 = $banks_accounts_type3->where('delete', false)->selectRaw('name, currency_id, SUM(balance) as total')
+        $banks_accounts_type3 = $banks_accounts_type3->where('delete', false)->selectRaw('name, currency_id, SUM(balance) + (SELECT COALESCE(SUM(balance), 0) FROM user_balances WHERE user_balances.currency_id = banks_accounts.currency_id) as total')
             ->where('account_type_id', 3)
             ->groupBy('currency_id', 'name')
             ->with('currency')
@@ -123,11 +123,11 @@ class StatisticsController extends Controller
         if ($user->role_id == 1) {
             $bank_account_with_cash = BankAccount::where('currency_id', '!=', 2)
                 ->where('delete', false)
-                ->selectRaw('currency_id, SUM(balance) as total')
+                ->selectRaw('banks_accounts.currency_id, SUM(balance) + (SELECT COALESCE(SUM(balance), 0) FROM user_balances WHERE user_balances.currency_id = banks_accounts.currency_id) as total')
                 ->groupBy('currency_id')
                 ->with('currency')
                 ->get();
-                //Make the all results have a field call name with the value 'Cuenta + Efectivo'
+
             $bank_account_with_cash->map(function ($account) {
                 $account->name = 'Cuenta + Efectivo';
                 return $account;
