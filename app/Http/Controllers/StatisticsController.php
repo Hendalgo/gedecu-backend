@@ -123,10 +123,16 @@ class StatisticsController extends Controller
         if ($user->role_id == 1) {
             $bank_account_with_cash = BankAccount::where('currency_id', 1)
                 ->where('delete', false)
-                ->selectRaw('name, currency_id, SUM(balance) as total')
-                ->groupBy('currency_id', 'name')
+                ->selectRaw('currency_id, SUM(balance) as total')
+                ->groupBy('currency_id')
                 ->with('currency')
                 ->get();
+                //Make the all results have a field call name with the value 'Cuenta + Efectivo'
+            $bank_account_with_cash->map(function ($account) {
+                $account->name = 'Cuenta + Efectivo';
+                return $account;
+            });
+            
             $banks_accounts = $bank_account_with_cash->concat($banks_accounts);
         }
 
