@@ -108,9 +108,13 @@ class ReportController extends Controller
             
             return response()->json($query, 200);
         } else {
-            $query = $query->where('reports.user_id', $currentUser->id)->with('type', 'subreports');
+            $query = $query->where('reports.user_id', $currentUser->id)->with('type', 'subreports.data')->paginate(10);
 
-            return response()->json($query->paginate(10), 200);
+            foreach ($query as $report) {
+                $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
+            }
+
+            return response()->json($query, 200);
         }
 
         return response()->json(['error' => 'Ocurrio un error al intentar visualizar los reportes'], 500);
