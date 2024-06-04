@@ -209,13 +209,19 @@ class StatisticsController extends Controller
         return response()->json($banks_accounts);
     }
 
-    public function getTotalByBankUser($id)
+    public function getTotalByBankUser(Request $request, $id)
     {
         if(auth()->user()->role_id != 1){
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-        
-        $user = User::with('store')->find($id);
+        $user_id = $request->query('user_id');
+        $user = null;
+        if(!$user_id){
+            $user = User::with('store')->find($id);
+        }
+        else{
+            $user = User::with('store')->find($user_id);
+        }
         $banks_accounts = BankAccount::query();
         if ($user->role_id == 2) {
             $banks_accounts->where('user_id', $id);

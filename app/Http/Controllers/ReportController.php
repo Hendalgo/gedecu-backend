@@ -103,6 +103,15 @@ class ReportController extends Controller
                     unset($subreport->inconsistencesAssociated);
                     $subreport->inconsistences = $subreport->inconsistencesFinal;
                     unset($subreport->inconsistencesFinal);
+
+                    if (array_key_exists('account_id', $subreport->data)){
+                        $acc = BankAccount::find($subreport->data['account_id']);
+                        if ($acc->delete) {
+                            $data = $subreport->data;
+                            $data['account_deleted'] = true;
+                            $subreport->data = $data;
+                        }
+                    }
                 }
             }
             
@@ -179,6 +188,15 @@ class ReportController extends Controller
             unset($subreport->inconsistencesAssociated);
             $subreport->inconsistences = $subreport->inconsistencesFinal;
             unset($subreport->inconsistencesFinal);
+
+            if (array_key_exists('account_id', $subreport->data)){
+                $acc = BankAccount::find($subreport->data['account_id']);
+                if ($acc->delete) {
+                    $data = $subreport->data;
+                    $data['account_deleted'] = true;
+                    $subreport->data = $data;
+                }
+            }
         }
         if ($currentUser->role->id === 1) {
             return response()->json($report, 200);
