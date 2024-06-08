@@ -182,6 +182,11 @@ class ReportController extends Controller
         $currentUser = User::find(auth()->user()->id);
         $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
         foreach ($report->subreports as $subreport) {
+            $verified = Inconsistence::where('subreport_id', $subreport->id)->where('verified', 1)->first();
+            if ($verified) {
+                $subreport->verified = true;
+            }
+            
             $subreport->inconsistencesFinal = $subreport->inconsistences->concat($subreport->inconsistencesAssociated);
             $subreport->inconsistencesFinal = $this->KeyMapValue->transformElement($subreport->inconsistencesFinal);
             unset($subreport->inconsistences);
