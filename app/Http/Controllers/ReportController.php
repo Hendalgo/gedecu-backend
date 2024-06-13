@@ -232,6 +232,23 @@ class ReportController extends Controller
             $report_type_config = json_decode($report_type->meta_data, true);
             $this->add_or_substract_amount($sub->data, $report_type_config, $report_type, $report, 'undo');
 
+            //Verify if the report is has associated inconsistences
+
+            $inconsistences = Inconsistence::where('subreport_id', $id)->get();
+            
+            foreach ($inconsistences as $inconsistence) {
+                //If has associated_id, update the associated_id to null 
+                // and  Create a new inconsistence with the associated_id
+
+                if ($inconsistence->associated_id) {
+                    $inconsistence->update(['associated_id' => null]);
+                    Inconsistence::create([
+                        'subreport_id' => $inconsistence->subreport_id,
+                    ]);
+                }
+            }
+
+
             if ($subreportsCount === 1) {
                 $report->delete();
 
