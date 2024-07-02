@@ -227,26 +227,28 @@ class ReportController extends Controller
         $currentUser = User::find(auth()->user()->id);
         if ($currentUser->role->id === 1) {
 
-            //Undo the amount of the subreport
-            $report_type = ReportType::find($report->type_id);
-            $report_type_config = json_decode($report_type->meta_data, true);
-            $this->add_or_substract_amount($sub->data, $report_type_config, $report_type, $report, 'undo');
+            DB::transaction(function () use ($sub, $subreport, $report, $subreportsCount, $id) {
+                //Undo the amount of the subreport
+                $report_type = ReportType::find($report->type_id);
+                $report_type_config = json_decode($report_type->meta_data, true);
+                $this->add_or_substract_amount($sub->data, $report_type_config, $report_type, $report, 'undo');
 
-            //Verify if the report is has associated inconsistences
+                //Verify if the report is has associated inconsistences
 
-            $inconsistences = Inconsistence::where('subreport_id', $id)->get();
-            
-            foreach ($inconsistences as $inconsistence) {
-                //If has associated_id, update the associated_id to null 
-                // and  Create a new inconsistence with the associated_id
+                $inconsistences = Inconsistence::where('subreport_id', $id)->get();
+                
+                foreach ($inconsistences as $inconsistence) {
+                    //If has associated_id, update the associated_id to null 
+                    // and  Create a new inconsistence with the associated_id
 
-                if ($inconsistence->associated_id) {
-                    $inconsistence->update(['associated_id' => null]);
-                    Inconsistence::create([
-                        'subreport_id' => $inconsistence->subreport_id,
-                    ]);
+                    if ($inconsistence->associated_id) {
+                        $inconsistence->update(['associated_id' => null]);
+                        Inconsistence::create([
+                            'subreport_id' => $inconsistence->subreport_id,
+                        ]);
+                    }
                 }
-            }
+            });
 
 
             if ($subreportsCount === 1) {
