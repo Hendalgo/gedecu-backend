@@ -2,6 +2,7 @@
 
 namespace App\Http;
 
+use App\Http\Middleware\AssignedWorkingDays;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\RoleCheck;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -69,5 +70,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'auth.veryfied' => AuthMiddleware::class,
         'role.check' => RoleCheck::class,
+        'assigned.workingdays' => AssignedWorkingDays::class
     ];
 }

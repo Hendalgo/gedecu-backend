@@ -71,6 +71,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany('\App\Models\BankAccount', 'user_id');
     }
 
+    public function workingDays()
+    {
+        //In this relationship just get the working days of the current week
+        return $this->hasMany('App\Models\WorkingDay', 'user_id')->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
+    }
+
     public function getJWTIdentifier()
     {
         return $this->getKey();

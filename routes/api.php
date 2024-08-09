@@ -14,6 +14,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WorkingDayController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +40,20 @@ Route::group([
     Route::post('refresh-token', [AuthController::class, 'refreshToken']);
 });
 Route::middleware('auth.veryfied')->group(function () {
+
+    Route::middleware('assigned.workingdays')->group(function(){
+        /**Banks Accounts */
+        Route::post('bank-accounts', [BankAccountController::class, 'store']);
+        Route::put('bank-accounts/{id}', [BankAccountController::class, 'update']);
+        Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy']);
+
+        /**Reports */
+        
+        Route::post('reports', [ReportController::class, 'store']);
+        Route::put('reports/{id}', [ReportController::class, 'update']);
+        Route::delete('reports/subreports/{id}', [ReportController::class, 'destroy']);
+    });
+
     Route::get('user', [AuthController::class, 'me']);
     /*
         Bank types
@@ -58,9 +73,6 @@ Route::middleware('auth.veryfied')->group(function () {
      * Banks Accounts Routes
      */
     Route::get('bank-accounts', [BankAccountController::class, 'index']);
-    Route::post('bank-accounts', [BankAccountController::class, 'store']);
-    Route::put('bank-accounts/{id}', [BankAccountController::class, 'update']);
-    Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy']);
     /*
         Users routes
     */
@@ -105,9 +117,6 @@ Route::middleware('auth.veryfied')->group(function () {
     Route::get('reports', [ReportController::class, 'index']);
     Route::get('reports/inconsistences', [ReportController::class, 'getInconsistences']);
     Route::get('reports/{id}', [ReportController::class, 'show']);
-    Route::post('reports', [ReportController::class, 'store']);
-    Route::put('reports/{id}', [ReportController::class, 'update']);
-    Route::delete('reports/subreports/{id}', [ReportController::class, 'destroy']);
     /*
     * Stores Routes
     */
@@ -132,4 +141,7 @@ Route::middleware('auth.veryfied')->group(function () {
     Route::get('inconsistences', [InconsistenceController::class, 'index']);
     Route::patch('inconsistences/verify/all', [InconsistenceController::class, 'verify_all']);
     Route::patch('inconsistences/verify/{id}', [InconsistenceController::class, 'verify_inconsistence']);
+    
+    /*Working Days*/
+    Route::post('working-days', [WorkingDayController::class, 'store']);
 });
