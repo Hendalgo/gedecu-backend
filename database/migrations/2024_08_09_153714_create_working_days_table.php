@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('working_day', function (Blueprint $table) {
+        Schema::create('working_days', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             //Store the working day in the format YYYY-MM-DD without time
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('working_day');
+        Schema::dropIfExists('working_days');
     }
 };
