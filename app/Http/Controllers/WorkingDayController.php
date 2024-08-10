@@ -25,7 +25,9 @@ class WorkingDayController extends Controller
                     now()->endOfWeek()
                 );
             });
-            $workingDays->delete();
+            //delete all working days from this week
+            WorkingDay::destroy($workingDays->pluck('id'));
+            
             $saveWorkingDays = [];
             //store new working days
             foreach ($workingDays as $workingDay) {
