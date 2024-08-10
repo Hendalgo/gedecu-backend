@@ -17,6 +17,13 @@ class WorkingDayController extends Controller
         
         $workingDays = $request->workingDays;
         $user = auth()->user();
+
+        //validate working days is an array with dates in the format YYYY-MM-DD
+        $request->validate([
+            'workingDays' => 'required|array',
+            'workingDays.*' => 'required|date_format:Y-m-d',
+        ]);
+
         DB::transaction(function () use ($workingDays, $user) {
             //get current workingdays from this week and delete
             $workingDays = $user->workingDays->filter(function ($workingDay) {
