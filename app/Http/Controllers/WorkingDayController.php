@@ -27,7 +27,7 @@ class WorkingDayController extends Controller
             });
             //delete all working days from this week
             WorkingDay::destroy($workingDays->pluck('id'));
-            
+
             $saveWorkingDays = [];
             //store new working days
             foreach ($workingDays as $workingDay) {
@@ -42,5 +42,6 @@ class WorkingDayController extends Controller
 
 
         });
+        return response()->json(['message' => 'Working days updated successfully'], 200);
     }
 }
