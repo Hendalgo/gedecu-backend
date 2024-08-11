@@ -50,6 +50,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }
+    public function lastReport()
+    {
+        return $this->hasOne('App\Models\Report', 'user_id', 'id')->latest();
+    }
 
     public function role()
     {

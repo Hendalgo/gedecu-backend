@@ -63,7 +63,7 @@ class UserController extends Controller
 
         $users = $users->where('users.id', '!=', auth()->user()->id)->with('role', 'country', 'store'); // Exclude current user
         if ($currentUser->role->id === 1) {
-            $users = $users->with('balance.currency'); // Include just admin
+            $users = $users->with('balance.currency', 'workingDays', 'lastReport'); // Include just admin
         }
         if ($paginated === 'no') {
             return response()->json($users->get(), 200);
