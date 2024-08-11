@@ -18,4 +18,8 @@ class WorkingDay extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function didReport()
+    {
+        return $this->hasOne(Subreport::class, 'created_at', 'date');
+    }
 }
