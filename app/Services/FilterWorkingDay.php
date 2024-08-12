@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
 
+use Carbon\Carbon;
+
 class FilterWorkingDay
 {   
     protected $user;
@@ -15,7 +17,7 @@ class FilterWorkingDay
       //Considering just the day from this week starting from Monday
 
       $workingDays = $this->user->workingDays->filter(function ($workingDay) {
-          return $workingDay->date->isBetween(
+          return Carbon::parse($workingDay->date)->isBetween(
               now()->startOfWeek(),
               now()->endOfWeek()
           );
