@@ -38,6 +38,21 @@ class StatisticsController extends Controller
             ->when($from && $to, function ($query) use ($from, $to) {
                 return $query->whereBetween('created_at', [$from, $to]);
             })
+            ->when($period === 'day', function ($query) {
+                return $query->where('created_at', '>=', Carbon::now()->subDays(14));
+            })
+            ->when($period === 'week', function ($query) {
+                return $query->where('created_at', '>=', Carbon::now()->subWeeks(14));
+            })
+            ->when($period === 'month', function ($query) {
+                return $query->where('created_at', '>=', Carbon::now()->subMonths(12));
+            })
+            ->when($period === 'quarter', function ($query) {
+                return $query->where('created_at', '>=', Carbon::now()->subQuarters(12));
+            })
+            ->when($period === 'year', function ($query) {
+                return $query->where('created_at', '>=', Carbon::now()->subYears(5));
+            })
             ->get()
             ->when(auth()->user()->role_id != 1, function ($query) {
                 return $query->where('report.user_id', auth()->user()->id);
