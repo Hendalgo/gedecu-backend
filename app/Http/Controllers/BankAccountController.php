@@ -25,7 +25,8 @@ class BankAccountController extends Controller
         $userParam = $request->get('user');
         $user = User::find(auth()->user()->id);
         $negatives = $request->get('negatives', 'no');
-        $validatedData = $request->validate([
+        $inactive = $request->get('inactive', 'no');
+        $request->validate([
             'order' => 'in:balance,created_at',
             'order_by' => 'in:asc,desc',
             'since' => 'date',
@@ -80,6 +81,9 @@ class BankAccountController extends Controller
         }
         if ($until) {
             $bank_account = $bank_account->whereDate('banks_accounts.created_at', '<=', $until);
+        }
+        if ($inactive === 'no') {
+            $bank_account = $bank_account->where('banks_accounts.status', 'active');
         }
         if ($order) {
             $bank_account = $bank_account->orderBy('banks_accounts.'.$order, $orderBy);
@@ -184,6 +188,7 @@ class BankAccountController extends Controller
                     'meta_data' => json_encode([]),
                     'currency_id' => $validatedData['currency_id'],
                     'account_type_id' => $bank_type == 1 ? 1 : 2,
+                    'status' => 'inactive',
                 ]);
 
                 return response()->json($bank_account, 201);
@@ -263,6 +268,7 @@ class BankAccountController extends Controller
                 'identifier' => 'required|string|min:2|max:255',
                 'bank_id' => 'required|exists:banks,id',
                 'currency_id' => 'required|exists:currencies,id',
+                'status' => 'in:active,inactive',
             ], $messages);
             $bank = BankAccount::find($id);
             if ($bank->user_id !== $user->id) {
