@@ -25,7 +25,7 @@ class BankAccountController extends Controller
         $userParam = $request->get('user');
         $user = User::find(auth()->user()->id);
         $negatives = $request->get('negatives', 'no');
-        $inactive = $request->get('inactive', 'no');
+        $inactive = $request->get('inactive');
         $request->validate([
             'order' => 'in:balance,created_at',
             'order_by' => 'in:asc,desc',
@@ -84,6 +84,9 @@ class BankAccountController extends Controller
         }
         if ($inactive === 'no') {
             $bank_account = $bank_account->where('banks_accounts.status', 'active');
+        }
+        else if($inactive === 'yes'){
+            $bank_account = $bank_account->where('banks_accounts.status', 'inactive');
         }
         if ($order) {
             $bank_account = $bank_account->orderBy('banks_accounts.'.$order, $orderBy);
