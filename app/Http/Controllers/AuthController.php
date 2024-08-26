@@ -57,6 +57,7 @@ class AuthController extends Controller
         $user->load('country.currency', 'balance.currency', 'store');
         $user->load('role');
         $user->load('workingDays');
+
         return response()->json($user);
     }
 

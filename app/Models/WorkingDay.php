@@ -20,6 +20,7 @@ class WorkingDay extends Model
     {
         return $this->belongsTo(User::class);
     }
+
     public function didReport(): HasMany
     {
         //return subreport where working day date is the same as the report created_at date
@@ -27,6 +28,6 @@ class WorkingDay extends Model
         //so we need to format the created_at to YYYY-MM-DD
 
         return $this->hasMany(Subreport::class, 'created_at', 'date')
-                    ->whereRaw('DATE(created_at) = ?', [Carbon::parse($this->date)->format('Y-m-d')]);
+            ->whereRaw('DATE(created_at) = ?', [Carbon::parse($this->date)->format('Y-m-d')]);
     }
 }

@@ -50,6 +50,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }
+
     public function lastReport()
     {
         return $this->hasOne('App\Models\Report', 'user_id', 'id')->latest();
@@ -79,6 +80,7 @@ class User extends Authenticatable implements JWTSubject
     {
         //In this relationship just get the working days of the current week
         $workingDays = $this->hasMany('App\Models\WorkingDay', 'user_id')->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
+
         //return $workingDays; and if what days did a report
         return $workingDays->with('didReport');
     }

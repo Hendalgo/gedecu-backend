@@ -544,27 +544,27 @@ class ReportsTypesSeeder extends Seeder
             ],
             [
                 'id' => 45,
-                'name'=> 'Entrega efectivo',
-                'description'=> 'Entrega efectivo',
-                'type'=> 'expense',
-                'config'=> '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
-                'delete'=> 0,
-                'created_at'=> '2024-01-17 04:18:57',
-                'updated_at'=> '2024-01-17 04:18:57',
-                'country'=> 1,
-                'meta_data'=> '{"name":"Entrega efectivo","type":"4", "user_balance":true}'
+                'name' => 'Entrega efectivo',
+                'description' => 'Entrega efectivo',
+                'type' => 'expense',
+                'config' => '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
+                'delete' => 0,
+                'created_at' => '2024-01-17 04:18:57',
+                'updated_at' => '2024-01-17 04:18:57',
+                'country' => 1,
+                'meta_data' => '{"name":"Entrega efectivo","type":"4", "user_balance":true}',
             ],
             [
                 'id' => 46,
-                'name'=> 'Gastos',
-                'description'=> 'Gastos',
-                'type'=> 'expense',
-                'config'=> '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
-                'delete'=> 0,
-                'created_at'=> '2024-01-17 04:18:57',
-                'updated_at'=> '2024-01-17 04:18:57',
-                'country'=> 1,
-                'meta_data'=> '{"name":"Gastos","type":"4", "user_balance":true}'
+                'name' => 'Gastos',
+                'description' => 'Gastos',
+                'type' => 'expense',
+                'config' => '{"styles":{"color":"#561435","borderColor":"#EFADCE","backgroundColor":"#F7D6E6"}}',
+                'delete' => 0,
+                'created_at' => '2024-01-17 04:18:57',
+                'updated_at' => '2024-01-17 04:18:57',
+                'country' => 1,
+                'meta_data' => '{"name":"Gastos","type":"4", "user_balance":true}',
             ],
         ];
         ReportType::insert($reportTypes);
@@ -573,7 +573,7 @@ class ReportsTypesSeeder extends Seeder
 
     private function update(): void
     {
-        
+
         /**
          * Proveedor - Proveedor
          */
@@ -584,7 +584,7 @@ class ReportsTypesSeeder extends Seeder
         $reportType = ReportType::find(26);
         $reportType->associated_type_id = 1;
         $reportType->save();
-        
+
         /*
          * Giro - Local
          */

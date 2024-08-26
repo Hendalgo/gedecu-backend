@@ -84,8 +84,7 @@ class BankAccountController extends Controller
         }
         if ($inactive === 'no') {
             $bank_account = $bank_account->where('banks_accounts.status', 'active');
-        }
-        else if($inactive === 'yes'){
+        } elseif ($inactive === 'yes') {
             $bank_account = $bank_account->where('banks_accounts.status', 'inactive');
         }
         if ($order) {
@@ -107,8 +106,7 @@ class BankAccountController extends Controller
 
             if ($user->role->id === 3) {
                 $bank_account = $bank_account->where('banks_accounts.store_id', $user->store->id);
-            }
-            else{
+            } else {
                 $bank_account = $bank_account->where('banks_accounts.user_id', $userParam);
             }
         }

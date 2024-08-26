@@ -104,7 +104,7 @@ class ReportController extends Controller
                     $subreport->inconsistences = $subreport->inconsistencesFinal;
                     unset($subreport->inconsistencesFinal);
 
-                    if (array_key_exists('account_id', $subreport->data)){
+                    if (array_key_exists('account_id', $subreport->data)) {
                         $acc = BankAccount::find($subreport->data['account_id']);
                         if ($acc->delete) {
                             $data = $subreport->data;
@@ -114,7 +114,7 @@ class ReportController extends Controller
                     }
                 }
             }
-            
+
             return response()->json($query, 200);
         } else {
             $query = $query->where('reports.user_id', $currentUser->id)->with('type', 'subreports.data')->paginate(10);
@@ -186,7 +186,7 @@ class ReportController extends Controller
             if ($verified) {
                 $subreport->verified = true;
             }
-            
+
             $subreport->inconsistencesFinal = $subreport->inconsistences->concat($subreport->inconsistencesAssociated);
             $subreport->inconsistencesFinal = $this->KeyMapValue->transformElement($subreport->inconsistencesFinal);
             unset($subreport->inconsistences);
@@ -194,7 +194,7 @@ class ReportController extends Controller
             $subreport->inconsistences = $subreport->inconsistencesFinal;
             unset($subreport->inconsistencesFinal);
 
-            if (array_key_exists('account_id', $subreport->data)){
+            if (array_key_exists('account_id', $subreport->data)) {
                 $acc = BankAccount::find($subreport->data['account_id']);
                 if ($acc->delete) {
                     $data = $subreport->data;
@@ -227,7 +227,7 @@ class ReportController extends Controller
         $currentUser = User::find(auth()->user()->id);
         if ($currentUser->role->id === 1) {
 
-            DB::transaction(function () use ($sub, $subreport, $report, $subreportsCount, $id) {
+            DB::transaction(function () use ($sub, $report, $id) {
                 //Undo the amount of the subreport
                 $report_type = ReportType::find($report->type_id);
                 $report_type_config = json_decode($report_type->meta_data, true);
@@ -236,9 +236,9 @@ class ReportController extends Controller
                 //Verify if the report is has associated inconsistences
 
                 $inconsistences = Inconsistence::where('subreport_id', $id)->get();
-                
+
                 foreach ($inconsistences as $inconsistence) {
-                    //If has associated_id, update the associated_id to null 
+                    //If has associated_id, update the associated_id to null
                     // and  Create a new inconsistence with the associated_id
 
                     if ($inconsistence->associated_id) {
@@ -249,7 +249,6 @@ class ReportController extends Controller
                     }
                 }
             });
-
 
             if ($subreportsCount === 1) {
                 $report->delete();
@@ -331,15 +330,17 @@ class ReportController extends Controller
                 //update to null the associated_id of the inconsistences
                 Inconsistence::where('associated_id', $subreport['id'])->update(['associated_id' => null]);
             }
-            
+
             $report->editable = 0;
             $report->save();
             $inconsistence = new InconsistenceController();
             $report->subreports = $report->subreports()->get();
             $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
             $inconsistence->check_inconsistences($report, $report->subreports);
+
             return true;
         });
+
         return response()->json(['message' => 'Reporte editado'], 200);
     }
 

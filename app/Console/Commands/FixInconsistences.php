@@ -39,7 +39,7 @@ class FixInconsistences extends Command
                 $subreports = (new KeyValueMap())->transformElement($report->subreports);
                 $newInconsistences = new InconsistenceController();
                 $newInconsistences->check_inconsistences($report, $subreports);
-                $this->info('Inconsistences checked for report ' . $report->id . ' (' . $count-- . ' remaining)');
+                $this->info('Inconsistences checked for report '.$report->id.' ('.$count--.' remaining)');
             }
             $this->alert('Inconsistences checked for all reports');
         });

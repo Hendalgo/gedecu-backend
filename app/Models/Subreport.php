@@ -36,6 +36,7 @@ class Subreport extends Model
             'associated_id' // Foreign key related model
         )->withPivot('verified');
     }
+
     public function inconsistencesAssociated()
     {
         return $this->belongsToMany('\App\Models\Subreport',
@@ -44,6 +45,7 @@ class Subreport extends Model
             'subreport_id' // Foreign key related model
         )->withPivot('verified');
     }
+
     public function data()
     {
         return $this->hasMany('\App\Models\SubreportData', 'subreport_id');

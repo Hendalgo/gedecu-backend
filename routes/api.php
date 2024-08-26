@@ -41,14 +41,14 @@ Route::group([
 });
 Route::middleware('auth.veryfied')->group(function () {
 
-    Route::middleware('assigned.workingdays')->group(function(){
+    Route::middleware('assigned.workingdays')->group(function () {
         /**Banks Accounts */
         Route::post('bank-accounts', [BankAccountController::class, 'store']);
         Route::put('bank-accounts/{id}', [BankAccountController::class, 'update']);
         Route::delete('bank-accounts/{id}', [BankAccountController::class, 'destroy']);
 
         /**Reports */
-        
+
         Route::post('reports', [ReportController::class, 'store']);
         Route::put('reports/{id}', [ReportController::class, 'update']);
         Route::delete('reports/subreports/{id}', [ReportController::class, 'destroy']);
@@ -141,7 +141,7 @@ Route::middleware('auth.veryfied')->group(function () {
     Route::get('inconsistences', [InconsistenceController::class, 'index']);
     Route::patch('inconsistences/verify/all', [InconsistenceController::class, 'verify_all']);
     Route::patch('inconsistences/verify/{id}', [InconsistenceController::class, 'verify_inconsistence']);
-    
+
     /*Working Days*/
     Route::post('working-days', [WorkingDayController::class, 'store']);
 });

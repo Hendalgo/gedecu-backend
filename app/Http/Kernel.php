@@ -70,6 +70,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'auth.veryfied' => AuthMiddleware::class,
         'role.check' => RoleCheck::class,
-        'assigned.workingdays' => AssignedWorkingDays::class
+        'assigned.workingdays' => AssignedWorkingDays::class,
     ];
 }

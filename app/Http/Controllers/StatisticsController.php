@@ -145,9 +145,10 @@ class StatisticsController extends Controller
 
             $bank_account_with_cash->map(function ($account) {
                 $account->name = 'Cuenta + Efectivo';
+
                 return $account;
             });
-            
+
             $banks_accounts = $bank_account_with_cash->concat($banks_accounts);
         }
 
@@ -205,31 +206,31 @@ class StatisticsController extends Controller
         return response()->json($banks_accounts);
     }
 
-    public function getTotalByBankBank(Request $request, $id){
-        if(auth()->user()->role_id != 1){
+    public function getTotalByBankBank(Request $request, $id)
+    {
+        if (auth()->user()->role_id != 1) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $banks_accounts = BankAccount::query();
-        
+
         $user_id = $request->query('user_id');
         $user = null;
-        if($user_id){
+        if ($user_id) {
             $user = User::with('store')->find($user_id);
         }
-        
+
         $banks_accounts = $banks_accounts->where('banks_accounts.delete', false)
             ->where('account_type_id', '!=', 3)
             ->where('bank_id', $id);
 
-
-        if($user != null){
+        if ($user != null) {
             if ($user->role_id == 2) {
                 $banks_accounts->where('user_id', $user->id);
             }
             if ($user->role_id == 3) {
                 //Check if the user has a store
-    
+
                 if ($user->store) {
                     $store = $user->store->id;
                     if ($store) {
@@ -241,16 +242,17 @@ class StatisticsController extends Controller
             }
         }
         $banks_accounts = $banks_accounts
-        ->selectRaw('user_id, store_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
-        ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
-        ->groupBy('user_id', 'store_id', 'currency_id')
-        ->with('user.role', 'store.user.role', 'currency')->get();    
+            ->selectRaw('user_id, store_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+            ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
+            ->groupBy('user_id', 'store_id', 'currency_id')
+            ->with('user.role', 'store.user.role', 'currency')->get();
+
         return response()->json($banks_accounts);
     }
 
     public function getTotalByBankUser($id)
     {
-        if(auth()->user()->role_id != 1){
+        if (auth()->user()->role_id != 1) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
         $user = User::with('store')->find($id);

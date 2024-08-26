@@ -108,7 +108,7 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 3,
         ]);
         ReportTypeValidations::create([
-            'name'=> 'bank_id',
+            'name' => 'bank_id',
             'validation' => 'required|exists:banks,id',
             'validation_role' => 'all',
             'report_type_id' => 4,
@@ -775,7 +775,7 @@ class ReportTypeValidationsSeeder extends Seeder
             'validation_role' => 'all',
             'report_type_id' => 45,
         ]);
-        
+
         /*Gastos*/
         ReportTypeValidations::create([
             'name' => 'motive',
@@ -802,8 +802,6 @@ class ReportTypeValidationsSeeder extends Seeder
             'report_type_id' => 46,
         ]);
 
-
-        /** */
         ReportTypeValidations::create([
             'name' => 'store_id',
             'validation' => 'required|exists:stores,id',
