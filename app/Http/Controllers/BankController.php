@@ -37,7 +37,7 @@ class BankController extends Controller
         if ($type) {
             $bank = $bank->where('banks.type_id', '=', $type);
         }
-        $bank = $bank->with('country', 'type');
+        $bank = $bank->with('country', 'type', 'currency');
         if ($paginated === 'no') {
             return response()->json($bank->get(), 200);
         }
@@ -57,11 +57,15 @@ class BankController extends Controller
                 'name.required' => 'El nombre es requerido',
                 'country.required' => 'El país es requerido',
                 'type_id.required' => 'El tipo de cuenta es requerido',
+                'name.regex' => 'El nombre solo puede contener letras y números',
+                'currency.required' => 'La moneda es requerida',
+                'currency.exists' => 'La moneda no existe',
             ];
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'image' => 'image',
                 'country' => 'required|exists:countries,id',
+                'currency' => 'required|exists:currencies,id',
                 'type_id' => 'required|exists:accounts_types,id|in:1,2',
             ], $message);
             $validatedData['meta_data'] = json_encode([
@@ -73,6 +77,7 @@ class BankController extends Controller
                 'country_id' => $validatedData['country'],
                 'meta_data' => $validatedData['meta_data'],
                 'type_id' => $validatedData['type_id'],
+                'currency_id' => $validatedData['currency'],
             ]);
 
             if ($bank) {
@@ -89,7 +94,7 @@ class BankController extends Controller
     {
 
         $user = User::find(auth()->user()->id);
-        $bank = Bank::with('country')->find($id);
+        $bank = Bank::with('country', 'currency')->find($id);
 
         return response()->json($bank, 200);
     }

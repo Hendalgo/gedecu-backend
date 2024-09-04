@@ -28,11 +28,6 @@ class Country extends Model
         return $this->hasMany('\App\Models\User', 'country_id');
     }
 
-    public function currency()
-    {
-        return $this->hasOne('\App\Models\Currency', 'country_id');
-    }
-
     public function stores()
     {
         return $this->hasMany('\App\Models\Store', 'country_id');
@@ -43,7 +38,6 @@ class Country extends Model
         foreach ($this->banks as $bank) {
             $bank->delete();
         }
-        $this->currency->delete();
         foreach ($this->stores as $store) {
             $store->delete();
         }

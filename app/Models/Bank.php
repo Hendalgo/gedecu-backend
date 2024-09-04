@@ -14,6 +14,7 @@ class Bank extends Model
         'img',
         'meta_data',
         'country_id',
+        'currency_id',
         'type_id',
         'delete',
     ];
@@ -22,7 +23,10 @@ class Bank extends Model
     {
         return $this->belongsTo('App\Models\Country', 'country_id', 'id');
     }
-
+    public function currency()
+    {
+        return $this->belongsTo('App\Models\Currency', 'currency_id', 'id');
+    }
     public function type()
     {
         return $this->belongsTo(AccountType::class, 'type_id', 'id');

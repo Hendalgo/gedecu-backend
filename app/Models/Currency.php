@@ -13,12 +13,11 @@ class Currency extends Model
         'name',
         'shortcode',
         'symbol',
-        'country_id',
     ];
 
-    public function country()
+    public function banks()
     {
-        return $this->belongsTo('\App\Models\Country', 'country_id');
+        return $this->hasMany('App\Models\Bank', 'currency_id', 'id');
     }
 
     public function delete()

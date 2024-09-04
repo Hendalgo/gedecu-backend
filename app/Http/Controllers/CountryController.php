@@ -22,7 +22,7 @@ class CountryController extends Controller
                 });
             }
 
-            $countries = $countries->where('countries.delete', false)->with('banks', 'currency')->paginate(10);
+            $countries = $countries->where('countries.delete', false)->with('banks')->paginate(10);
 
             return response()->json($countries, 200);
         }

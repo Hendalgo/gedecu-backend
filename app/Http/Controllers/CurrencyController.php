@@ -22,10 +22,10 @@ class CurrencyController extends Controller
                 ->orWhere('currencies.symbol', 'LIKE', "%{$search}%");
         });
         if ($paginated === 'no') {
-            return response()->json($currency->with('country')->get(), 200);
+            return response()->json($currency->get(), 200);
         }
 
-        return response()->json($currency->with('country')->paginate(10), 200);
+        return response()->json($currency->paginate(10), 200);
     }
 
     public function create()
@@ -40,7 +40,6 @@ class CurrencyController extends Controller
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
                 'shortcode' => 'required|string|min:2|max:4|regex:/^[a-zA-Z\s]+$/',
                 'symbol' => 'required|string',
-                'country_id' => 'required|integer|exists:countries,id|unique:currencies,country_id',
             ]);
 
             $currency = Currency::create($validatedData);
@@ -71,7 +70,7 @@ class CurrencyController extends Controller
             return response()->json($currency->get(), 200);
         }
 
-        return response()->json(Currency::with('country')->find($id), 200);
+        return response()->json(Currency::find($id), 200);
     }
 
     public function update(Request $request, $id)
