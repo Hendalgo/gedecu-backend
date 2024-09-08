@@ -54,7 +54,7 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        $user->load('country.currency', 'balance.currency', 'store');
+        $user->load('country', 'balance.currency', 'store');
         $user->load('role');
         $user->load('workingDays');
 
@@ -80,7 +80,7 @@ class AuthController extends Controller
     protected function responseWithToken($token)
     {
         $user = auth()->user();
-        $user->load('country.currency', 'balance.currency', 'store');
+        $user->load('country', 'balance.currency', 'store');
         $user->load('role');
 
         return response()->json([

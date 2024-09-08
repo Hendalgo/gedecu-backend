@@ -99,7 +99,14 @@ class UserController extends Controller
                 'country' => 'required|exists:countries,id',
                 'role' => 'required|exists:roles,id',
             ], $messages);
-
+            if ($validatedData['role'] == 5 || $validatedData['role'] == 6) {
+                $request->validate([
+                    'currency' => 'required|exists:countries,id',
+                ],
+                [
+                    'currency.exist' => 'Moneda no registrada',
+                ]);
+            }
             if (isset($validatedData['image'])) {
                 $imageName = time().'.'.$request->image->extension();
                 $request->image->move(public_path('images'), $imageName);
@@ -117,10 +124,9 @@ class UserController extends Controller
                         'role_id' => $request->role,
                     ]);
                     if ($user->role_id == 5 || $user->role_id == 6) {
-                        $currency = Country::with('currency')->find($user->country_id);
                         UserBalance::create([
                             'user_id' => $user->id,
-                            'currency_id' => $currency->currency->id,
+                            'currency_id' => $request->currency,
                         ]);
                     }
                 });
