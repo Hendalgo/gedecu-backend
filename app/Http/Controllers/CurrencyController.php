@@ -16,11 +16,32 @@ class CurrencyController extends Controller
         $paginated = $request->get('paginated', 'yes');
         $per_page = $request->get('per_page', 10);
 
+        if ($user->role->id === 1) {
+            $currency = Currency::where('currencies.delete', false)->where(function ($query) use ($search) {
+                $query = $query->where('currencies.name', 'LIKE', "%{$search}%")
+                    ->orWhere('currencies.shortcode', 'LIKE', "%{$search}%")
+                    ->orWhere('currencies.symbol', 'LIKE', "%{$search}%");
+            });
+            if ($paginated === 'no') {
+                return response()->json($currency->get(), 200);
+            }
+
+            return response()->json($currency->paginate($per_page), 200);
+        }
+        
+        //Check if the user has permissions to see the currencies
+        $permissions = json_decode($user->permissions, true);
+        if (!isset($permissions['allowed_currencies'])) {
+            return response()->json(['message' => 'forbiden'], 403);
+        }
+        $allowed_currencies = $permissions['allowed_currencies'];
+
         $currency = Currency::where('currencies.delete', false)->where(function ($query) use ($search) {
             $query = $query->where('currencies.name', 'LIKE', "%{$search}%")
                 ->orWhere('currencies.shortcode', 'LIKE', "%{$search}%")
                 ->orWhere('currencies.symbol', 'LIKE', "%{$search}%");
-        });
+        })->whereIn('currencies.id', $allowed_currencies);
+
         if ($paginated === 'no') {
             return response()->json($currency->get(), 200);
         }
@@ -68,6 +89,11 @@ class CurrencyController extends Controller
                 ->select('stores.*');
 
             return response()->json($currency->get(), 200);
+        }
+
+        $allowed_currencies = json_decode($user->permissions, true)['allowed_currencies'];
+        if (!in_array($id, $allowed_currencies)) {
+            return response()->json(['message' => 'forbiden'], 403);
         }
 
         return response()->json(Currency::find($id), 200);

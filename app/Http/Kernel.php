@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'auth.veryfied' => AuthMiddleware::class,
         'role.check' => RoleCheck::class,
         'assigned.workingdays' => AssignedWorkingDays::class,
+        'check.permissions' => \App\Http\Middleware\CheckPermissions::class,
     ];
 }

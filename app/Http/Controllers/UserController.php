@@ -90,6 +90,8 @@ class UserController extends Controller
                 'password.max' => 'Contraseña máximo 16 caracteres',
                 'country.exist' => 'País no registrado',
                 'role.exist' => 'Rol inválido',
+                'allowed_currencies.required' => 'Monedas permitidas requeridas',
+                'allowed_currencies.*.exist' => 'Moneda no registrada',
             ];
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
@@ -98,10 +100,12 @@ class UserController extends Controller
                 'image' => 'image',
                 'country' => 'required|exists:countries,id',
                 'role' => 'required|exists:roles,id',
+                'allowed_currencies' => 'required|array',
+                'allowed_currencies.*' => 'exists:currencies,id',
             ], $messages);
             if ($validatedData['role'] == 5 || $validatedData['role'] == 6) {
                 $request->validate([
-                    'currency' => 'required|exists:countries,id',
+                    'currency' => 'required|exists:currencies,id',
                 ],
                 [
                     'currency.exist' => 'Moneda no registrada',
@@ -122,6 +126,9 @@ class UserController extends Controller
                         'password' => Hash::make($request->password),
                         'country_id' => $request->country,
                         'role_id' => $request->role,
+                        'permissions' => json_encode([
+                            'allowed_currencies' => $request->allowed_currencies,
+                        ]),
                     ]);
                     if ($user->role_id == 5 || $user->role_id == 6) {
                         UserBalance::create([
@@ -173,6 +180,8 @@ class UserController extends Controller
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'password' => 'min:8|max:16|confirmed',
+                'allowed_currencies' => 'array',
+                'allowed_currencies.*' => 'exists:currencies,id',
                 'image' => 'image',
             ], $messages);
 
@@ -194,6 +203,11 @@ class UserController extends Controller
                 }
                 if ($field === 'role_id') {
                     $user->$field = $user->role_id;
+                }
+                if ($field === 'allowed_currencies') {
+                    $user->permissions = json_encode([
+                        'allowed_currencies' => $value,
+                    ]);
                 }
             }
             $user->save();
@@ -235,6 +249,9 @@ class UserController extends Controller
                 }
                 if ($field === 'role_id') {
                     $user->$field = $user->role_id;
+                }
+                if ($field === 'allowed_currencies') {
+                    $user->permissions = $user->permissions;
                 }
             }
             $user->save();
