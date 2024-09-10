@@ -194,7 +194,6 @@ class UserController extends Controller
             $user = User::find($id);
 
             foreach ($validatedData as $field => $value) {
-                $user->$field = $value;
                 if ($field === 'email') {
                     $user->$field = $user->email;
                 }
@@ -208,6 +207,9 @@ class UserController extends Controller
                     $user->permissions = json_encode([
                         'allowed_currencies' => $value,
                     ]);
+                }
+                else{
+                    $user->$field = $value;
                 }
             }
             $user->save();
