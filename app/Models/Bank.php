@@ -14,7 +14,6 @@ class Bank extends Model
         'img',
         'meta_data',
         'country_id',
-        'currency_id',
         'type_id',
         'delete',
     ];
