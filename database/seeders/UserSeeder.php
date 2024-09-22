@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
             'permissions' => json_encode([
                 'users' => true,
                 'roles' => true,
-                'allowed_countries' => true,
+                'allowed_banks' => true,
                 'allowed_currencies' => true,
                 'accounts' => true,
                 'transactions' => true,
@@ -43,7 +43,7 @@ class UserSeeder extends Seeder
             'permissions' => json_encode([
                 'users' => true,
                 'roles' => true,
-                'allowed_countries' => true,
+                'allowed_banks' => true,
                 'allowed_currencies' => true,
                 'accounts' => true,
                 'transactions' => true,
@@ -63,7 +63,7 @@ class UserSeeder extends Seeder
             'permissions' => json_encode([
                 'users' => true,
                 'roles' => true,
-                'allowed_countries' => true,
+                'allowed_banks' => true,
                 'allowed_currencies' => true,
                 'accounts' => true,
                 'transactions' => true,

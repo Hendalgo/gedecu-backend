@@ -92,7 +92,7 @@ class UserController extends Controller
                 'role.exist' => 'Rol inválido',
                 'allowed_currencies.required' => 'Monedas permitidas requeridas',
                 'allowed_currencies.*.exist' => 'Moneda no registrada',
-                'allowed_countries.*.exist' => 'País no registrado',
+                'allowed_banks.*.exist' => 'Banco no registrado',
             ];
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
@@ -103,8 +103,8 @@ class UserController extends Controller
                 'role' => 'required|exists:roles,id',
                 'allowed_currencies' => 'required|array',
                 'allowed_currencies.*' => 'exists:currencies,id',
-                'allowed_countries' => 'array',
-                'allowed_countries.*' => 'exists:countries,id',
+                'allowed_banks' => 'array',
+                'allowed_banks.*' => 'exists:banks,id',
             ], $messages);
             if ($validatedData['role'] == 5 || $validatedData['role'] == 6) {
                 $request->validate([
@@ -131,7 +131,7 @@ class UserController extends Controller
                         'role_id' => $request->role,
                         'permissions' => json_encode([
                             'allowed_currencies' => $request->allowed_currencies,
-                            'allowed_countries' => $request->allowed_countries,
+                            'allowed_banks' => $request->allowed_banks,
                         ]),
                     ]);
                     if ($user->role_id == 5 || $user->role_id == 6) {
@@ -180,12 +180,17 @@ class UserController extends Controller
                 'password.max' => 'Contraseña máximo 16 caracteres',
                 'country_id.exist' => 'País no registrado',
                 'role_id.exist' => 'Rol inválido',
+                'allowed_currencies.required' => 'Monedas permitidas requeridas',
+                'allowed_currencies.*.exist' => 'Moneda no registrada',
+                'allowed_banks.*.exist' => 'Banco no registrado',
             ];
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
                 'password' => 'min:8|max:16|confirmed',
                 'allowed_currencies' => 'array',
                 'allowed_currencies.*' => 'exists:currencies,id',
+                'allowed_banks' => 'array',
+                'allowed_banks.*' => 'exists:banks,id',
                 'image' => 'image',
             ], $messages);
 
@@ -210,6 +215,11 @@ class UserController extends Controller
                 if ($field === 'allowed_currencies') {
                     $user->permissions = json_encode([
                         'allowed_currencies' => $value,
+                    ]);
+                }
+                if ($field === 'allowed_banks') {
+                    $user->permissions = json_encode([
+                        'allowed_banks' => $value,
                     ]);
                 }
                 else{
