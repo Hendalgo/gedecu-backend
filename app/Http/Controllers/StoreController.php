@@ -20,16 +20,41 @@ class StoreController extends Controller
         $search = $request->get('search');
         $per_page = $request->get('per_page', 10);
         $paginated = $request->get('paginated', 'yes');
-        // Filter to get stores where user is not owner
         $not_owner = $request->get('not_owner', 'no');
         $country = $request->get('country');
+
         $store = Store::leftjoin('banks_accounts', 'stores.id', '=', 'banks_accounts.store_id')
-            ->leftjoin('countries', 'stores.country_id', '=', 'countries.id')
-            ->leftjoin('currencies', 'countries.id', '=', 'currencies.country_id')
+            ->leftjoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
             ->leftjoin('users', 'stores.user_id', '=', 'users.id')
             ->where('banks_accounts.account_type_id', 3)
-            ->select('stores.*', 'banks_accounts.balance as cash_balance')
-            ->groupBy('stores.id', 'stores.name', 'stores.location', 'stores.user_id', 'stores.country_id', 'stores.created_at', 'stores.updated_at', 'stores.delete', 'banks_accounts.balance')
+            ->select(
+                'stores.id',
+                'stores.name',
+                'stores.location',
+                'stores.user_id',
+                'stores.country_id',
+                'stores.created_at',
+                'stores.updated_at',
+                'stores.delete',
+                'banks_accounts.balance as cash_balance',
+                'currencies.id as currency_id',
+                'currencies.name as currency_name',
+                'currencies.symbol as currency_symbol'
+            )
+            ->groupBy(
+                'stores.id',
+                'stores.name',
+                'stores.location',
+                'stores.user_id',
+                'stores.country_id',
+                'stores.created_at',
+                'stores.updated_at',
+                'stores.delete',
+                'banks_accounts.balance',
+                'currencies.id',
+                'currencies.name',
+                'currencies.symbol'
+            )
             ->orderBy($order ?? 'stores.id', $orderBy ?? 'desc');
 
         if ($since) {
@@ -42,12 +67,11 @@ class StoreController extends Controller
             $store = $store->where(function ($query) use ($search) {
                 $query->where('stores.name', 'LIKE', "%{$search}%")
                     ->orWhere('stores.location', 'LIKE', "%{$search}%")
-                    ->orWhere('countries.name', 'LIKE', "%{$search}%")
                     ->orWhere('users.name', 'LIKE', "%{$search}%");
             });
         }
         if ($country) {
-            $store = $store->where('countries.id', '=', $country);
+            $store = $store->where('stores.country_id', '=', $country);
         }
         if ($not_owner === 'yes') {
             $store = $store->where(function ($query) {
@@ -55,7 +79,7 @@ class StoreController extends Controller
                     ->orWhereNull('stores.user_id');
             });
         }
-        $store = $store->with('country.currency', 'accounts', 'user');
+        $store = $store->with('accounts', 'user');
         if ($paginated === 'no') {
             return response()->json($store->where('stores.delete', false)->get(), 200);
         }
@@ -63,10 +87,52 @@ class StoreController extends Controller
         return response()->json($store->where('stores.delete', false)->paginate($per_page), 200);
     }
 
+    public function show($id)
+    {
+        $user = User::find(auth()->user()->id);
+        $store = Store::where('id', '=', $id)->where('delete', false);
+
+        if ($user->role->id === 1) {
+            $store = $store->with(['accounts' => function ($query) {
+                $query->where('account_type_id', 3)->with('currency');
+            }, 'user'])->first();
+
+            if (! $store) {
+                return response()->json(['message' => 'No se encontro el local'], 404);
+            }
+
+            $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type', 'bank')->get();
+            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
+            $auxStore = $store->toArray();
+
+            $auxStore['accounts'] = $bank_accounts;
+            $auxStore['cash_balance'] = $cash_account;
+
+            return response()->json($auxStore, 200);
+        }
+        $store = $store->where('user_id', '=', $user->id)->with(['accounts' => function ($query) {
+            $query->where('account_type_id', 3)->with('currency');
+        }, 'user'])->first();
+
+        if (! $store) {
+            return response()->json(['message' => 'No se encontro el local'], 404);
+        }
+
+        $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type', 'bank')->get();
+        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
+
+        $auxStore = $store->toArray();
+
+        $auxStore['accounts'] = $bank_accounts;
+        $auxStore['cash_balance'] = $cash_account;
+
+        return response()->json($auxStore, 200);
+    }
+
     public function create()
     {
     }
-
+    
     public function store(Request $request)
     {
         $user = User::find(auth()->user()->id);
@@ -81,6 +147,8 @@ class StoreController extends Controller
                 'country.exist' => 'País no existe',
                 'balance.required' => 'Balance requerido',
                 'balance.numeric' => 'Balance debe ser un número',
+                'currency_id.required' => 'Moneda requerida',
+                'currency_id.exists' => 'Moneda no existe',
             ];
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
@@ -88,6 +156,7 @@ class StoreController extends Controller
                 'user_id' => 'required|exists:users,id|user_role:3',
                 'country_id' => 'required|exists:countries,id',
                 'balance' => 'required|numeric',
+                'currency_id' => 'required|exists:currencies,id',
             ], $messages);
             $exist_user = Store::where('user_id', '=', $validatedData['user_id'])->first();
             if ($exist_user) {
@@ -110,12 +179,11 @@ class StoreController extends Controller
                         'user_id' => $validatedData['user_id'],
                         'country_id' => $validatedData['country_id'],
                     ]);
-                    $country = Country::where('id', '=', $validatedData['country_id'])->with('currency')->first();
                     $bank_account = $store->accounts()->create([
                         'name' => 'Efectivo',
                         'identifier' => 'Efectivo',
                         'balance' => $validatedData['balance'],
-                        'currency_id' => $country->currency->id,
+                        'currency_id' => $validatedData['currency_id'],
                         'account_type_id' => 3,
                     ]);
                 });
@@ -127,44 +195,6 @@ class StoreController extends Controller
         }
 
         return response()->json(['message' => 'forbiden'], 401);
-    }
-
-    public function show($id)
-    {
-        $user = User::find(auth()->user()->id);
-        $store = Store::where('id', '=', $id)->where('delete', false);
-
-        if ($user->role->id === 1) {
-            $store = $store->with('country.currency', 'accounts', 'user')->first();
-
-            if (! $store) {
-                return response()->json(['message' => 'No se encontro el local'], 404);
-            }
-
-            $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type', 'bank')->get();
-            $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
-            $auxStore = $store->toArray();
-
-            $auxStore['accounts'] = $bank_accounts;
-            $auxStore['cash_balance'] = $cash_account;
-
-            return response()->json($auxStore, 200);
-        }
-        $store = $store->where('user_id', '=', $user->id)->with('country.currency', 'user')->first();
-
-        if (! $store) {
-            return response()->json(['message' => 'No se encontro el local'], 404);
-        }
-
-        $bank_accounts = BankAccount::where('store_id', '=', $id)->where('account_type_id', '!=', 3)->with('currency', 'type', 'bank')->get();
-        $cash_account = BankAccount::where('store_id', '=', $id)->where('account_type_id', '=', 3)->with('currency', 'type')->first();
-
-        $auxStore = $store->toArray();
-
-        $auxStore['accounts'] = $bank_accounts;
-        $auxStore['cash_balance'] = $cash_account;
-
-        return response()->json($auxStore, 200);
     }
 
     public function update(Request $request, $id)
