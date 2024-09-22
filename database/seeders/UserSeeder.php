@@ -20,6 +20,16 @@ class UserSeeder extends Seeder
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
             'country_id' => Country::inRandomOrder()->first()->id,
             'role_id' => 1,
+            'permissions' => json_encode([
+                'users' => true,
+                'roles' => true,
+                'allowed_countries' => true,
+                'allowed_currencies' => true,
+                'accounts' => true,
+                'transactions' => true,
+                'reports' => true,
+                'settings' => true,
+            ]),
             'is_initial' => true,
         ]);
 
@@ -30,6 +40,16 @@ class UserSeeder extends Seeder
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi85',
             'country_id' => Country::inRandomOrder()->first()->id,
             'role_id' => 7,
+            'permissions' => json_encode([
+                'users' => true,
+                'roles' => true,
+                'allowed_countries' => true,
+                'allowed_currencies' => true,
+                'accounts' => true,
+                'transactions' => true,
+                'reports' => true,
+                'settings' => true,
+            ]),
             'is_initial' => true,
         ]);
 
@@ -40,6 +60,16 @@ class UserSeeder extends Seeder
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi85',
             'country_id' => Country::inRandomOrder()->first()->id,
             'role_id' => 7,
+            'permissions' => json_encode([
+                'users' => true,
+                'roles' => true,
+                'allowed_countries' => true,
+                'allowed_currencies' => true,
+                'accounts' => true,
+                'transactions' => true,
+                'reports' => true,
+                'settings' => true,
+            ]),
             'is_initial' => true,
         ]);
     }

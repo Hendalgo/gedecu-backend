@@ -92,6 +92,7 @@ class UserController extends Controller
                 'role.exist' => 'Rol inválido',
                 'allowed_currencies.required' => 'Monedas permitidas requeridas',
                 'allowed_currencies.*.exist' => 'Moneda no registrada',
+                'allowed_countries.*.exist' => 'País no registrado',
             ];
             $validatedData = $request->validate([
                 'name' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s]+$/',
@@ -102,6 +103,8 @@ class UserController extends Controller
                 'role' => 'required|exists:roles,id',
                 'allowed_currencies' => 'required|array',
                 'allowed_currencies.*' => 'exists:currencies,id',
+                'allowed_countries' => 'array',
+                'allowed_countries.*' => 'exists:countries,id',
             ], $messages);
             if ($validatedData['role'] == 5 || $validatedData['role'] == 6) {
                 $request->validate([
@@ -128,6 +131,7 @@ class UserController extends Controller
                         'role_id' => $request->role,
                         'permissions' => json_encode([
                             'allowed_currencies' => $request->allowed_currencies,
+                            'allowed_countries' => $request->allowed_countries,
                         ]),
                     ]);
                     if ($user->role_id == 5 || $user->role_id == 6) {

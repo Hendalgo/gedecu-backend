@@ -13,14 +13,18 @@ class RolesSeeder extends Seeder
     public function run(): void
     {
         $user = new Role();
+
+        $user->id = 1;
         $user->name = 'Administrador';
         $user->description = 'Super admin, acceso a todas las funcionalidades de la aplicación';
         $user->permissions = json_encode([]);
         $user->config = '{"styles":{"color":"#052C65","borderColor":"#9EC5FE","backgroundColor":"#E7F1FF"}}';
 
         $user->save();
-
+        
         $user = new Role();
+
+        $user->id = 2;
         $user->name = 'Gestor';
         $user->description = '';
         $user->permissions = json_encode([]);
@@ -29,6 +33,8 @@ class RolesSeeder extends Seeder
         $user->save();
 
         $user = new Role();
+
+        $user->id = 3;
         $user->name = 'Encargado de local';
         $user->description = '';
         $user->permissions = json_encode([]);
@@ -37,6 +43,8 @@ class RolesSeeder extends Seeder
         $user->save();
 
         $user = new Role();
+
+        $user->id = 4;
         $user->name = 'Proveedor';
         $user->description = '';
         $user->permissions = json_encode([]);
@@ -45,6 +53,8 @@ class RolesSeeder extends Seeder
         $user->save();
 
         $user = new Role();
+
+        $user->id = 5;
         $user->name = 'Depositante';
         $user->description = '';
         $user->permissions = json_encode([]);
@@ -53,6 +63,8 @@ class RolesSeeder extends Seeder
         $user->save();
 
         $user = new Role();
+
+        $user->id = 6;
         $user->name = 'Caja Fuerte';
         $user->description = '';
         $user->permissions = json_encode([]);
@@ -61,6 +73,8 @@ class RolesSeeder extends Seeder
         $user->save();
 
         $user = new Role();
+
+        $user->id = 7;
         $user->name = 'Jefe';
         $user->description = 'Jefe de tienda';
         $user->permissions = json_encode([]);

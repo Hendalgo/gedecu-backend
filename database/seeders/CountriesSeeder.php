@@ -13,7 +13,7 @@ class CountriesSeeder extends Seeder
     public function run(): void
     {
         $colombia = new Country();
-
+        $colombia->id = 1;
         $colombia->name = 'Colombia';
         $colombia->img = '';
         $colombia->shortcode = 'CO';
@@ -31,6 +31,7 @@ class CountriesSeeder extends Seeder
 
         $venezuela = new Country();
 
+        $venezuela->id = 2;
         $venezuela->name = 'Venezuela';
         $venezuela->img = '';
         $venezuela->config = json_encode([
@@ -48,6 +49,7 @@ class CountriesSeeder extends Seeder
 
         $usa = new Country();
 
+        $usa->id = 3;
         $usa->name = 'Estados Unidos';
         $usa->img = '';
         $usa->config = json_encode([
@@ -57,7 +59,7 @@ class CountriesSeeder extends Seeder
                 'borderColor' => '$FDFDFD',
             ],
         ]);
-        $usa->is_initial = true;
+        $usa->is_initial = false;
         $usa->locale = 'en_US';
         $usa->shortcode = 'US';
         $usa->save();
