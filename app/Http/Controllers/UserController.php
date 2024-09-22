@@ -106,14 +106,6 @@ class UserController extends Controller
                 'allowed_banks' => 'array',
                 'allowed_banks.*' => 'exists:banks,id',
             ], $messages);
-            if ($validatedData['role'] == 5 || $validatedData['role'] == 6) {
-                $request->validate([
-                    'currency' => 'required|exists:currencies,id',
-                ],
-                [
-                    'currency.exist' => 'Moneda no registrada',
-                ]);
-            }
             if (isset($validatedData['image'])) {
                 $imageName = time().'.'.$request->image->extension();
                 $request->image->move(public_path('images'), $imageName);
@@ -134,12 +126,6 @@ class UserController extends Controller
                             'allowed_banks' => $request->allowed_banks,
                         ]),
                     ]);
-                    if ($user->role_id == 5 || $user->role_id == 6) {
-                        UserBalance::create([
-                            'user_id' => $user->id,
-                            'currency_id' => $request->currency,
-                        ]);
-                    }
                 });
 
                 return response()->json($user, 201);

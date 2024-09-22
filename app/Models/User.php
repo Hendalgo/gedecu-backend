@@ -108,11 +108,13 @@ class User extends Authenticatable implements JWTSubject
     {
         static::created(function ($user) {
             if ($user->role_id === 5 || $user->role_id === 6) {
-                $user->balance()->create([
-                    'user_id' => $user->id,
-                    'balance' => 0,
-                    'currency_id' => Currency::where('country_id', $user->country_id)->first()->id,
-                ]);
+               foreach(json_decode($user->permissions)->allowed_currencies as $currency){
+                    $user->balance()->create([
+                        'user_id' => $user->id,
+                        'balance' => 0,
+                        'currency_id' => $currency,
+                    ]);
+               }
             }
         });
     }
