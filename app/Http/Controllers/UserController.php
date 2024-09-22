@@ -191,24 +191,15 @@ class UserController extends Controller
             foreach ($validatedData as $field => $value) {
                 if ($field === 'email') {
                     $user->$field = $user->email;
-                }
-                if ($field === 'country_id') {
+                } elseif ($field === 'country_id') {
                     $user->$field = $user->country_id;
-                }
-                if ($field === 'role_id') {
+                } elseif ($field === 'role_id') {
                     $user->$field = $user->role_id;
-                }
-                if ($field === 'allowed_currencies') {
-                    $user->permissions = json_encode([
-                        'allowed_currencies' => $value,
-                    ]);
-                }
-                if ($field === 'allowed_banks') {
-                    $user->permissions = json_encode([
-                        'allowed_banks' => $value,
-                    ]);
-                }
-                else{
+                } elseif ($field === 'allowed_currencies' || $field === 'allowed_banks') {
+                    $permissions = json_decode($user->permissions, true) ?? [];
+                    $permissions[$field] = $value;
+                    $user->permissions = json_encode($permissions);
+                } else {
                     $user->$field = $value;
                 }
             }
@@ -242,18 +233,14 @@ class UserController extends Controller
             $user = $currentUser;
 
             foreach ($validatedData as $field => $value) {
-                $user->$field = $value;
                 if ($field === 'email') {
                     $user->$field = $user->email;
-                }
-                if ($field === 'country_id') {
+                } elseif ($field === 'country_id') {
                     $user->$field = $user->country_id;
-                }
-                if ($field === 'role_id') {
+                } elseif ($field === 'role_id') {
                     $user->$field = $user->role_id;
-                }
-                if ($field === 'allowed_currencies') {
-                    $user->permissions = $user->permissions;
+                } else {
+                    $user->$field = $value;
                 }
             }
             $user->save();
@@ -262,7 +249,6 @@ class UserController extends Controller
         }
 
         return response()->json(['message' => 'forbiden'], 401);
-
     }
 
     public function destroy($id)
