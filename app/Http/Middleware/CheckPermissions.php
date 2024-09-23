@@ -23,9 +23,12 @@ class CheckPermissions
         $permissions = json_decode($user->permissions, true);
         $route = $request->route()->uri;
         $method = $request->method();
-        
-        if($route === 'api/bank-accounts' && $method === 'POST') {
-            if(!in_array($request->currency_id, $permissions->allowed_currencies)) {
+
+        if ($route === 'api/bank-accounts' && $method === 'POST') {
+            if (!in_array($request->currency_id, $permissions['allowed_currencies'])) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            if(!in_array($request->bank_id, $permissions['allowed_banks'])) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
         }

@@ -18,12 +18,20 @@ class BankController extends Controller
         $country = $request->get('country');
         $type = $request->get('type');
 
+        // Verifica si el usuario tiene el rol de Super Administrador
+        if ($user->role_id !== 1) {
+            // Verifica si el usuario tiene permisos para ver los bancos
+            $permissions = json_decode($user->permissions, true);
+            if (!isset($permissions['allowed_banks'])) {
+                return response()->json(['message' => 'forbidden'], 403);
+            }
+            $allowed_banks = $permissions['allowed_banks'];
+        }
+
         $bank = Bank::where('banks.delete', false)
-            ->leftjoin('accounts_types', 'banks.type_id', '=', 'accounts_types.id')
+            ->leftJoin('accounts_types', 'banks.type_id', '=', 'accounts_types.id')
             ->select('banks.*');
-        /* if ($search) {
-            $bank = $bank->havingRaw('banks.name LIKE ? OR amount LIKE ?', ["%{$search}%", "%{$search}%"]);
-        } */
+
         if ($search) {
             $bank = $bank->where(function ($query) use ($search) {
                 $query->where('banks.name', 'LIKE', '%'.$search.'%')
@@ -37,7 +45,14 @@ class BankController extends Controller
         if ($type) {
             $bank = $bank->where('banks.type_id', '=', $type);
         }
+
+        // Aplica el filtro de bancos permitidos si el usuario no es Super Administrador
+        if ($user->role_id !== 1) {
+            $bank = $bank->whereIn('banks.id', $allowed_banks);
+        }
+
         $bank = $bank->with('country', 'type');
+
         if ($paginated === 'no') {
             return response()->json($bank->get(), 200);
         }
