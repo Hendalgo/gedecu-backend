@@ -98,6 +98,9 @@ class BankAccountController extends Controller
         if ($user->role->id === 2) {
             $bank_account = $bank_account->where('banks_accounts.user_id', $user->id);
         }
+        if($user->role->id === 8) {
+            $bank_account = $bank_account->where('banks_accounts.user_id', $user->id);
+        }
         if ($user->role->id === 5 || $user->role->id === 6) {
             return response()->json(['message' => 'No tiene acceso a estas cuentas'], 403);
         }

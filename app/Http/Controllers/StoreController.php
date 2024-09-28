@@ -79,7 +79,7 @@ class StoreController extends Controller
                     ->orWhereNull('stores.user_id');
             });
         }
-        $store = $store->with('accounts', 'user');
+        $store = $store->with('accounts', 'user', 'country');
         if ($paginated === 'no') {
             return response()->json($store->where('stores.delete', false)->get(), 200);
         }
@@ -112,7 +112,7 @@ class StoreController extends Controller
         }
         $store = $store->where('user_id', '=', $user->id)->with(['accounts' => function ($query) {
             $query->where('account_type_id', 3)->with('currency');
-        }, 'user'])->first();
+        }, 'user', 'country'])->first();
 
         if (! $store) {
             return response()->json(['message' => 'No se encontro el local'], 404);
