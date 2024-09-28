@@ -15,7 +15,7 @@ return new class extends Migration
         DB::table('report_type_validations')->insert([
             [
                 'name' => 'account_id',
-                'validation' => 'required|exists:accounts,id|bank_account_owner',
+                'validation' => 'required|exists:banks_accounts,id|bank_account_owner',
                 'validation_role' => 'all',
                 'report_type_id' => 57,
             ],
