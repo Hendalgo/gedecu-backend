@@ -39,7 +39,7 @@ class StoreController extends Controller
                 'banks_accounts.balance as cash_balance',
                 'currencies.id as currency_id',
                 'currencies.name as currency_name',
-                'currencies.symbol as currency_symbol'
+                'currencies.symbol as currency_symbol',
                 'currencies.shortcode as currency_shortcode'
             )
             ->groupBy(
