@@ -40,6 +40,7 @@ class StoreController extends Controller
                 'currencies.id as currency_id',
                 'currencies.name as currency_name',
                 'currencies.symbol as currency_symbol'
+                'currencies.shortcode as currency_shortcode'
             )
             ->groupBy(
                 'stores.id',
@@ -53,7 +54,8 @@ class StoreController extends Controller
                 'banks_accounts.balance',
                 'currencies.id',
                 'currencies.name',
-                'currencies.symbol'
+                'currencies.symbol',
+                'currencies.shortcode'
             )
             ->orderBy($order ?? 'stores.id', $orderBy ?? 'desc');
 

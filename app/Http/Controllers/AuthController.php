@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -54,9 +55,23 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        $user->load('country', 'balance.currency', 'store');
-        $user->load('role');
-        $user->load('workingDays');
+        $user->load('country', 'balance.currency', 'store', 'role', 'workingDays');
+
+        // Verifica si el usuario tiene el rol de Encargado de Local (id 3)
+        if ($user->role_id === 3) {
+            // Busca la primera cuenta bancaria con type_id 1
+            $bankAccount = BankAccount::where('account_type_id', 3)->where('store_id', $user->store->id)->first();
+
+            if ($bankAccount) {
+                // Carga la información de la moneda asociada a la cuenta bancaria
+                $bankAccount->load('currency');
+                $currencyInfo = $bankAccount->currency;
+            } else {
+                $currencyInfo = null;
+            }
+
+           $user->currency = $currencyInfo;
+        }
 
         return response()->json($user);
     }
