@@ -27,7 +27,6 @@ class BankController extends Controller
             } else {
                 $allowed_banks = [];
             }
-            $allowed_banks = $permissions['allowed_banks'];
         }
 
         $bank = Bank::where('banks.delete', false)

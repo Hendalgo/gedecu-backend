@@ -36,8 +36,6 @@ class CurrencyController extends Controller
         } else {
             $allowed_currencies = [];
         }
-        $allowed_currencies = $permissions['allowed_currencies'];
-
         $currency = Currency::where('currencies.delete', false)->where(function ($query) use ($search) {
             $query = $query->where('currencies.name', 'LIKE', "%{$search}%")
                 ->orWhere('currencies.shortcode', 'LIKE', "%{$search}%")
@@ -47,7 +45,7 @@ class CurrencyController extends Controller
         if (count($allowed_currencies) > 0) {
             $currency = $currency->whereIn('currencies.id', $allowed_currencies);
         }
-        
+
         if ($paginated === 'no') {
             return response()->json($currency->get(), 200);
         }
