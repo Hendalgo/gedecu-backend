@@ -31,8 +31,10 @@ class CurrencyController extends Controller
         
         //Check if the user has permissions to see the currencies
         $permissions = json_decode($user->permissions, true);
-        if (!isset($permissions['allowed_currencies'])) {
-            return response()->json(['message' => 'forbiden'], 403);
+        if (isset($permissions['allowed_currencies'])) {
+            $allowed_currencies = $permissions['allowed_currencies'];
+        } else {
+            $allowed_currencies = [];
         }
         $allowed_currencies = $permissions['allowed_currencies'];
 
@@ -40,8 +42,12 @@ class CurrencyController extends Controller
             $query = $query->where('currencies.name', 'LIKE', "%{$search}%")
                 ->orWhere('currencies.shortcode', 'LIKE', "%{$search}%")
                 ->orWhere('currencies.symbol', 'LIKE', "%{$search}%");
-        })->whereIn('currencies.id', $allowed_currencies);
+        });
 
+        if (count($allowed_currencies) > 0) {
+            $currency = $currency->whereIn('currencies.id', $allowed_currencies);
+        }
+        
         if ($paginated === 'no') {
             return response()->json($currency->get(), 200);
         }

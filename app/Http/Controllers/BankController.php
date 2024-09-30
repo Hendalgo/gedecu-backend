@@ -22,8 +22,10 @@ class BankController extends Controller
         if ($user->role_id !== 1) {
             // Verifica si el usuario tiene permisos para ver los bancos
             $permissions = json_decode($user->permissions, true);
-            if (!isset($permissions['allowed_banks'])) {
-                return response()->json(['message' => 'forbidden'], 403);
+            if (isset($permissions['allowed_banks'])) {
+                $allowed_banks = $permissions['allowed_banks'];
+            } else {
+                $allowed_banks = [];
             }
             $allowed_banks = $permissions['allowed_banks'];
         }
@@ -47,7 +49,7 @@ class BankController extends Controller
         }
 
         // Aplica el filtro de bancos permitidos si el usuario no es Super Administrador
-        if ($user->role_id !== 1) {
+        if ($user->role_id !== 1 && count($allowed_banks) > 0) {
             $bank = $bank->whereIn('banks.id', $allowed_banks);
         }
 
