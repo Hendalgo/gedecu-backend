@@ -27,12 +27,12 @@ return new class extends Migration
             ],
             [
                 'name'=> 'user_id',
-                'validation' => 'required|exists:users,id|user_role:3',
+                'validation' => 'required|exists:users,id|user_role:8',
                 'validation_role' => 'all',
                 'report_type_id' => 57,
             ],
             [
-                'name' => 'is_duplicated',
+                'name' => 'isDuplicated',
                 'validation' => 'required|boolean|is_false',
                 'validation_role' => 'all',
                 'report_type_id' => 57,
