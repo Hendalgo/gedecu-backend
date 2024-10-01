@@ -15,7 +15,7 @@ return new class extends Migration
         DB::table("report_type_validations")->insert([
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 47,
             ],
@@ -46,7 +46,7 @@ return new class extends Migration
             ],
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 48,
             ],
@@ -71,7 +71,7 @@ return new class extends Migration
             ],
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 49,
             ],
@@ -102,7 +102,7 @@ return new class extends Migration
             ],
             [
                 "name" => "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 50,
             ],
@@ -127,13 +127,13 @@ return new class extends Migration
             /** Traspaso */
             [
                 "name"=> "senderAccount_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 51,
             ],
             [
                 "name"=> "receiverAccount_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 51,
             ],
@@ -158,7 +158,7 @@ return new class extends Migration
             /** Devolucion */
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 52,
             ],
@@ -177,7 +177,7 @@ return new class extends Migration
             /** Billetera Egreso */
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 53,
             ],
@@ -208,7 +208,7 @@ return new class extends Migration
             ],
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 54,
             ],
@@ -233,7 +233,7 @@ return new class extends Migration
             /** Comisiones */
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 55,
             ],
@@ -252,7 +252,7 @@ return new class extends Migration
             /** Otros */
             [
                 "name"=> "account_id",
-                "validation" => "required|exists:accounts,id|bank_account_owner",
+                "validation" => "required|exists:banks_accounts,id|bank_account_owner",
                 "validation_role" => "all",
                 "report_type_id" => 56,
             ],
