@@ -26,7 +26,7 @@ return new class extends Migration
                 "report_type_id" => 47,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 51,
@@ -34,7 +34,7 @@ return new class extends Migration
             /** Proveedor */
             [
                 "name"=> "supplier_id",
-                "validation" => "required|exists:users,id|user_role:supplier",
+                "validation" => "required|exists:users,id|user_role:4",
                 "validation_role" => "all",
                 "report_type_id" => 48,
             ],
@@ -57,7 +57,7 @@ return new class extends Migration
                 "report_type_id" => 48,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 51,
@@ -88,7 +88,7 @@ return new class extends Migration
                 "report_type_id" => 49,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 51,
@@ -96,7 +96,7 @@ return new class extends Migration
             /** Ayuda Efectivo */
             [
                 "name"=> "store_id",
-                "validation" => "required|exists:store,id",
+                "validation" => "required|exists:stores,id",
                 "validation_role" => "all",
                 "report_type_id" => 50,
             ],
@@ -119,7 +119,7 @@ return new class extends Migration
                 "report_type_id" => 50,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 51,
@@ -150,7 +150,7 @@ return new class extends Migration
                 "report_type_id" => 51,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 51,
@@ -169,7 +169,7 @@ return new class extends Migration
                 "report_type_id" => 52,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 52,
@@ -194,7 +194,7 @@ return new class extends Migration
                 "report_type_id" => 53,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 53,
@@ -225,7 +225,7 @@ return new class extends Migration
                 "report_type_id" => 54,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 54,
@@ -244,7 +244,7 @@ return new class extends Migration
                 "report_type_id" => 55,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 55,
@@ -269,7 +269,7 @@ return new class extends Migration
                 "report_type_id" => 56,
             ],
             [
-                "name" => "is_duplicated",
+                "name" => "isDuplicated",
                 "validation" => "required|boolean|is_false",
                 "validation_role" => "all",
                 "report_type_id" => 56,
