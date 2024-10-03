@@ -142,7 +142,7 @@ class ReportController extends Controller
             $validatedSubreports = $subreport->validate_subreport($request);
             $report_type = ReportType::with(['validations'])->find($request->type_id);
             $report_type_config = json_decode($report_type->meta_data, true);
-
+            
             try {
                 $report = [];
                 // Create the report

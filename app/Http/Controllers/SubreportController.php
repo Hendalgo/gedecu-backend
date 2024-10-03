@@ -35,16 +35,15 @@ class SubreportController extends Controller
             if (array_key_exists('convert_amount', $report_type_config)) {
                 $validator->setRules(['conversionCurrency_id' => 'required|exists:currencies,id']);
             }
-            foreach ($reportValidations as $validation) {
-                if (array_key_exists($validation['name'], $subreport)) {
-                    $validator->setRules([$validation['name'] => $validation['validation']]);
-                    if ($validator->fails()) {
-                        $errorMessages = $validator->errors()->all();
 
-                        return response()->json(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages], 422);
-                    }
-                } else {
-                    return response()->json(['error' => 'Campo requerido no encontrado en el subreporte'], 422);
+
+            foreach ($reportValidations as $validation) {
+                echo $validation['name'];
+                $validator->setRules([$validation['name'] => $validation['validation']]);
+                if ($validator->fails()) {
+                    $errorMessages = $validator->errors()->all();
+                    
+                    return response()->json(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages], 422);
                 }
             }
             // Find if the role need extra validations for create the report
