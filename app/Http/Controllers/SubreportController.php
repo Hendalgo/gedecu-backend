@@ -38,7 +38,6 @@ class SubreportController extends Controller
 
 
             foreach ($reportValidations as $validation) {
-                echo $validation['name'];
                 $validator->setRules([$validation['name'] => $validation['validation']]);
                 if ($validator->fails()) {
                     $errorMessages = $validator->errors()->all();
