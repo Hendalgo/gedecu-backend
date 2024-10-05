@@ -379,8 +379,8 @@ class ReportController extends Controller
         }
         SubreportData::insert($subreport_data);
         $insertedSubs->load('report.user.store', 'data');
-        $insertedSubs = $this->KeyMapValue->transformElement($insertedSubs);/* 
-        $inconsistence->check_inconsistences($report, $insertedSubs); */
+        $insertedSubs = $this->KeyMapValue->transformElement($insertedSubs);
+        $inconsistence->check_inconsistences($report, $insertedSubs);
     }
 
     //Calculate the amount of the subreport
