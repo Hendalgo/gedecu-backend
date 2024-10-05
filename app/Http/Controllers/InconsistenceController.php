@@ -579,18 +579,6 @@ class InconsistenceController extends Controller
 
     public function check_inconsistences($report, $subreports)
     {
-
-        $toCompare = Subreport::where('duplicate', false)
-            ->whereDoesntHave('inconsistences', function ($query) {
-                $query->where('verified', 1);
-            })
-            ->whereDoesntHave('inconsistences', function ($query) {
-                $query->whereNotNull('associated_id');
-            })
-            ->with('report.type', 'data')
-            ->get()
-            ->where('report.type.id', $report->type->associated_type_id);
-        $toCompare = $this->keyValueMap->transformElement($toCompare);
     }
 
     private function check_if_have_matches($filtered, $sub)
