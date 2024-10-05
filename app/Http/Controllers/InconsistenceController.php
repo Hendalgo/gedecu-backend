@@ -143,9 +143,9 @@ class InconsistenceController extends Controller
             $this->helpG($filtered, $sub, $type, $subreports);
         }
         /**Done group */
-        /* if ($type == 23 || $type == 4) {
+        if ($type == 23 || $type == 4) {
             $this->giro_local($filtered, $sub, $type, $subreports);
-        } */
+        }
         /**Grouped */
         if ($type == 17 || $type == 27) {
             $this->efectivo_depositante_entrega_efectivo($filtered, $sub, $type, $subreports);
@@ -618,9 +618,9 @@ class InconsistenceController extends Controller
 
                     $valueData = json_decode($value->data, true);
                     $subData = json_decode($sub->data, true);
-                    if ($valueData['currency_id'] === $subData['currency_id'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24) {
+                    /* if ($valueData['currency_id'] === $subData['currency_id'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24) {
                         return true;
-                    }
+                    } */
 
                     return false;
                 });
