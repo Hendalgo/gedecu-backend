@@ -549,7 +549,7 @@ class InconsistenceController extends Controller
 
                 return false;
             });
-
+            echo "Aqui LLego";
             /*Group the filtered collection by report id */
             $filtered = $filtered->groupBy('report_id');
 
