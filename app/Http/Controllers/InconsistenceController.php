@@ -549,9 +549,9 @@ class InconsistenceController extends Controller
 
                 return false;
             });
-            echo "Aqui LLego";
+
             /*Group the filtered collection by report id */
-            $filtered = $filtered->groupBy('report_id');
+           /*  $filtered = $filtered->groupBy('report_id');
 
             $filtered = $filtered->filter(function ($item) use ($sub, $amount, $transferences_quantity) {
                 $amountLocal = 0;
@@ -571,7 +571,7 @@ class InconsistenceController extends Controller
 
             $filtered = $filtered->flatten();
 
-            return $this->check_if_have_matches($filtered, $sub);
+            return $this->check_if_have_matches($filtered, $sub); */
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
