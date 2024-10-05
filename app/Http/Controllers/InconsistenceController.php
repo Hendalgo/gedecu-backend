@@ -587,6 +587,7 @@ class InconsistenceController extends Controller
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->whereNotNull('associated_id');
             })
+            ->with('report.type')
             ->get();
     }
 
