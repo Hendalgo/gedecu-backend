@@ -143,9 +143,9 @@ class InconsistenceController extends Controller
             $this->helpG($filtered, $sub, $type, $subreports);
         }
         /**Done group */
-        if ($type == 23 || $type == 4) {
+        /* if ($type == 23 || $type == 4) {
             $this->giro_local($filtered, $sub, $type, $subreports);
-        }
+        } */
         /**Grouped */
         if ($type == 17 || $type == 27) {
             $this->efectivo_depositante_entrega_efectivo($filtered, $sub, $type, $subreports);
@@ -488,7 +488,90 @@ class InconsistenceController extends Controller
         try{
             $amount = 0;
             $transferences_quantity = 0;
-            return response()->json(['error' => 'Error de validación en el subreporte'], 422);
+            $subData = json_decode($sub->data, true);
+
+            //Get siblings of the current subreport
+            $subreports = $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $type) {
+                $subData = json_decode($sub->data, true);
+                if (gettype($item->data) == 'string') {
+                    $itemData = json_decode($item->data, true);
+                } else {
+                    $itemData = $item->data;
+                }
+
+                if ($type == 23) {
+                    if ($subData['user_id'] != $itemData['user_id'] || $subData['bank_id'] != $itemData['bank_id']) {
+                        return false;
+                    }
+                } else {
+                    if ($subData['store_id'] != $itemData['store_id'] || $subData['bank_id'] != $itemData['bank_id']) {
+                        return false;
+                    }
+                }
+
+                if ($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id) {
+                    $amount += $itemData['amount'];
+                    $transferences_quantity += $itemData['transferences_quantity'];
+                }
+            });
+
+            $amount += $subData['amount'];
+            $transferences_quantity += $subData['transferences_quantity'];
+
+            //Start to filter the possible matches
+
+            $filtered = $filtered->filter(function ($item) use ($sub, $type) {
+                //The bank account from the subreport should be the same as the bank account from the
+                $subData = json_decode($sub->data, true);
+                $itemData = json_decode($item->data, true);
+                $store = $subData['store_id'];
+                $bank_id = null;
+                if (array_key_exists('bank_id', $itemData)) {
+                    $bank_id = $itemData['bank_id'];
+                }
+                if ($type == 23) {
+                    if ($subData['user_id'] != $item->report->user_id && $store != $itemData['store_id']) {
+                        return false;
+                    }
+                } else {
+                    if (auth()->user()) {
+                        $user = auth()->user()->id;
+                    } else {
+                        $user = Subreport::with('report.user')->find($sub->id)->report->user->id;
+                    }
+                    if ($user != $itemData['user_id'] && $subData['store_id'] != $store) {
+                        return false;
+                    }
+                }
+                if ($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $subData['bank_id'] == $bank_id && $store == $itemData['store_id']) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            /*Group the filtered collection by report id */
+            $filtered = $filtered->groupBy('report_id');
+
+            $filtered = $filtered->filter(function ($item) use ($sub, $amount, $transferences_quantity) {
+                $amountLocal = 0;
+                $transferences_quantityLocal = 0;
+                $subData = json_decode($sub->data, true);
+                foreach ($item as $subreport) {
+                    $data = json_decode($subreport->data, true);
+                    $amountLocal += $data['amount'];
+                    $transferences_quantityLocal += $data['transferences_quantity'];
+                }
+                if ($amountLocal == $amount && $transferences_quantityLocal == $transferences_quantity) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            $filtered = $filtered->flatten();
+
+            return $this->check_if_have_matches($filtered, $sub);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
