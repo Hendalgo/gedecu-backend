@@ -589,45 +589,6 @@ class InconsistenceController extends Controller
             })
             ->with('report.type', 'data')
             ->get();
-        $toCompare = $this->keyValueMap->transformElement($toCompare);
-        //Transform the data to json
-        //bc before it works with json data
-        //and now it works with key value
-        foreach ($toCompare as $key => $value) {
-            $toCompare[$key]->data = json_encode($value->data);
-        }
-
-        foreach ($subreports as $sub) {
-
-            /**This subreport is alredy in inconsistences table skip */
-            $exists = Inconsistence::where(function ($query) use ($sub) {
-                $query->where('associated_id', $sub->id);
-            })->OrWhere(function ($query) use ($sub) {
-                $query->where('subreport_id', $sub->id)->where('verified', 1);
-            })->first();
-
-            if ($exists) {
-                continue;
-            }
-            //if the subreport is duplicated, then skip it
-            $sub->data = json_encode($sub->data);
-            //Filter the subreports that have the same currency and amount
-            if ($report->type->id != 4 && $report->type->id != 23) {
-                $filtered = $toCompare->filter(function ($value, $key) use ($sub) {
-
-                    $valueData = json_decode($value->data, true);
-                    $subData = json_decode($sub->data, true);
-                    if ($valueData['currency_id'] === $subData['currency_id'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24) {
-                        return true;
-                    }
-
-                    return false;
-                });
-            } else {
-                $filtered = $toCompare;
-            }
-            $this->invoke($filtered, $sub, $report->type->id, $subreports);
-        }
     }
 
     private function check_if_have_matches($filtered, $sub)
