@@ -488,32 +488,6 @@ class InconsistenceController extends Controller
         try{
             $amount = 0;
             $transferences_quantity = 0;
-
-            //Get siblings of the current subreport
-            $subreports = $subreports->filter(function ($item) use ($sub, &$amount, &$transferences_quantity, $type) {
-                $subData = json_decode($sub->data, true);
-                if (gettype($item->data) == 'string') {
-                    $itemData = json_decode($item->data, true);
-                } else {
-                    $itemData = $item->data;
-                }
-
-                if ($type == 23) {
-                    if ($subData['user_id'] != $itemData['user_id'] || $subData['bank_id'] != $itemData['bank_id']) {
-                        return false;
-                    }
-                } else {
-                    if ($subData['store_id'] != $itemData['store_id'] || $subData['bank_id'] != $itemData['bank_id']) {
-                        return false;
-                    }
-                }
-
-                if ($subData['rate'] == $itemData['rate'] && Carbon::parse($item->created_at)->diffInHours($sub->created_at) <= 24 && $sub->id != $item->id) {
-                    $amount += $itemData['amount'];
-                    $transferences_quantity += $itemData['transferences_quantity'];
-                }
-            });
-
             return response()->json(['error' => 'Error de validación en el subreporte'], 422);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
