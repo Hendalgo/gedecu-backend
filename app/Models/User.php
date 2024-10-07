@@ -80,7 +80,7 @@ class User extends Authenticatable implements JWTSubject
     public function workingDays()
     {
         //In this relationship just get the working days of the current week
-        $workingDays = $this->hasMany('App\Models\WorkingDay', 'user_id')->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
+        $workingDays = $this->hasMany('App\Models\WorkingDay', 'user_id');
 
         //return $workingDays; and if what days did a report
         return $workingDays->with('didReport');

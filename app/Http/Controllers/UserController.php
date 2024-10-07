@@ -6,6 +6,7 @@ use App\Models\Country;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserBalance;
+use Carbon\Carbon;
 use Error;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        $timezone  = $request->header('timezone', '-04:00');
         $currentUser = User::find(auth()->user()->id);
         $order = $request->get('order', 'created_at');
         $orderBy = $request->get('order_by', 'desc');
@@ -63,7 +65,13 @@ class UserController extends Controller
 
         $users = $users->where('users.id', '!=', auth()->user()->id)->with('role', 'country', 'store'); // Exclude current user
         if ($currentUser->role->id === 1) {
-            $users = $users->with('balance.currency', 'workingDays', 'lastReport'); // Include just admin
+            $users = $users->with([
+                'balance.currency',
+                'workingDays' => function ($query) use ($timezone){
+                    $query->whereBetween('date', [now($timezone)->startOfWeek(Carbon::MONDAY), now($timezone)->endOfWeek(Carbon::SUNDAY)]);
+                },
+                'lastReport'
+            ]); // Include just admin
         }
         if ($paginated === 'no') {
             return response()->json($users->get(), 200);

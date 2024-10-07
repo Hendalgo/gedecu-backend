@@ -8,6 +8,8 @@ use Exception;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use function PHPUnit\Framework\isEmpty;
+
 class AssignedWorkingDays
 {
     /**
@@ -19,11 +21,10 @@ class AssignedWorkingDays
     {
         try {
             $user = auth()->user();
-            $assignedWorkingDays = new FilterWorkingDay($user, $request->header('TimeZone', 'America/Caracas'));
-
+            $assignedWorkingDays = new FilterWorkingDay($user, $request->header('timezone', '-04:00'));
             $workingDays = $assignedWorkingDays->filterWorkingDay();
-
-            if ($workingDays->isEmpty() && $user->role->id === 2) {
+            
+            if (empty($workingDays)) {
                 return response()->json([
                     'error' => 'No se encontraron días laborales asignados',
                 ], 401);
@@ -31,7 +32,7 @@ class AssignedWorkingDays
 
         } catch (Exception $e) {
             return response()->json([
-                'error' => 'Error procesando la petición',
+                'error' => $e->getMessage(),
             ], 500);
         }
 

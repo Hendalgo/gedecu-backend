@@ -22,12 +22,11 @@ class FilterWorkingDay
         //Considering just the day from this week starting from Monday and the timezone of the user
 
         $workingDays = $this->user->workingDays->filter(function ($workingDay) {
-            return Carbon::parse($workingDay->date)->isBetween(
-                now()->startOfWeek()->setTimezone($this->timezone),
-                now()->endOfWeek()->setTimezone($this->timezone)
-            );
+            $workingDayDate = Carbon::parse($workingDay->date)->format('Y-m-d');
+            $startOfWeek = now($this->timezone)->startOfWeek(Carbon::MONDAY);
+            $endOfWeek = now($this->timezone)->endOfWeek(Carbon::SUNDAY);
+            return Carbon::create($workingDayDate)->isBetween($startOfWeek, $endOfWeek);
         });
-
-        return $workingDays;
+        return $workingDays->toArray();
     }
 }

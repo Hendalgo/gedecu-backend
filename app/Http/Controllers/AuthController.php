@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -52,10 +53,19 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function me()
+    public function me(Request $request)
     {
+        $timezone = $request->header('timezone', "-04:00");
         $user = auth()->user();
-        $user->load('country', 'balance.currency', 'store', 'role', 'workingDays');
+        $user->load([
+            'country', 
+            'balance.currency', 
+            'store', 
+            'role', 
+            'workingDays' => function ($query) use ($timezone){
+                $query->whereBetween('date', [now($timezone)->startOfWeek(Carbon::MONDAY), now($timezone)->endOfWeek(Carbon::SUNDAY)]);
+            }
+        ]);
 
         // Verifica si el usuario tiene el rol de Encargado de Local (id 3)
         if ($user->role_id === 3) {
