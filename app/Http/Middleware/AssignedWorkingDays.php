@@ -24,7 +24,7 @@ class AssignedWorkingDays
             $assignedWorkingDays = new FilterWorkingDay($user, $request->header('timezone', '-04:00'));
             $workingDays = $assignedWorkingDays->filterWorkingDay();
             
-            if (empty($workingDays)) {
+            if (empty($workingDays) && $user->role->id === 2) {
                 return response()->json([
                     'error' => 'No se encontraron días laborales asignados',
                 ], 401);
