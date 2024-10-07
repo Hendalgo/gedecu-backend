@@ -579,10 +579,6 @@ class InconsistenceController extends Controller
 
     public function check_inconsistences($report, $subreports)
     {
-        //if the report type is 23 or 4, then not check the inconsistency
-        if ($report->type->id == 23 || $report->type->id == 4) {
-            return;
-        }
         $toCompare = Subreport::where('duplicate', false)
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->where('verified', 1);
@@ -590,6 +586,7 @@ class InconsistenceController extends Controller
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->whereNotNull('associated_id');
             })
+            ->whereBetween('created_at', [now()->subWeek(), now()])
             ->with('report.type', 'data')
             ->get();
         $toCompare = $this->keyValueMap->transformElement($toCompare);

@@ -336,7 +336,7 @@ class ReportController extends Controller
             $inconsistence = new InconsistenceController();
             $report->subreports = $report->subreports()->get();
             $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
-            //$inconsistence->check_inconsistences($report, $report->subreports);
+            $inconsistence->check_inconsistences($report, $report->subreports);
 
             return true;
         });
@@ -380,7 +380,7 @@ class ReportController extends Controller
         SubreportData::insert($subreport_data);
         $insertedSubs->load('report.user.store', 'data');
         $insertedSubs = $this->KeyMapValue->transformElement($insertedSubs);
-        //$inconsistence->check_inconsistences($report, $insertedSubs);
+        $inconsistence->check_inconsistences($report, $insertedSubs);
     }
 
     //Calculate the amount of the subreport
