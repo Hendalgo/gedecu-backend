@@ -164,9 +164,9 @@ class ReportController extends Controller
 
                 return response()->json($report, 201);
             } catch (\Error $e) {
-                return response()->json(['error' => $e], 422);
+                return response()->json(['error' => $e->getMessage()], 422);
             } catch (QueryException $e) {
-                return response()->json(['error' => $e], 422);
+                return response()->json(['error' => $e->getMessage()], 422);
             }
         } else {
             return response()->json(['error' => 'No tienes permiso para crear este tipo de reporte'], 401);
