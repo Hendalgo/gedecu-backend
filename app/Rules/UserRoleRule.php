@@ -7,11 +7,11 @@ use Illuminate\Contracts\Validation\Rule;
 
 class UserRoleRule implements Rule
 {
-    private $role;
+    private $roles;
 
-    public function __construct($role)
+    public function __construct($roles)
     {
-        $this->role = $role;
+        $this->roles = array_map('intval', explode(';', $roles));
     }
 
     public function passes($attribute, $value)
@@ -20,7 +20,7 @@ class UserRoleRule implements Rule
         if (! $user) {
             return false;
         }
-        if ($user->role->id == $this->role) {
+        if (in_array(intval($user->role->id), $this->roles)) {
             return true;
         }
 
