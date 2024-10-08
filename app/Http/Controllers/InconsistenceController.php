@@ -586,9 +586,16 @@ class InconsistenceController extends Controller
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->whereNotNull('associated_id');
             })
+            ->whereHas('report', function ($query) use ($report) {
+                $query->whereHas('type', function ($query) use ($report) {
+                    $query->where('associated_type_id', $report->type_id);
+                });
+            })
             ->whereBetween('created_at', [now()->subWeek(), now()])
             ->with('report.type', 'data')
             ->get();
+
+
         $toCompare = $this->keyValueMap->transformElement($toCompare);
         //Transform the data to json
         //bc before it works with json data
