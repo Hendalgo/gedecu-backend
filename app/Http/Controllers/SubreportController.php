@@ -51,10 +51,11 @@ class SubreportController extends Controller
                     if (array_key_exists($validation['name'], $subreport)) {
                         $validator->setRules([$validation['name'] => $validation['validation']]);
                         if ($validator->fails()) {
-                            return response()->json(['error' => 'Error de validación en el subreporte'], 422);
+                            $errorMessages = $validator->errors()->all();
+                            return json_encode(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages]);
                         }
                     } else {
-                        return response()->json(['error' => 'Campo requerido no encontrado en el subreporte'], 422);
+                        return json_encode(['error' => 'Campo requerido no encontrado']);
                     }
                 }
             }
