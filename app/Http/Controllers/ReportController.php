@@ -142,7 +142,9 @@ class ReportController extends Controller
             $validatedSubreports = $subreport->validate_subreport($request);
             $report_type = ReportType::with(['validations'])->find($request->type_id);
             $report_type_config = json_decode($report_type->meta_data, true);
-            
+            if (!is_array($validatedSubreports)) {
+                return response()->json(json_decode($validatedSubreports), 422);
+            }
             try {
                 $report = [];
                 // Create the report
@@ -152,9 +154,9 @@ class ReportController extends Controller
                         'user_id' => auth()->user()->id,
                         'meta_data' => json_encode([]),
                     ]);
-
+                    
                     // Create the subreports
-                    $this->create_subreport($request->subreports, $report, $report_type_config);
+                    $this->create_subreport($validatedSubreports, $report, $report_type_config);
 
                     //Add or substract the amount to the bank account
                     foreach ($validatedSubreports as $subreport) {

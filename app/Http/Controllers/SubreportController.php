@@ -42,7 +42,7 @@ class SubreportController extends Controller
                 if ($validator->fails()) {
                     $errorMessages = $validator->errors()->all();
                     
-                    return response()->json(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages], 422);
+                    return json_encode(['error' => 'Error de validación en el subreporte', 'validation_errors' => $errorMessages]);
                 }
             }
             // Find if the role need extra validations for create the report
