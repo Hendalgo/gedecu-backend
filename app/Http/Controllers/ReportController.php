@@ -154,7 +154,7 @@ class ReportController extends Controller
                     ]);
 
                     // Create the subreports
-                    $this->create_subreport($validatedSubreports, $report, $report_type_config);
+                    $this->create_subreport($request->subreports, $report, $report_type_config);
 
                     //Add or substract the amount to the bank account
                     foreach ($validatedSubreports as $subreport) {
