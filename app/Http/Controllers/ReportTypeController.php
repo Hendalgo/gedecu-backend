@@ -13,11 +13,19 @@ class ReportTypeController extends Controller
         $user = User::find(auth()->user()->id);
         $search = $request->get('search');
         $paginated = $request->get('paginated');
+        $role = $request->get('role');
+        $type = $request->get('type');
         $reports = ReportType::withCount(['reports as count'])->where('delete', false);
         $reports->when($search, function ($query) use ($search) {
             $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%");
         });
+        if ($role) {
+            $reports = $reports->where('role_id', $role);
+        }
+        if ($type) {
+            $reports = $reports->where('type', $type);
+        }
         $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
             ->where('roles_reports_permissions.role_id', $user->role->id);
         if ($paginated) {
