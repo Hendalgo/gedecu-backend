@@ -20,14 +20,19 @@ class ReportTypeController extends Controller
             $query->where('name', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%");
         });
-        if ($role) {
-            $reports = $reports->where('role_id', $role);
+        if ($user->role_id !== 1) {
+            $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
+                ->where('roles_reports_permissions.role_id', $user->role->id);
         }
-        if ($type) {
-            $reports = $reports->where('type', $type);
+        else{
+            $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id');
+            if ($role) {
+                $reports = $reports->where('roles_reports_permissions.role_id', $role);
+            }
+            if ($type) {
+                $reports = $reports->where('type', $type);
+            }
         }
-        $reports = $reports->leftJoin('roles_reports_permissions', 'reports_types.id', '=', 'roles_reports_permissions.report_type_id')
-            ->where('roles_reports_permissions.role_id', $user->role->id);
         if ($paginated) {
             if ($paginated === 'no') {
                 return response()->json($reports->get(), 200);
