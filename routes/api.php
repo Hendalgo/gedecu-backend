@@ -139,6 +139,8 @@ Route::middleware('auth.veryfied')->group(function () {
         Route::get('statistics/total-banks', [StatisticsController::class, 'getTotalByBank']);
         Route::get('statistics/total-banks/bank/{id}', [StatisticsController::class, 'getTotalByBankBank']);
         Route::get('statistics/total-banks/{id}', [StatisticsController::class, 'getTotalByBankUser']);
+        /*Totalizeds*/
+        Route::get('totalized', [StatisticsController::class, 'getTotalized']);
 
         /*Inconsistences*/
         Route::get('inconsistences', [InconsistenceController::class, 'index']);

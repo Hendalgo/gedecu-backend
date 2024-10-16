@@ -11,6 +11,7 @@ use App\Models\RoleReportPermission;
 use App\Models\Store;
 use App\Models\Subreport;
 use App\Models\SubreportData;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserBalance;
 use App\Services\KeyValueMap;
@@ -406,6 +407,14 @@ class ReportController extends Controller
                 if ($account->account_type_id == 3) {
                     $account->balance += $convertedAmount;
                     $account->save();
+
+                    $transaction = new Transaction();
+                    $transaction->type = "income";
+                    $transaction->subreport_id = $subreport['id'];
+                    $transaction->account_id = $account->id;
+                    $transaction->amount = $convertedAmount;
+                    $transaction->currency_id = $account->currency_id;
+                    $transaction->created_at = $subreport['date'];
                 }
             }
 
@@ -413,6 +422,16 @@ class ReportController extends Controller
             $wallet->balance = $wallet->balance - $amount;
             $wallet->save();
 
+            if ($operation !== 'undo') {
+                $transaction = new Transaction();
+                $transaction->type = "expense";
+                $transaction->subreport_id = $subreport['id'];
+                $transaction->account_id = $subreport['wallet_id'];
+                $transaction->amount = $amount;
+                $transaction->currency_id = $currency;
+                $transaction->created_at = $subreport['date'];
+                $transaction->save();
+            }
             return;
         } elseif ($report_type->id == 40) {
             $wallet = BankAccount::find($subreport['wallet_id']);
@@ -427,6 +446,26 @@ class ReportController extends Controller
 
             $wallet->save();
             $bank->save();
+
+            if ($operation !== 'undo') {
+                $transaction = new Transaction();
+                $transaction->type = "expense";
+                $transaction->subreport_id = $subreport['id'];
+                $transaction->account_id = $subreport['account_id'];
+                $transaction->amount = $amount;
+                $transaction->currency_id = $currency;
+                $transaction->created_at = $subreport['date'];
+                $transaction->save();
+
+                $transaction = new Transaction();
+                $transaction->type = "income";
+                $transaction->subreport_id = $subreport['id'];
+                $transaction->account_id = $subreport['wallet_id']; 
+                $transaction->amount = $convertedAmount;
+                $transaction->currency_id = $subreport['conversionCurrency_id'];
+                $transaction->created_at = $subreport['date'];
+                $transaction->save();
+            }
 
             return;
         }
@@ -443,6 +482,26 @@ class ReportController extends Controller
 
             $wallet->save();
             $bank->save();
+
+            if ($operation !== 'undo') {
+                $transaction = new Transaction();
+                $transaction->type = "income";
+                $transaction->subreport_id = $subreport['id'];
+                $transaction->account_id = $subreport['account_id'];
+                $transaction->amount = $amount;
+                $transaction->currency_id = $currency;
+                $transaction->created_at = $subreport['date'];
+                $transaction->save();
+
+                $transaction = new Transaction();
+                $transaction->type = "expense";
+                $transaction->subreport_id = $subreport['id'];
+                $transaction->account_id = $subreport['wallet_id']; 
+                $transaction->amount = $convertedAmount;
+                $transaction->currency_id = $subreport['conversionCurrency_id'];
+                $transaction->created_at = $subreport['date'];
+                $transaction->save();
+            }
 
             return;
         } elseif ($report_type->id == 43) {
@@ -465,6 +524,17 @@ class ReportController extends Controller
             $wallet->balance = $wallet->balance + $amount;
             $wallet->save();
 
+            if ($operation !== 'undo') {
+                $transaction = new Transaction();
+                $transaction->type = "income";
+                $transaction->subreport_id = $subreport['id'];
+                $transaction->account_id = $subreport['wallet_id'];
+                $transaction->amount = $amount;
+                $transaction->currency_id = $currency;
+                $transaction->created_at = $subreport['date'];
+                $transaction->save();
+            }
+
             return;
         }
         if (array_key_exists('convert_amount', $report_type_config)) {
@@ -481,6 +551,8 @@ class ReportController extends Controller
         } elseif ($report_type->type === 'expense' && $operation === 'create') {
             $amount = $amount * -1;
         }
+        $transaction = new Transaction();
+        $transaction2 = new Transaction();
 
         if (array_key_exists('user_balance', $report_type_config)) {
             $userBalance = UserBalance::where('user_id', $report->user_id)->first();
@@ -489,6 +561,14 @@ class ReportController extends Controller
             }
             $userBalance->balance += $amount;
             $userBalance->save();
+            
+            $transaction->balance_id = $userBalance->id;
+            $transaction->currency_id = $userBalance->currency_id;
+            $transaction->amount = $amount;
+            $transaction->subreport_id = $subreport['id'];
+            $transaction->type = $report_type->type;
+            $transaction->created_at = $subreport['date'];
+
         } elseif (array_key_exists('receiverAccount_id', $subreport) && array_key_exists('senderAccount_id', $subreport)) {
             //This is a traspaso
             $senderAccount = BankAccount::find($subreport['senderAccount_id']);
@@ -497,11 +577,34 @@ class ReportController extends Controller
             $receiverAccount->balance = $receiverAccount->balance + $amount;
             $senderAccount->save();
             $receiverAccount->save();
+
+            $transaction->account_id = $subreport['senderAccount_id'];
+            $transaction->currency_id = $currency;
+            $transaction->amount = $amount;
+            $transaction->subreport_id = $subreport['id'];
+            $transaction->type = 'expense';
+            $transaction->created_at = $subreport['date'];
+
+            $transaction2->account_id = $subreport['receiverAccount_id'];
+            $transaction2->currency_id = $currency;
+            $transaction2->amount = $amount;
+            $transaction2->subreport_id = $subreport['id'];
+            $transaction2->type = 'income';
+            $transaction2->created_at = $subreport['date'];
+
         } elseif (array_key_exists('account_id', $subreport)) {
             //Update bank account
             $bankAccount = BankAccount::find($subreport['account_id']);
             $bankAccount->balance = $bankAccount->balance + $amount;
             $bankAccount->save();
+
+            $transaction->account_id = $subreport['account_id'];
+            $transaction->currency_id = $currency;
+            $transaction->amount = $amount;
+            $transaction->subreport_id = $subreport['id'];
+            $transaction->type = $report_type->type;
+            $transaction->created_at = $subreport['date'];
+
         } elseif (! array_key_exists('account_id', $subreport)) {
             $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
             if (! $store) {
@@ -511,8 +614,24 @@ class ReportController extends Controller
                 if ($account->account_type_id == 3 && $account->currency_id == $currency) {
                     $account->balance += $amount;
                     $account->save();
+
+                    $transaction->account_id = $account->id;
+                    $transaction->currency_id = $currency;
+                    $transaction->amount = $amount;
+                    $transaction->subreport_id = $subreport['id'];
+                    $transaction->type = $report_type->type;
+                    $transaction->created_at = $subreport['date'];
                 }
             }
+        }
+
+        if ($operation !== 'undo') {
+            $transaction->save();
+            if (isset($transaction2->account_id)) {
+                $transaction2->save();
+            }
+        }else{
+            Transaction::where('subreport_id', $subreport['id'])->delete();
         }
     }
 }

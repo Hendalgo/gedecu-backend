@@ -282,4 +282,64 @@ class StatisticsController extends Controller
 
         return response()->json($banks_accounts);
     }
+
+    public function getTotalized(Request $request){
+        $currency = $request->get('currency');
+        $transactionType = $request->get('type', "income");
+        $timezone = $request->header('TimeZone', '-04:00');
+        $date = $request->get('date', now($timezone));
+        $reportType = $request->get('report');
+
+        $subreports = Subreport::with('report.user.store')
+        ->whereDate('subreports.created_at', Carbon::parse($date))
+        ->where('currency_id', $currency);
+
+        $total = $subreports->sum('amount');
+
+        // Unir la tabla 'reports' y agrupar por 'user_id'
+        $subreport = $subreports->join('reports', 'subreports.report_id', '=', 'reports.id')
+            ->groupBy('reports.user_id')
+            ->get();
+        $response = [
+            "total" => $total,
+            "subreports" => $subreport
+        ];
+        return response()->json($response, 200);
+        /* $example = [
+            "total" => "1,000,000",
+            "users" => [
+                [
+                    "name" => "Encargado 1",
+                    "store" => [
+                        "name" => "Tienda 1",
+                    ],
+                    "bank_accounts" =>[
+                        [
+                            "identifier" => "0102",
+                            "name" => "paco",
+                            "balance" => "500,000",
+                        ]
+                    ],
+                ],
+                [
+                    "name"=> "Depositante",
+                    "bank_accounts" =>[
+                        [
+                            "balance" => "300,000",
+                        ]
+                    ]
+                ],
+                [
+                    "name" => "Billtera Paco",
+                    "bank_accounts" => [
+                        [
+                            "identifier" => "billetera@billete.com",
+                            "balance" => "200,000",
+                        ]
+                    ]
+                ]
+            ]
+        ] */
+
+    }
 }
