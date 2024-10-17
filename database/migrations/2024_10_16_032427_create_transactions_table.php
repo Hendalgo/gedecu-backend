@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('type');
             $table->foreignId('subreport_id')->constrained('subreports')->cascadeOnDelete();
             $table->foreignId('account_id')->nullable(true)->constrained('banks_accounts')->cascadeOnDelete();
-            $table->foreignId('balance_id')->nullable(true)->constrained('balances')->cascadeOnDelete();
+            $table->foreignId('balance_id')->nullable(true)->constrained('user_balances')->cascadeOnDelete();
             $table->foreignId('currency_id')->constrained('currencies')->cascadeOnDelete();
             $table->decimal('amount', 20, 2);
             $table->timestamps();
