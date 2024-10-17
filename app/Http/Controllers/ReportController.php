@@ -157,11 +157,11 @@ class ReportController extends Controller
                     ]);
                     
                     // Create the subreports
-                    $this->create_subreport($validatedSubreports, $report, $report_type_config);
+                    $insertedSub = $this->create_subreport($validatedSubreports, $report, $report_type_config);
 
                     //Add or substract the amount to the bank account
-                    foreach ($validatedSubreports as $subreport) {
-                        $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'create');
+                    foreach ($validatedSubreports as $key => $subreport) {
+                        $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'create', $insertedSub[$key]->id);
                     }
                 });
 
@@ -234,7 +234,7 @@ class ReportController extends Controller
                 //Undo the amount of the subreport
                 $report_type = ReportType::find($report->type_id);
                 $report_type_config = json_decode($report_type->meta_data, true);
-                $this->add_or_substract_amount($sub->data, $report_type_config, $report_type, $report, 'undo');
+                $this->add_or_substract_amount($sub->data, $report_type_config, $report_type, $report, 'undo', $id);
 
                 //Verify if the report is has associated inconsistences
                 $inconsistences = Inconsistence::where('subreport_id', $id)->delete();
@@ -293,7 +293,7 @@ class ReportController extends Controller
 
                 $report_type = ReportType::find($report->type_id);
                 $report_type_config = json_decode($report_type->meta_data, true);
-                $this->add_or_substract_amount($subData->data, $report_type_config, $report_type, $report, 'undo');
+                $this->add_or_substract_amount($subData->data, $report_type_config, $report_type, $report, 'undo', $subreport['id']);
 
                 $amount = $subreport['amount'];
                 $currency = $subreport['currency_id'];
@@ -315,7 +315,7 @@ class ReportController extends Controller
                 }
 
                 //Add or substract the amount to the bank account
-                $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update');
+                $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update', $subreport['id']);
                 // Delete Inconsistences
                 Inconsistence::where('subreport_id', $subreport['id'])->delete();
                 //update to null the associated_id of the inconsistences
@@ -372,6 +372,8 @@ class ReportController extends Controller
         $insertedSubs->load('report.user.store', 'data');
         $insertedSubs = $this->KeyMapValue->transformElement($insertedSubs);
         $inconsistence->check_inconsistences($report, $insertedSubs);
+
+        return $insertedSubs;
     }
 
     //Calculate the amount of the subreport
@@ -391,9 +393,11 @@ class ReportController extends Controller
         }
     }
 
-    private function add_or_substract_amount($subreport, $report_type_config, $report_type, $report, $operation)
+    private function add_or_substract_amount($subreport, $report_type_config, $report_type, $report, $operation, $subreport_id = null)
     {
+        echo $subreport_id;
         $amount = $subreport['amount'];
+        $subreport['id'] = $subreport_id ?? $subreport['id'];
         $currency = $subreport['currency_id'];
         if ($report_type->id == 41) {
             $store = Store::with('accounts')->where('user_id', $report->user_id)->first();
