@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
+use App\Models\Report;
 use App\Models\Subreport;
 use App\Models\TotalCurrenciesHistory;
+use App\Models\Transaction;
 use App\Models\User;
+use App\Models\UserBalance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -290,56 +293,58 @@ class StatisticsController extends Controller
         $date = $request->get('date', now($timezone));
         $reportType = $request->get('report');
 
-        $subreports = Subreport::with('report.user.store')
-        ->whereDate('subreports.created_at', Carbon::parse($date))
-        ->where('currency_id', $currency);
+        $transactions = Transaction::where('currency_id', $currency)
+            ->where('type', $transactionType)
+            ->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
+            ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay())
+            ->when($reportType, function ($query) use ($reportType) {
+                return $query->whereHas('subreport', function ($query) use ($reportType) {
+                    $query->whereHas('report', function ($query) use ($reportType) {
+                        $query->where('type_id', $reportType);
+                    });
+                });
+            });
 
-        $total = $subreports->sum('amount');
+        $transactionsTotal = $transactions->sum('amount');
+        $transactions = $transactions->get();
 
-        // Unir la tabla 'reports' y agrupar por 'user_id'
-        $subreport = $subreports->join('reports', 'subreports.report_id', '=', 'reports.id')
-            ->groupBy('reports.user_id')
-            ->get();
-        $response = [
-            "total" => $total,
-            "subreports" => $subreport
-        ];
-        return response()->json($response, 200);
-        /* $example = [
-            "total" => "1,000,000",
-            "users" => [
-                [
-                    "name" => "Encargado 1",
-                    "store" => [
-                        "name" => "Tienda 1",
-                    ],
-                    "bank_accounts" =>[
-                        [
-                            "identifier" => "0102",
-                            "name" => "paco",
-                            "balance" => "500,000",
-                        ]
-                    ],
-                ],
-                [
-                    "name"=> "Depositante",
-                    "bank_accounts" =>[
-                        [
-                            "balance" => "300,000",
-                        ]
-                    ]
-                ],
-                [
-                    "name" => "Billtera Paco",
-                    "bank_accounts" => [
-                        [
-                            "identifier" => "billetera@billete.com",
-                            "balance" => "200,000",
-                        ]
-                    ]
-                ]
-            ]
-        ] */
+        $users = [];
 
-    }
+        foreach ($transactions as $transaction) {
+            $subreport = Subreport::find($transaction->subreport_id);
+            $report = Report::find($subreport->report_id);
+            $user = User::find($report->user_id);
+
+            if (!isset($users[$user->id])) {
+                $users[$user->id] = [
+                    'name' => $user->name,
+                    'store' => $user->store ? ['name' => $user->store->name] : null,
+                    'bank_accounts' => [],
+                ];
+            }
+
+            if ($transaction->account_id) {
+                $bankAccount = BankAccount::find($transaction->account_id);
+                $users[$user->id]['bank_accounts'][] = [
+                    'identifier' => $bankAccount->identifier,
+                    'name' => $bankAccount->name,
+                    'balance' => $bankAccount->balance,
+                ];
+            } elseif ($transaction->balance_id) {
+                $balance = UserBalance::find($transaction->balance_id);
+                $users[$user->id]['bank_accounts'][] = [
+                    'identifier' => $balance->identifier,
+                    'name' => $balance->name,
+                    'balance' => $balance->balance,
+                ];
+            }
+            }
+
+            $response = [
+                'total' => $transactionsTotal,
+                'users' => array_values($users),
+            ];
+
+            return response()->json($response, 200);
+        }
 }

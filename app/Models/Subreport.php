@@ -18,6 +18,10 @@ class Subreport extends Model
         'created_at',
     ];
 
+    public function transactions()
+    {
+        return $this->hasMany('\App\Models\Transaction', 'subreport_id');
+    }
     public function report()
     {
         return $this->belongsTo('\App\Models\Report', 'report_id');

@@ -17,4 +17,21 @@ class Transaction extends Model
         'amount',
         'created_at',
     ];
+
+    public function subreport()
+    {
+        return $this->belongsTo(Subreport::class);
+    }
+    public function account()
+    {
+        return $this->belongsTo(BankAccount::class);
+    }
+    public function balance()
+    {
+        return $this->belongsTo(UserBalance::class);
+    }
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
+    }
 }

@@ -416,7 +416,7 @@ class ReportController extends Controller
                     $transaction->type = "income";
                     $transaction->subreport_id = $subreport['id'];
                     $transaction->account_id = $account->id;
-                    $transaction->amount = $convertedAmount;
+                    $transaction->amount = abs($convertedAmount);
                     $transaction->currency_id = $account->currency_id;
                     $transaction->created_at = $subreport['date'];
                 }
@@ -431,7 +431,7 @@ class ReportController extends Controller
                 $transaction->type = "expense";
                 $transaction->subreport_id = $subreport['id'];
                 $transaction->account_id = $subreport['wallet_id'];
-                $transaction->amount = $amount;
+                $transaction->amount = abs($amount);
                 $transaction->currency_id = $currency;
                 $transaction->created_at = $subreport['date'];
                 $transaction->save();
@@ -456,7 +456,7 @@ class ReportController extends Controller
                 $transaction->type = "expense";
                 $transaction->subreport_id = $subreport['id'];
                 $transaction->account_id = $subreport['account_id'];
-                $transaction->amount = $amount;
+                $transaction->amount = abs($amount);
                 $transaction->currency_id = $currency;
                 $transaction->created_at = $subreport['date'];
                 $transaction->save();
@@ -465,7 +465,7 @@ class ReportController extends Controller
                 $transaction->type = "income";
                 $transaction->subreport_id = $subreport['id'];
                 $transaction->account_id = $subreport['wallet_id']; 
-                $transaction->amount = $convertedAmount;
+                $transaction->amount = abs($convertedAmount);
                 $transaction->currency_id = $subreport['conversionCurrency_id'];
                 $transaction->created_at = $subreport['date'];
                 $transaction->save();
@@ -492,7 +492,7 @@ class ReportController extends Controller
                 $transaction->type = "income";
                 $transaction->subreport_id = $subreport['id'];
                 $transaction->account_id = $subreport['account_id'];
-                $transaction->amount = $amount;
+                $transaction->amount = abs($amount);
                 $transaction->currency_id = $currency;
                 $transaction->created_at = $subreport['date'];
                 $transaction->save();
@@ -501,7 +501,7 @@ class ReportController extends Controller
                 $transaction->type = "expense";
                 $transaction->subreport_id = $subreport['id'];
                 $transaction->account_id = $subreport['wallet_id']; 
-                $transaction->amount = $convertedAmount;
+                $transaction->amount = abs($convertedAmount);
                 $transaction->currency_id = $subreport['conversionCurrency_id'];
                 $transaction->created_at = $subreport['date'];
                 $transaction->save();
@@ -533,7 +533,7 @@ class ReportController extends Controller
                 $transaction->type = "income";
                 $transaction->subreport_id = $subreport['id'];
                 $transaction->account_id = $subreport['wallet_id'];
-                $transaction->amount = $amount;
+                $transaction->amount = abs($amount);
                 $transaction->currency_id = $currency;
                 $transaction->created_at = $subreport['date'];
                 $transaction->save();
@@ -568,7 +568,7 @@ class ReportController extends Controller
             
             $transaction->balance_id = $userBalance->id;
             $transaction->currency_id = $userBalance->currency_id;
-            $transaction->amount = $amount;
+            $transaction->amount = abs($amount);
             $transaction->subreport_id = $subreport['id'];
             $transaction->type = $report_type->type;
             $transaction->created_at = $subreport['date'];
@@ -584,14 +584,14 @@ class ReportController extends Controller
 
             $transaction->account_id = $subreport['senderAccount_id'];
             $transaction->currency_id = $currency;
-            $transaction->amount = $amount;
+            $transaction->amount = abs($amount);
             $transaction->subreport_id = $subreport['id'];
             $transaction->type = 'expense';
             $transaction->created_at = $subreport['date'];
 
             $transaction2->account_id = $subreport['receiverAccount_id'];
             $transaction2->currency_id = $currency;
-            $transaction2->amount = $amount;
+            $transaction2->amount = abs($amount);
             $transaction2->subreport_id = $subreport['id'];
             $transaction2->type = 'income';
             $transaction2->created_at = $subreport['date'];
@@ -604,7 +604,7 @@ class ReportController extends Controller
 
             $transaction->account_id = $subreport['account_id'];
             $transaction->currency_id = $currency;
-            $transaction->amount = $amount;
+            $transaction->amount = abs($amount);
             $transaction->subreport_id = $subreport['id'];
             $transaction->type = $report_type->type;
             $transaction->created_at = $subreport['date'];
@@ -621,7 +621,7 @@ class ReportController extends Controller
 
                     $transaction->account_id = $account->id;
                     $transaction->currency_id = $currency;
-                    $transaction->amount = $amount;
+                    $transaction->amount = abs($amount);
                     $transaction->subreport_id = $subreport['id'];
                     $transaction->type = $report_type->type;
                     $transaction->created_at = $subreport['date'];
