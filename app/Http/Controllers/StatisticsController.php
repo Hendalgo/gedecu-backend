@@ -286,13 +286,14 @@ class StatisticsController extends Controller
         return response()->json($banks_accounts);
     }
 
-    public function getTotalized(Request $request){
+    public function getTotalized(Request $request)
+    {
         $currency = $request->get('currency');
         $transactionType = $request->get('type', "income");
         $timezone = $request->header('TimeZone', '-04:00');
         $date = $request->get('date', now($timezone));
         $reportType = $request->get('report');
-
+    
         $transactions = Transaction::where('currency_id', $currency)
             ->where('type', $transactionType)
             ->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
@@ -304,47 +305,56 @@ class StatisticsController extends Controller
                     });
                 });
             });
-
+    
         $transactionsTotal = $transactions->sum('amount');
         $transactions = $transactions->get();
-
+    
         $users = [];
-
+    
         foreach ($transactions as $transaction) {
-            $subreport = Subreport::find($transaction->subreport_id);
-            $report = Report::find($subreport->report_id);
-            $user = User::find($report->user_id);
-
+            $subreport = $transaction->subreport;
+            $report = $subreport->report;
+            $user = $report->user;
+    
             if (!isset($users[$user->id])) {
                 $users[$user->id] = [
                     'name' => $user->name,
                     'store' => $user->store ? ['name' => $user->store->name] : null,
+                    'total_amount' => 0,
                     'bank_accounts' => [],
                 ];
             }
-
+    
+            $users[$user->id]['total_amount'] += $transaction->amount;
+    
             if ($transaction->account_id) {
-                $bankAccount = BankAccount::find($transaction->account_id);
-                $users[$user->id]['bank_accounts'][] = [
-                    'identifier' => $bankAccount->identifier,
-                    'name' => $bankAccount->name,
-                    'balance' => $bankAccount->balance,
-                ];
+                $bankAccount = $transaction->account;
+                if (!isset($users[$user->id]['bank_accounts'][$bankAccount->id])) {
+                    $users[$user->id]['bank_accounts'][$bankAccount->id] = [
+                        'identifier' => $bankAccount->identifier,
+                        'name' => $bankAccount->name,
+                        'total_amount' => 0,
+                    ];
+                }
+                $users[$user->id]['bank_accounts'][$bankAccount->id]['total_amount'] += $transaction->amount;
             } elseif ($transaction->balance_id) {
-                $balance = UserBalance::find($transaction->balance_id);
-                $users[$user->id]['bank_accounts'][] = [
-                    'identifier' => $balance->identifier,
-                    'name' => $balance->name,
-                    'balance' => $balance->balance,
-                ];
+                $balance = $transaction->balance;
+                if (!isset($users[$user->id]['bank_accounts'][$balance->id])) {
+                    $users[$user->id]['bank_accounts'][$balance->id] = [
+                        'identifier' => $balance->identifier,
+                        'name' => $balance->name,
+                        'total_amount' => 0,
+                    ];
+                }
+                $users[$user->id]['bank_accounts'][$balance->id]['total_amount'] += $transaction->amount;
             }
-            }
-
-            $response = [
-                'total' => $transactionsTotal,
-                'users' => array_values($users),
-            ];
-
-            return response()->json($response, 200);
         }
+    
+        $response = [
+            'total' => $transactionsTotal,
+            'users' => array_values($users),
+        ];
+    
+        return response()->json($response, 200);
+    }
 }
