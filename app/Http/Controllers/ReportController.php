@@ -395,7 +395,6 @@ class ReportController extends Controller
 
     private function add_or_substract_amount($subreport, $report_type_config, $report_type, $report, $operation, $subreport_id = null)
     {
-        echo $subreport_id;
         $amount = $subreport['amount'];
         $subreport['id'] = $subreport_id ?? $subreport['id'];
         $currency = $subreport['currency_id'];

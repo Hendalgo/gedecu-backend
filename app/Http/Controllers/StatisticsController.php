@@ -293,68 +293,76 @@ class StatisticsController extends Controller
         $timezone = $request->header('TimeZone', '-04:00');
         $date = $request->get('date', now($timezone));
         $reportType = $request->get('report');
-    
-        $transactions = Transaction::where('currency_id', $currency)
-            ->where('type', $transactionType)
-            ->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
-            ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay())
+
+        $transactionsQuery = Transaction::selectRaw('
+                transactions.*,
+                SUM(transactions.amount) as total_amount,
+                users.id as user_id,
+                users.name as user_name,
+                stores.name as store_name,
+                bank_accounts.id as bank_account_id,
+                bank_accounts.identifier as bank_account_identifier,
+                bank_accounts.name as bank_account_name,
+                balances.id as balance_id,
+                balances.identifier as balance_identifier,
+                balances.name as balance_name
+            ')
+            ->join('subreports', 'transactions.subreport_id', '=', 'subreports.id')
+            ->join('reports', 'subreports.report_id', '=', 'reports.id')
+            ->join('users', 'reports.user_id', '=', 'users.id')
+            ->leftJoin('stores', 'users.store_id', '=', 'stores.id')
+            ->leftJoin('bank_accounts', 'transactions.account_id', '=', 'bank_accounts.id')
+            ->leftJoin('balances', 'transactions.balance_id', '=', 'balances.id')
+            ->where('transactions.currency_id', $currency)
+            ->where('transactions.type', $transactionType)
+            ->where('transactions.created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
+            ->where('transactions.created_at', '<=', Carbon::parse($date, $timezone)->endOfDay())
             ->when($reportType, function ($query) use ($reportType) {
-                return $query->whereHas('subreport', function ($query) use ($reportType) {
-                    $query->whereHas('report', function ($query) use ($reportType) {
-                        $query->where('type_id', $reportType);
-                    });
-                });
-            });
-    
-        $transactionsTotal = $transactions->sum('amount');
-        $transactions = $transactions->get();
-    
+                return $query->where('reports.type_id', $reportType);
+            })
+            ->groupBy('users.id', 'bank_accounts.id', 'balances.id')
+            ->get();
+
         $users = [];
-    
-        foreach ($transactions as $transaction) {
-            $subreport = $transaction->subreport;
-            $report = $subreport->report;
-            $user = $report->user;
-    
-            if (!isset($users[$user->id])) {
-                $users[$user->id] = [
-                    'name' => $user->name,
-                    'store' => $user->store ? ['name' => $user->store->name] : null,
+
+        foreach ($transactionsQuery as $transaction) {
+            if (!isset($users[$transaction->user_id])) {
+                $users[$transaction->user_id] = [
+                    'name' => $transaction->user_name,
+                    'store' => $transaction->store_name ? ['name' => $transaction->store_name] : null,
                     'total_amount' => 0,
                     'bank_accounts' => [],
                 ];
             }
-    
-            $users[$user->id]['total_amount'] += $transaction->amount;
-    
-            if ($transaction->account_id) {
-                $bankAccount = $transaction->account;
-                if (!isset($users[$user->id]['bank_accounts'][$bankAccount->id])) {
-                    $users[$user->id]['bank_accounts'][$bankAccount->id] = [
-                        'identifier' => $bankAccount->identifier,
-                        'name' => $bankAccount->name,
+
+            $users[$transaction->user_id]['total_amount'] += $transaction->total_amount;
+
+            if ($transaction->bank_account_id) {
+                if (!isset($users[$transaction->user_id]['bank_accounts'][$transaction->bank_account_id])) {
+                    $users[$transaction->user_id]['bank_accounts'][$transaction->bank_account_id] = [
+                        'identifier' => $transaction->bank_account_identifier,
+                        'name' => $transaction->bank_account_name,
                         'total_amount' => 0,
                     ];
                 }
-                $users[$user->id]['bank_accounts'][$bankAccount->id]['total_amount'] += $transaction->amount;
+                $users[$transaction->user_id]['bank_accounts'][$transaction->bank_account_id]['total_amount'] += $transaction->total_amount;
             } elseif ($transaction->balance_id) {
-                $balance = $transaction->balance;
-                if (!isset($users[$user->id]['bank_accounts'][$balance->id])) {
-                    $users[$user->id]['bank_accounts'][$balance->id] = [
-                        'identifier' => $balance->identifier,
-                        'name' => $balance->name,
+                if (!isset($users[$transaction->user_id]['bank_accounts'][$transaction->balance_id])) {
+                    $users[$transaction->user_id]['bank_accounts'][$transaction->balance_id] = [
+                        'identifier' => $transaction->balance_identifier,
+                        'name' => $transaction->balance_name,
                         'total_amount' => 0,
                     ];
                 }
-                $users[$user->id]['bank_accounts'][$balance->id]['total_amount'] += $transaction->amount;
+                $users[$transaction->user_id]['bank_accounts'][$transaction->balance_id]['total_amount'] += $transaction->total_amount;
             }
         }
-    
+
         $response = [
-            'total' => $transactionsTotal,
+            'total' => $transactionsQuery->sum('total_amount'),
             'users' => array_values($users),
         ];
-    
+
         return response()->json($response, 200);
     }
 }
