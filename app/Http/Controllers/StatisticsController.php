@@ -422,16 +422,11 @@ class StatisticsController extends Controller
         }
     
         $date = $request->get('date', now());
-        $timezone = $request->header('TimeZone', '-04:00');
     
         // Función para obtener y calcular los totales
-        $calculateTotals = function ($reportId) use ($date, $timezone) {
+        $calculateTotals = function ($reportId) {
             $subreports = Subreport::query()
                 ->where('report_id', $reportId)
-                ->when($date, function ($query) use ($date, $timezone) {
-                    return $query->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
-                                 ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay());
-                })
                 ->get();
     
             $rates = SubreportData::query()
@@ -460,16 +455,18 @@ class StatisticsController extends Controller
     
         // Calcular los totales para los subreportes de tipo expense y moneda id 2
         $subreportsExpenses = Subreport::query()
-            ->whereHas('data', function ($query) {
-                $query->where('key', 'type')->where('value', 'expense');
+            ->whereHas('report', function ($query) {
+                $query->whereHas('type', function ($query) {
+                    $query->where('type', 'expense');
+                });
             })
             ->whereHas('currency', function ($query) {
                 $query->where('id', 2);
             })
-            ->when($date, function ($query) use ($date, $timezone) {
-                return $query->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
-                             ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay());
+            ->when($date, function ($query) use ($date) {
+                return $query->whereDate('created_at', Carbon::parse($date));
             })
+            ->with('report.user.store')
             ->get();
     
         $totalOriginalExpenses = $subreportsExpenses->sum('amount');
