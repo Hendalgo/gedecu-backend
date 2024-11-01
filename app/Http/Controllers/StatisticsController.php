@@ -427,6 +427,7 @@ class StatisticsController extends Controller
         $calculateTotals = function ($reportId) {
             $subreports = Subreport::query()
                 ->where('report_id', $reportId)
+                ->with('currency', 'report.user.store')
                 ->get();
     
             $rates = SubreportData::query()
@@ -466,7 +467,7 @@ class StatisticsController extends Controller
             ->when($date, function ($query) use ($date) {
                 return $query->whereDate('created_at', Carbon::parse($date));
             })
-            ->with('report.user.store')
+            ->with('report.user.store', 'currency')
             ->get();
     
         $totalOriginalExpenses = $subreportsExpenses->sum('amount');
