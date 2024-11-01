@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
 use App\Models\Report;
+use App\Models\Store;
 use App\Models\Subreport;
+use App\Models\SubreportData;
 use App\Models\TotalCurrenciesHistory;
 use App\Models\Transaction;
 use App\Models\User;
@@ -364,5 +366,133 @@ class StatisticsController extends Controller
         ];
 
         return response()->json($response, 200);
+    }
+    public function getFinalBalance(Request $request){
+        if (auth()->user()->role_id != 1) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+    
+        $date = $request->get('date', now());
+        $timezone = $request->header('TimeZone', '-04:00');
+
+        // Obtener las cuentas de banco agrupadas por local
+        $banks_accounts = BankAccount::query()
+            ->where('banks_accounts.delete', false)
+            ->where('status', 'active')
+            ->where('account_type_id', '!=', 3)
+            ->selectRaw('store_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+            ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
+            ->groupBy('store_id', 'currency_id')
+            ->with('store.user')
+            ->get()
+            ->filter(function ($account) {
+                return !is_null($account->store_id);
+            });
+
+        // Obtener las cuentas de tipo 3 con delete en false y status en active
+        $accounts_type_3 = BankAccount::query()
+            ->where('banks_accounts.delete', false)
+            ->where('account_type_id', 3)
+            ->where('status', 'active')
+            ->selectRaw('store_id, SUM(balance) as total3, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+            ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
+            ->groupBy('store_id', 'currency_id')
+            ->get()
+            ->filter(function ($account) {
+                return !is_null($account->store_id);
+            });
+
+        // Combinar los resultados
+        $result = $banks_accounts->groupBy('store_id')->map(function ($accounts, $store_id) use ($accounts_type_3) {
+            $store = $accounts->first()->store;
+            $currencies = $accounts->map(function ($account) use ($accounts_type_3, $store_id) {
+                $currency_id = $account->currency_id;
+                $account_type_3 = $accounts_type_3->firstWhere('store_id', $store_id)->firstWhere('currency_id', $currency_id);
+                return [
+                    'currency_id' => $currency_id,
+                    'shortcode' => $account->shortcode,
+                    'symbol' => $account->symbol,
+                    'total' => $account->total,
+                    'total3' => $account_type_3 ? $account_type_3->balance : "No posee",
+                ];
+            });
+            return [
+                'store' => $store,
+                'currencies' => $currencies
+            ];
+        })->values();
+
+        return response()->json($result);
+    }
+    public function getFinalBalanceTransactions (Request $request){
+        if (auth()->user()->role_id != 1) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+    
+        $date = $request->get('date', now());
+        $timezone = $request->header('TimeZone', '-04:00');
+    
+        // Función para obtener y calcular los totales
+        $calculateTotals = function ($reportId) use ($date, $timezone) {
+            $subreports = Subreport::query()
+                ->where('report_id', $reportId)
+                ->when($date, function ($query) use ($date, $timezone) {
+                    return $query->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
+                                 ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay());
+                })
+                ->get();
+    
+            $rates = SubreportData::query()
+                ->whereIn('subreport_id', $subreports->pluck('id'))
+                ->where('key', 'rate')
+                ->pluck('value', 'subreport_id');
+    
+            $totalOriginal = $subreports->sum('amount');
+            $totalBolivares = $subreports->sum(function ($subreport) use ($rates) {
+                $rate = $rates->get($subreport->id, 1);
+                return $subreport->amount * $rate;
+            });
+    
+            return [
+                'total' => $totalOriginal,
+                'total_bolivares' => $totalBolivares,
+                'subreports' => $subreports
+            ];
+        };
+    
+        // Calcular los totales para los reportes de tipo 23, 4, 9 y 11
+        $pesosGiros = $calculateTotals(23);
+        $bolivaresGirosGestor = $calculateTotals(4);
+        $bolivaresComisiones = $calculateTotals(9);
+        $bolivaresOtros = $calculateTotals(11);
+    
+        // Calcular los totales para los subreportes de tipo expense y moneda id 2
+        $subreportsExpenses = Subreport::query()
+            ->whereHas('data', function ($query) {
+                $query->where('key', 'type')->where('value', 'expense');
+            })
+            ->whereHas('currency', function ($query) {
+                $query->where('id', 2);
+            })
+            ->when($date, function ($query) use ($date, $timezone) {
+                return $query->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
+                             ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay());
+            })
+            ->get();
+    
+        $totalOriginalExpenses = $subreportsExpenses->sum('amount');
+    
+        $bolivaresDelDia = [
+            'total' => $totalOriginalExpenses,
+            'subreports' => $subreportsExpenses
+        ];
+    
+        return response()->json([
+            'pesos_giros' => $pesosGiros,
+            'bolivares_giros_gestor' => $bolivaresGirosGestor,
+            'bolivares_comisiones' => $bolivaresComisiones,
+            'bolivares_otros' => $bolivaresOtros,
+            'bolivares_del_dia' => $bolivaresDelDia
+        ]);
     }
 }
