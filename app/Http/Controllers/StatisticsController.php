@@ -424,10 +424,13 @@ class StatisticsController extends Controller
         $date = $request->get('date', now());
     
         // Función para obtener y calcular los totales
-        $calculateTotals = function ($reportId) {
+        $calculateTotals = function ($reportId) use ($date) {
             $subreports = Subreport::query()
                 ->where('report_id', $reportId)
                 ->with('currency', 'report.user.store')
+                ->when($date, function ($query) use ($date) {
+                    return $query->whereDate('created_at', Carbon::parse($date));
+                })
                 ->get();
     
             $rates = SubreportData::query()
