@@ -434,16 +434,26 @@ class StatisticsController extends Controller
                 ->pluck('value', 'subreport_id');
     
             $totalOriginal = $subreports->sum('amount');
-            $totalBolivares = $subreports->sum(function ($subreport) use ($rates) {
-                $rate = $rates->get($subreport->id, 1);
-                return $subreport->amount * $rate;
-            });
+            $totalBolivares = null;
+            if ($reportId === 23) {
+                $subreports->sum(function ($subreport) use ($rates) {
+                    $rate = $rates->get($subreport->id, 1);
+                    return $subreport->amount * $rate;
+                });
+            }
     
-            return [
-                'total' => $totalOriginal,
-                'total_bolivares' => $totalBolivares,
-                'subreports' => $subreports
-            ];
+            if($totalBolivares === null){
+                return [
+                    'total' => $totalOriginal,
+                    'subreports' => $subreports
+                ];
+            }else{
+                return [
+                    'total' => $totalOriginal,
+                    'total_bolivares' => $totalBolivares,
+                    'subreports' => $subreports
+                ];
+            }
         };
     
         // Calcular los totales para los reportes de tipo 23, 4, 9 y 11
