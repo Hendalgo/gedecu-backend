@@ -385,27 +385,20 @@ class StatisticsController extends Controller
         $accounts_type_3 = BankAccount::query()
             ->where('banks_accounts.delete', false)
             ->where('account_type_id', 3)
-            ->where('status', 'active')
-            ->selectRaw('store_id, SUM(balance) as total3, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
-            ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
-            ->groupBy('store_id', 'currency_id')
-            ->get()
-            ->filter(function ($account) {
-                return !is_null($account->store_id);
-            });
-
+            ->where('status', 'active')->get()->toArray();
         // Combinar los resultados
         $result = $banks_accounts->groupBy('store_id')->map(function ($accounts, $store_id) use ($accounts_type_3) {
             $store = $accounts->first()->store;
             $currencies = $accounts->map(function ($account) use ($accounts_type_3, $store_id) {
                 $currency_id = $account->currency_id;
-                $account_type_3 = $accounts_type_3->firstWhere('store_id', $store_id)->firstWhere('currency_id', $currency_id);
+               $account_type_3 = collect($accounts_type_3)->firstWhere('store_id', $store_id);
+            
                 return [
                     'currency_id' => $currency_id,
                     'shortcode' => $account->shortcode,
                     'symbol' => $account->symbol,
                     'total' => $account->total,
-                    'total3' => $account_type_3 ? $account_type_3->balance : "No posee",
+                    'total3' => $account_type_3['balance'],
                 ];
             });
             return [
