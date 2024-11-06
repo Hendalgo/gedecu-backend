@@ -293,13 +293,35 @@ class StatisticsController extends Controller
         $currency = $request->get('currency');
         $transactionType = $request->get('type', "income");
         $timezone = $request->header('TimeZone', '-04:00');
-        $date = $request->get('date', now($timezone));
+        $from = null;
+        $to = null;
         $reportType = $request->get('report');
+
+        $period = $request->get('period', 'day');
+
+        if ($period == 'day') {
+            $date = now($timezone);
+            $from = Carbon::parse($date, $timezone)->startOfDay();
+            $to = Carbon::parse($date, $timezone)->endOfDay();
+        } else if ($period == 'yesterday') {
+            $date = now($timezone)->subDay();
+            $from = Carbon::parse($date, $timezone)->startOfDay();
+            $to = Carbon::parse($date, $timezone)->endOfDay();
+        } else if ($period == 'month') {
+            $date = now($timezone);
+            $from = Carbon::parse($date, $timezone)->startOfMonth();
+            $to = Carbon::parse($date, $timezone)->endOfMonth();
+        } else {
+            $date = now($timezone)->subMonth();
+            $from = Carbon::parse($date, $timezone)->startOfMonth();
+            $to = Carbon::parse($date, $timezone)->endOfMonth();
+        }
     
         $transactions = Transaction::where('currency_id', $currency)
             ->where('type', $transactionType)
-            ->where('created_at', '>=', Carbon::parse($date, $timezone)->startOfDay())
-            ->where('created_at', '<=', Carbon::parse($date, $timezone)->endOfDay())
+            ->whereHas('subreport', function ($query) use ($from, $to) {
+                $query->whereBetween('created_at', [$from, $to]);
+            })
             ->when($reportType, function ($query) use ($reportType) {
                 return $query->whereHas('subreport', function ($query) use ($reportType) {
                     $query->whereHas('report', function ($query) use ($reportType) {
@@ -363,9 +385,6 @@ class StatisticsController extends Controller
         if (auth()->user()->role_id != 1) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-    
-        $date = $request->get('date', now());
-        $timezone = $request->header('TimeZone', '-04:00');
 
         // Obtener las cuentas de banco agrupadas por local
         $banks_accounts = BankAccount::query()
@@ -413,18 +432,40 @@ class StatisticsController extends Controller
         if (auth()->user()->role_id != 1) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
-    
-        $date = $request->get('date', now());
+        
+        $period =  $request->get('period', 'day');
+        $timezone = $request->header('TimeZone', '-04:00');
+        $from = null;
+        $to = null;
+
+        if($period == 'day'){
+            $date = now();
+            $from = Carbon::parse($date, $timezone)->startOfDay();
+            $to = Carbon::parse($date, $timezone)->endOfDay();
+        }else if($period == 'yesterday'){
+            $date = now()->subDay();
+            $from = Carbon::parse($date, $timezone)->startOfDay();
+            $to = Carbon::parse($date, $timezone)->endOfDay();
+        }else if($period == 'month'){
+            $date = now();
+            $from = Carbon::parse($date, $timezone)->startOfMonth();
+            $to = Carbon::parse($date, $timezone)->endOfMonth();
+        }else{
+            $date = now()->subMonth();
+            $from = Carbon::parse($date, $timezone)->startOfMonth();
+            $to = Carbon::parse($date, $timezone)->endOfMonth();
+        }
     
         // Función para obtener y calcular los totales
-        $calculateTotals = function ($reportId) use ($date) {
+        $calculateTotals = function ($reportId) use ($date, $from, $to) {
             $subreports = Subreport::query()
                 ->whereHas('report', function ($query) use ($reportId) {
                     $query->where('type_id', $reportId);
                 })
                 ->with('currency', 'report.user.store')
-                ->when($date, function ($query) use ($date) {
-                    return $query->whereDate('created_at', Carbon::parse($date));
+                ->when($date, function ($query) use ($date, $from, $to) {/* 
+                    return $query->whereDate('created_at', Carbon::parse($date)); */
+                    return $query->whereBetween('created_at', [$from, $to]);
                 })
                 ->get();
     
@@ -472,8 +513,8 @@ class StatisticsController extends Controller
             ->whereHas('currency', function ($query) {
                 $query->where('id', 2);
             })
-            ->when($date, function ($query) use ($date) {
-                return $query->whereDate('created_at', Carbon::parse($date));
+            ->when($date, function ($query) use ($date, $from, $to) {
+                return $query->whereBetween('created_at', [$from, $to]);
             })
             ->with('report.user.store', 'currency')
             ->get();
