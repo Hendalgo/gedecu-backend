@@ -477,7 +477,7 @@ class StatisticsController extends Controller
             $totalOriginal = $subreports->sum('amount');
             $totalBolivares = null;
             if ($reportId === 23) {
-                $subreports->sum(function ($subreport) use ($rates) {
+                $totalBolivares = $subreports->sum(function ($subreport) use ($rates) {
                     $rate = $rates->get($subreport->id, 1);
                     return $subreport->amount * $rate;
                 });
