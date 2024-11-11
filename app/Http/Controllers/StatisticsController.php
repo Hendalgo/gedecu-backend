@@ -353,10 +353,12 @@ class StatisticsController extends Controller
     
             if ($transaction->account_id) {
                 $bankAccount = $transaction->account;
+                $bank = $bankAccount->bank;
                 if (!isset($users[$user->id]['bank_accounts'][$bankAccount->id])) {
                     $users[$user->id]['bank_accounts'][$bankAccount->id] = [
                         'identifier' => $bankAccount->identifier,
                         'name' => $bankAccount->name,
+                        'bank' => $bank ? ['name' => $bank->name] : null,
                         'total_amount' => 0,
                     ];
                 }
