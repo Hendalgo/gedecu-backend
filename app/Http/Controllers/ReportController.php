@@ -58,7 +58,8 @@ class ReportController extends Controller
             $query = $query->leftJoin('users', 'reports.user_id', '=', 'users.id')
                 ->select('users.id as user_id', 'users.name as user_name', 'users.email', DB::raw('DATE_FORMAT(MAX(reports.created_at), "%Y-%m-%dT%T.000000Z") as report_date'))
                 ->orderByDesc('report_date')
-                ->groupBy('users.id', 'users.name', 'users.email');
+                ->groupBy('users.id', 'users.name', 'users.email')
+                ->where('reports.status', 'completed');
 
             if ($search) {
                 $query = $query->where(function ($q) use ($search) {
@@ -66,7 +67,7 @@ class ReportController extends Controller
                         ->orWhere('users.email', 'LIKE', '%'.$search.'%');
                 });
             }
-
+            
             if ($date) {
                 $query = $query->whereDate(DB::raw('DATE(CONVERT_TZ(reports.created_at, "+00:00", "'.$timezone.'"))'), $date);
             }
