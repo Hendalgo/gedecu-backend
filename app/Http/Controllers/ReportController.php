@@ -141,7 +141,7 @@ class ReportController extends Controller
             'type_id' => 'required|exists:reports_types,id',
         ]);
         
-        $isDraft = $request->get('isDraft', false);
+        $isDraft = $request->get('isDraft', "no");
         $role_report_permission = RoleReportPermission::where('role_id', auth()->user()->role->id)
             ->where('report_type_id', $request->type_id)
             ->first();

@@ -12,6 +12,7 @@ class Report extends Model
     protected $fillable = [
         'meta_data',
         'user_id',
+        'status',
         'type_id',
         'delete',
     ];
