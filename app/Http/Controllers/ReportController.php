@@ -76,7 +76,7 @@ class ReportController extends Controller
 
             return response()->json($query->with('user.role')->paginate(10), 200);
         }
-        if ($draft) {
+        if ($draft = 'yes') {
             $query = $query->where('status', 'draft');
         } else {
             $query = $query->where('status', 'completed');
@@ -159,7 +159,7 @@ class ReportController extends Controller
                 DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type, $report_type_config, $isDraft){
                     $report = Report::create([
                         'type_id' => $request->type_id,
-                        'status' => $isDraft ? 'draft' : 'completed',
+                        'status' => $isDraft == "yes"? 'draft' : 'completed',
                         'user_id' => auth()->user()->id,
                         'meta_data' => json_encode([]),
                     ]);
@@ -168,7 +168,7 @@ class ReportController extends Controller
                     $insertedSub = $this->create_subreport($validatedSubreports, $report, $report_type_config);
 
                     //Add or substract the amount to the bank account
-                    if($isDraft){
+                    if($isDraft != "yes"){
                         foreach ($validatedSubreports as $key => $subreport) {
                             $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'create', $insertedSub[$key]->id);
                         }
@@ -293,7 +293,7 @@ class ReportController extends Controller
         }
         $edited = DB::transaction(function () use ($subreports, $report, $isDraft) {
             
-            if (!$isDraft) {
+            if ($isDraft !== "yes") {
                 $report->status = 'completed';
                 foreach ($subreports as $subreport) {
 
@@ -342,7 +342,7 @@ class ReportController extends Controller
             $report->subreports = $report->subreports()->get();
             $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
 
-            if(!$isDraft){
+            if($isDraft !== "yes"){
                 $inconsistence->check_inconsistences($report, $report->subreports);
             }
 
