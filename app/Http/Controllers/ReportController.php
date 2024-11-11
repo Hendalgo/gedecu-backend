@@ -76,7 +76,7 @@ class ReportController extends Controller
 
             return response()->json($query->with('user.role')->paginate(10), 200);
         }
-        if ($draft = 'yes') {
+        if ($draft === 'yes') {
             $query = $query->where('status', 'draft');
         } else {
             $query = $query->where('status', 'completed');
