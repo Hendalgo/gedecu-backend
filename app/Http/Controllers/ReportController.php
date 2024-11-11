@@ -44,6 +44,7 @@ class ReportController extends Controller
         $user = $request->get('user');
         $type = $request->get('type_id');
         $role = $request->get('role');
+        $draft = $request->get('draft');
 
         //Get TimeZone header
         $timezone = $request->header('TimeZone');
@@ -74,6 +75,11 @@ class ReportController extends Controller
             }
 
             return response()->json($query->with('user.role')->paginate(10), 200);
+        }
+        if ($draft) {
+            $query = $query->where('status', 'draft');
+        } else {
+            $query = $query->where('status', 'completed');
         }
         if ($type) {
             $query = $query->where('reports.type_id', $type);
@@ -129,12 +135,13 @@ class ReportController extends Controller
 
         return response()->json(['error' => 'Ocurrio un error al intentar visualizar los reportes'], 500);
     }
-
     public function store(Request $request)
     {
         $request->validate([
             'type_id' => 'required|exists:reports_types,id',
         ]);
+        
+        $isDraft = $request->get('isDraft', false);
         $role_report_permission = RoleReportPermission::where('role_id', auth()->user()->role->id)
             ->where('report_type_id', $request->type_id)
             ->first();
@@ -149,9 +156,10 @@ class ReportController extends Controller
             try {
                 $report = [];
                 // Create the report
-                DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type, $report_type_config) {
+                DB::transaction(function () use (&$report, $request, $validatedSubreports, $report_type, $report_type_config, $isDraft){
                     $report = Report::create([
                         'type_id' => $request->type_id,
+                        'status' => $isDraft ? 'draft' : 'completed',
                         'user_id' => auth()->user()->id,
                         'meta_data' => json_encode([]),
                     ]);
@@ -160,8 +168,10 @@ class ReportController extends Controller
                     $insertedSub = $this->create_subreport($validatedSubreports, $report, $report_type_config);
 
                     //Add or substract the amount to the bank account
-                    foreach ($validatedSubreports as $key => $subreport) {
-                        $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'create', $insertedSub[$key]->id);
+                    if($isDraft){
+                        foreach ($validatedSubreports as $key => $subreport) {
+                            $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'create', $insertedSub[$key]->id);
+                        }
                     }
                 });
 
@@ -255,11 +265,11 @@ class ReportController extends Controller
         return response()->json(['message' => 'forbiden'], 401);
 
     }
-
+    
     public function update(Request $request, $id)
     {
         $subreports = $request->all();
-
+        $isDraft = $request->get('isDraft', false);
         //Just the user that created the report can edit it
         $report = Report::with('type')->find($id);
         if ($report->user_id !== auth()->user()->id) {
@@ -281,53 +291,60 @@ class ReportController extends Controller
                 'id' => 'required|exists:subreports,id,report_id,'.$id,
             ])->validate();
         }
-        $edited = DB::transaction(function () use ($subreports, $report) {
-            foreach ($subreports as $subreport) {
+        $edited = DB::transaction(function () use ($subreports, $report, $isDraft) {
+            
+            if (!$isDraft) {
+                $report->status = 'completed';
+                foreach ($subreports as $subreport) {
 
-                //Undo the amount of the subreport
-
-                //Last subreport data
-                $sub = Subreport::findOrFail($subreport['id']);
-                $auxSub = Subreport::with('data')->findOrFail($subreport['id']);
-                $subData = $this->KeyMapValue->transformElement($auxSub)[0];
-
-                $report_type = ReportType::find($report->type_id);
-                $report_type_config = json_decode($report_type->meta_data, true);
-                $this->add_or_substract_amount($subData->data, $report_type_config, $report_type, $report, 'undo', $subreport['id']);
-
-                $amount = $subreport['amount'];
-                $currency = $subreport['currency_id'];
-                if (array_key_exists('convert_amount', $report_type_config)) {
-                    $amount = $this->calculateAmount($subreport);
-                    $currency = $subreport['conversionCurrency_id'];
+                    //Undo the amount of the subreport
+    
+                    //Last subreport data
+                    $sub = Subreport::findOrFail($subreport['id']);
+                    $auxSub = Subreport::with('data')->findOrFail($subreport['id']);
+                    $subData = $this->KeyMapValue->transformElement($auxSub)[0];
+    
+                    $report_type = ReportType::find($report->type_id);
+                    $report_type_config = json_decode($report_type->meta_data, true);
+                    $this->add_or_substract_amount($subData->data, $report_type_config, $report_type, $report, 'undo', $subreport['id']);
+    
+                    $amount = $subreport['amount'];
+                    $currency = $subreport['currency_id'];
+                    if (array_key_exists('convert_amount', $report_type_config)) {
+                        $amount = $this->calculateAmount($subreport);
+                        $currency = $subreport['conversionCurrency_id'];
+                    }
+    
+                    $sub->amount = $amount;
+                    $sub->currency_id = $currency;
+                    $sub->duplicate = $subreport['isDuplicated'];
+                    $sub->save();
+    
+                    //Edit subreport data
+                    $subreport_data = SubreportData::where('subreport_id', $subreport['id'])->get();
+                    foreach ($subreport_data as $data) {
+                        $data->value = $subreport[$data->key];
+                        $data->save();
+                    }
+    
+                    //Add or substract the amount to the bank account
+                    $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update', $subreport['id']);
+                    // Delete Inconsistences
+                    Inconsistence::where('subreport_id', $subreport['id'])->delete();
+                    //update to null the associated_id of the inconsistences
+                    Inconsistence::where('associated_id', $subreport['id'])->update(['associated_id' => null]);
                 }
-
-                $sub->amount = $amount;
-                $sub->currency_id = $currency;
-                $sub->duplicate = $subreport['isDuplicated'];
-                $sub->save();
-
-                //Edit subreport data
-                $subreport_data = SubreportData::where('subreport_id', $subreport['id'])->get();
-                foreach ($subreport_data as $data) {
-                    $data->value = $subreport[$data->key];
-                    $data->save();
-                }
-
-                //Add or substract the amount to the bank account
-                $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update', $subreport['id']);
-                // Delete Inconsistences
-                Inconsistence::where('subreport_id', $subreport['id'])->delete();
-                //update to null the associated_id of the inconsistences
-                Inconsistence::where('associated_id', $subreport['id'])->update(['associated_id' => null]);
             }
-
+            
             $report->editable = 0;
             $report->save();
             $inconsistence = new InconsistenceController();
             $report->subreports = $report->subreports()->get();
             $report->subreports = $this->KeyMapValue->transformElement($report->subreports);
-            $inconsistence->check_inconsistences($report, $report->subreports);
+
+            if(!$isDraft){
+                $inconsistence->check_inconsistences($report, $report->subreports);
+            }
 
             return true;
         });
