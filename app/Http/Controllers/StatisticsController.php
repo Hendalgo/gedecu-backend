@@ -287,7 +287,159 @@ class StatisticsController extends Controller
 
         return response()->json($banks_accounts);
     }
+    public function getNewTotalized(Request $request)
+    {
+        $transactionType = $request->get('type', "income");
+        $timezone = $request->header('TimeZone', '-04:00');
+        $from = null;
+        $to = null;
+        $reportType = $request->get('report');
 
+        // Determinar la moneda y el tipo de reporte basado en el tipo pasado por el usuario
+        $currency = 1; // Moneda por defecto
+        $reportTypeId = null;
+        $reportTypeField = null;
+
+        switch ($reportType) {
+            case 0:
+                $currency = 1;
+                $reportTypeId = 23;
+                break;
+            case 1:
+                $currency = 1;
+                $reportTypeId = 4;
+                break;
+            case 2:
+                $currency = 2;
+                $reportTypeId = 1;
+                break;
+            case 3:
+                $currency = 2;
+                $reportTypeField = 'income';
+                break;
+            case 4:
+                $currency = 1;
+                $reportTypeId = 13;
+                break;
+            case 6:
+                $currency = 2;
+                $reportTypeField = 'expense';
+                break;
+            case 7:
+                $currency = 1;
+                $reportTypeId = 17;
+                break;
+            case 8:
+                $currency = 1;
+                $reportTypeId = 37;
+                break;
+            case 9:
+                $currency = 1;
+                $reportTypeId = 19;
+                break;
+            case 10:
+                $currency = 1;
+                $reportTypeId = 25;
+                break;
+            case 11:
+                $currency = 1;
+                $reportTypeId = 21;
+                break;
+        }
+
+        $period = $request->get('period', 'day');
+
+        if ($period == 'day') {
+            $date = now($timezone);
+            $from = Carbon::parse($date, $timezone)->startOfDay();
+            $to = Carbon::parse($date, $timezone)->endOfDay();
+        } else if ($period == 'yesterday') {
+            $date = now($timezone)->subDay();
+            $from = Carbon::parse($date, $timezone)->startOfDay();
+            $to = Carbon::parse($date, $timezone)->endOfDay();
+        } else if ($period == 'month') {
+            $date = now($timezone);
+            $from = Carbon::parse($date, $timezone)->startOfMonth();
+            $to = Carbon::parse($date, $timezone)->endOfMonth();
+        } else {
+            $date = now($timezone)->subMonth();
+            $from = Carbon::parse($date, $timezone)->startOfMonth();
+            $to = Carbon::parse($date, $timezone)->endOfMonth();
+        }
+
+        $transactions = Transaction::where('currency_id', $currency)
+            ->when(!is_numeric($transactionType), function ($query) use ($transactionType) {
+                return $query->where('type', $transactionType);
+            })
+            ->whereHas('subreport', function ($query) use ($from, $to, $reportTypeId, $reportTypeField) {
+                $query->whereBetween('created_at', [$from, $to])
+                    ->when($reportTypeId, function ($query) use ($reportTypeId) {
+                        return $query->whereHas('report', function ($query) use ($reportTypeId) {
+                            $query->where('type_id', $reportTypeId);
+                        });
+                    })
+                    ->when($reportTypeField, function ($query) use ($reportTypeField) {
+                        return $query->whereHas('report', function ($query) use ($reportTypeField) {
+                            $query->whereHas('reportType', function ($query) use ($reportTypeField) {
+                                $query->where('type', $reportTypeField);
+                            });
+                        });
+                    });
+            });
+
+        $transactionsTotal = $transactions->sum('amount');
+        $transactions = $transactions->get();
+
+        $users = [];
+
+        foreach ($transactions as $transaction) {
+            $subreport = $transaction->subreport;
+            $report = $subreport->report;
+            $user = $report->user;
+
+            if (!isset($users[$user->id])) {
+                $users[$user->id] = [
+                    'name' => $user->name,
+                    'store' => $user->store ? ['name' => $user->store->name] : null,
+                    'total_amount' => 0,
+                    'bank_accounts' => [],
+                ];
+            }
+
+            $users[$user->id]['total_amount'] += $transaction->amount;
+
+            if ($transaction->account_id) {
+                $bankAccount = $transaction->account;
+                $bank = $bankAccount->bank;
+                if (!isset($users[$user->id]['bank_accounts'][$bankAccount->id])) {
+                    $users[$user->id]['bank_accounts'][$bankAccount->id] = [
+                        'identifier' => $bankAccount->identifier,
+                        'name' => $bankAccount->name,
+                        'bank' => $bank ? ['name' => $bank->name] : null,
+                        'total_amount' => 0,
+                    ];
+                }
+                $users[$user->id]['bank_accounts'][$bankAccount->id]['total_amount'] += $transaction->amount;
+            } elseif ($transaction->balance_id) {
+                $balance = $transaction->balance;
+                if (!isset($users[$user->id]['bank_accounts'][$balance->id])) {
+                    $users[$user->id]['bank_accounts'][$balance->id] = [
+                        'identifier' => $balance->identifier,
+                        'name' => $balance->name,
+                        'total_amount' => 0,
+                    ];
+                }
+                $users[$user->id]['bank_accounts'][$balance->id]['total_amount'] += $transaction->amount;
+            }
+        }
+
+        $response = [
+            'total' => $transactionsTotal,
+            'users' => array_values($users),
+        ];
+
+        return response()->json($response, 200);
+    }
     public function getTotalized(Request $request)
     {
         $currency = $request->get('currency');
