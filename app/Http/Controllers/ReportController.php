@@ -269,7 +269,7 @@ class ReportController extends Controller
     
     public function update(Request $request, $id)
     {
-        $subreports = $request->all();
+        $subreports = json_decode($request->getContent(), true);
         $isDraft = $request->get('isDraft', false);
         //Just the user that created the report can edit it
         $report = Report::with('type')->find($id);
@@ -292,10 +292,7 @@ class ReportController extends Controller
                 'id' => 'required|exists:subreports,id,report_id,'.$id,
             ])->validate();
         }
-
-
-        return response()->json(['message' => 'Reporte editado'], 200);
-
+        
         $edited = DB::transaction(function () use ($subreports, $report, $isDraft) {
             
             if ($isDraft !== "yes") {
