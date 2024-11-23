@@ -288,9 +288,11 @@ class ReportController extends Controller
         }
         //Validate if each subreport has a valid id and belongs to the report
         foreach ($subreports as $subreport) {
-            $sub = Validator::make($subreport, [
-                'id' => 'required|exists:subreports,id,report_id,'.$id,
-            ])->validate();
+            if ($isDraft !== "yes") {
+                $sub = Validator::make($subreport, [
+                    'id' => 'required|exists:subreports,id,report_id,'.$id,
+                ])->validate();
+            }
         }
         
         $edited = DB::transaction(function () use ($subreports, $report, $isDraft) {
@@ -298,7 +300,6 @@ class ReportController extends Controller
             if ($isDraft !== "yes") {
                 $report->status = 'completed';
                 foreach ($subreports as $subreport) {
-
                     //Undo the amount of the subreport
                     if(!isset($subreport['id'])){
                         //Then is a new subreport and we need to create it
