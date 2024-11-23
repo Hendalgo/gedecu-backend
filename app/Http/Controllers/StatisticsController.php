@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
+use App\Models\Currency;
 use App\Models\Report;
 use App\Models\Store;
 use App\Models\Subreport;
@@ -289,7 +290,6 @@ class StatisticsController extends Controller
     }
     public function getNewTotalized(Request $request)
     {
-        $transactionType = $request->get('type', "income");
         $timezone = $request->header('TimeZone', '-04:00');
         $from = null;
         $to = null;
@@ -384,6 +384,9 @@ class StatisticsController extends Controller
         $transactions = $transactions->get();
         $users = [];
 
+        // Obtener el shortcode de la moneda
+        $currencyShortcode = Currency::find($currency)->shortcode;
+
         foreach ($transactions as $transaction) {
             $subreport = $transaction->subreport;
             $report = $subreport->report;
@@ -425,8 +428,16 @@ class StatisticsController extends Controller
             }
         }
 
+        // Concatenar los montos con el shortcode de la moneda
+        foreach ($users as &$user) {
+            $user['total_amount'] = number_format($user['total_amount'], 2) . ' ' . $currencyShortcode;
+            foreach ($user['bank_accounts'] as &$account) {
+                $account['total_amount'] = number_format($account['total_amount'], 2) . ' ' . $currencyShortcode;
+            }
+        }
+
         $response = [
-            'total' => $transactionsTotal,
+            'total' => number_format($transactionsTotal, 2) . ' ' . $currencyShortcode,
             'users' => array_values($users),
         ];
 
