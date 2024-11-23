@@ -612,37 +612,32 @@ class StatisticsController extends Controller
                 ->when($date, function ($query) use ($date, $from, $to) {
                     return $query->whereBetween('created_at', [$from, $to]);
                 })
-                ->get()
-                ->groupBy('report.user_id');
+                ->get();
     
             if ($subreports->isEmpty()) {
-                return collect([
+                return [
                     'total' => 0,
                     'total_bolivares' => 0,
                     'subreports' => []
-                ]);
+                ];
             }
     
-            $totals = $subreports->map(function ($userSubreports) {
-                $totalOriginal = $userSubreports->sum('amount');
-                $rates = SubreportData::query()
-                    ->whereIn('subreport_id', $userSubreports->pluck('id'))
-                    ->where('key', 'rate')
-                    ->pluck('value', 'subreport_id');
+            $totalOriginal = $subreports->sum('amount');
+            $rates = SubreportData::query()
+                ->whereIn('subreport_id', $subreports->pluck('id'))
+                ->where('key', 'rate')
+                ->pluck('value', 'subreport_id');
     
-                $totalBolivares = $userSubreports->sum(function ($subreport) use ($rates) {
-                    $rate = $rates->get($subreport->id, 1);
-                    return $subreport->amount * $rate;
-                });
-    
-                return [
-                    'total' => $totalOriginal,
-                    'total_bolivares' => $totalBolivares,
-                    'subreports' => $userSubreports
-                ];
+            $totalBolivares = $subreports->sum(function ($subreport) use ($rates) {
+                $rate = $rates->get($subreport->id, 1);
+                return $subreport->amount * $rate;
             });
     
-            return $totals;
+            return [
+                'total' => $totalOriginal,
+                'total_bolivares' => $totalBolivares,
+                'subreports' => $subreports
+            ];
         };
     
         // Calcular los totales para los reportes de tipo 23, 4, 9 y 11
@@ -665,30 +660,27 @@ class StatisticsController extends Controller
                 return $query->whereBetween('created_at', [$from, $to]);
             })
             ->with('report.user.store', 'currency')
-            ->get()
-            ->groupBy('report.user_id');
+            ->get();
     
         if ($subreportsExpenses->isEmpty()) {
-            $bolivaresDelDia = collect([
+            $bolivaresDelDia = [
                 'total' => 0,
                 'subreports' => []
-            ]);
+            ];
         } else {
-            $bolivaresDelDia = $subreportsExpenses->map(function ($userSubreports) {
-                $totalOriginal = $userSubreports->sum('amount');
-                return [
-                    'total' => $totalOriginal,
-                    'subreports' => $userSubreports
-                ];
-            });
+            $totalOriginal = $subreportsExpenses->sum('amount');
+            $bolivaresDelDia = [
+                'total' => $totalOriginal,
+                'subreports' => $subreportsExpenses
+            ];
         }
     
         return response()->json([
-            'pesos_giros' => $pesosGiros->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $pesosGiros,
-            'bolivares_giros_gestor' => $bolivaresGirosGestor->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $bolivaresGirosGestor,
-            'bolivares_comisiones' => $bolivaresComisiones->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $bolivaresComisiones,
-            'bolivares_otros' => $bolivaresOtros->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $bolivaresOtros,
-            'bolivares_del_dia' => $bolivaresDelDia->isEmpty() ? ['total' => 0, 'subreports' => []] : $bolivaresDelDia
+            'pesos_giros' => $pesosGiros,
+            'bolivares_giros_gestor' => $bolivaresGirosGestor,
+            'bolivares_comisiones' => $bolivaresComisiones,
+            'bolivares_otros' => $bolivaresOtros,
+            'bolivares_del_dia' => $bolivaresDelDia
         ]);
     }
 }
