@@ -574,8 +574,9 @@ class ReportController extends Controller
             $transaction->subreport_id = $subreport['id'];
             $transaction->currency_id = $currency;
             $transaction->created_at = $subreport['date'];
+            $transaction->type = 'neutro';
             $transaction->save();
-            
+
             return;
         }
         if ($report_type->type === 'income' && $operation === 'undo') {
