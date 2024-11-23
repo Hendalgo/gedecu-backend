@@ -428,16 +428,16 @@ class StatisticsController extends Controller
             }
         }
 
-        // Concatenar los montos con el shortcode de la moneda
+        // Concatenar los montos con el shortcode de la moneda al principio
         foreach ($users as &$user) {
-            $user['total_amount'] = number_format($user['total_amount'], 2) . ' ' . $currencyShortcode;
+            $user['total_amount'] = $currencyShortcode . ' ' . number_format($user['total_amount'], 2);
             foreach ($user['bank_accounts'] as &$account) {
-                $account['total_amount'] = number_format($account['total_amount'], 2) . ' ' . $currencyShortcode;
+                $account['total_amount'] = $currencyShortcode . ' ' . number_format($account['total_amount'], 2);
             }
         }
 
         $response = [
-            'total' => number_format($transactionsTotal, 2) . ' ' . $currencyShortcode,
+            'total' => $currencyShortcode . ' ' . number_format($transactionsTotal, 2),
             'users' => array_values($users),
         ];
 
