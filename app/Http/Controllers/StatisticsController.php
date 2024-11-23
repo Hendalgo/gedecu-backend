@@ -603,7 +603,7 @@ class StatisticsController extends Controller
         }
     
         // Función para obtener y calcular los totales
-        $calculateTotals = function ($reportId) use ($date, $from, $to) {
+        $calculateTotals = function ($reportId, $includeBolivares = false) use ($date, $from, $to) {
             $subreports = Subreport::query()
                 ->whereHas('report', function ($query) use ($reportId) {
                     $query->where('type_id', $reportId);
@@ -616,42 +616,53 @@ class StatisticsController extends Controller
                 ->groupBy('report.user_id');
     
             if ($subreports->isEmpty()) {
-                return [
+                return $includeBolivares ? [
                     'total' => 0,
                     'total_bolivares' => 0,
+                    'subreports' => []
+                ] : [
+                    'total' => 0,
                     'subreports' => []
                 ];
             }
     
-            $totals = $subreports->map(function ($userSubreports, $userId) {
+            $totals = $subreports->map(function ($userSubreports, $userId) use ($includeBolivares) {
                 $totalOriginal = $userSubreports->sum('amount');
-                $rates = SubreportData::query()
-                    ->whereIn('subreport_id', $userSubreports->pluck('id'))
-                    ->where('key', 'rate')
-                    ->pluck('value', 'subreport_id');
-    
-                $totalBolivares = $userSubreports->sum(function ($subreport) use ($rates) {
-                    $rate = $rates->get($subreport->id, 1);
-                    return $subreport->amount * $rate;
-                });
-    
-                return [
+                $result = [
                     'user_id' => $userId,
                     'total' => $totalOriginal,
-                    'total_bolivares' => $totalBolivares,
                     'subreports' => $userSubreports
                 ];
+    
+                if ($includeBolivares) {
+                    $rates = SubreportData::query()
+                        ->whereIn('subreport_id', $userSubreports->pluck('id'))
+                        ->where('key', 'rate')
+                        ->pluck('value', 'subreport_id');
+    
+                    $totalBolivares = $userSubreports->sum(function ($subreport) use ($rates) {
+                        $rate = $rates->get($subreport->id, 1);
+                        return $subreport->amount / $rate;
+                    });
+    
+                    $result['total_bolivares'] = $totalBolivares;
+                }
+    
+                return $result;
             });
     
-            return [
+            return $includeBolivares ? [
                 'total' => $totals->sum('total'),
                 'total_bolivares' => $totals->sum('total_bolivares'),
+                'subreports' => $totals->values()
+            ] : [
+                'total' => $totals->sum('total'),
                 'subreports' => $totals->values()
             ];
         };
     
         // Calcular los totales para los reportes de tipo 23, 4, 9 y 11
-        $pesosGiros = $calculateTotals(23);
+        $pesosGiros = $calculateTotals(23, true);
         $bolivaresGirosGestor = $calculateTotals(4);
         $bolivaresComisiones = $calculateTotals(9);
         $bolivaresOtros = $calculateTotals(11);
