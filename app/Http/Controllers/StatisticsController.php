@@ -612,7 +612,8 @@ class StatisticsController extends Controller
                 ->when($date, function ($query) use ($date, $from, $to) {
                     return $query->whereBetween('created_at', [$from, $to]);
                 })
-                ->get();
+                ->get()
+                ->groupBy('report.user_id');
     
             if ($subreports->isEmpty()) {
                 return [
@@ -622,21 +623,30 @@ class StatisticsController extends Controller
                 ];
             }
     
-            $totalOriginal = $subreports->sum('amount');
-            $rates = SubreportData::query()
-                ->whereIn('subreport_id', $subreports->pluck('id'))
-                ->where('key', 'rate')
-                ->pluck('value', 'subreport_id');
+            $totals = $subreports->map(function ($userSubreports, $userId) {
+                $totalOriginal = $userSubreports->sum('amount');
+                $rates = SubreportData::query()
+                    ->whereIn('subreport_id', $userSubreports->pluck('id'))
+                    ->where('key', 'rate')
+                    ->pluck('value', 'subreport_id');
     
-            $totalBolivares = $subreports->sum(function ($subreport) use ($rates) {
-                $rate = $rates->get($subreport->id, 1);
-                return $subreport->amount * $rate;
+                $totalBolivares = $userSubreports->sum(function ($subreport) use ($rates) {
+                    $rate = $rates->get($subreport->id, 1);
+                    return $subreport->amount * $rate;
+                });
+    
+                return [
+                    'user_id' => $userId,
+                    'total' => $totalOriginal,
+                    'total_bolivares' => $totalBolivares,
+                    'subreports' => $userSubreports
+                ];
             });
     
             return [
-                'total' => $totalOriginal,
-                'total_bolivares' => $totalBolivares,
-                'subreports' => $subreports
+                'total' => $totals->sum('total'),
+                'total_bolivares' => $totals->sum('total_bolivares'),
+                'subreports' => $totals->values()
             ];
         };
     
@@ -660,7 +670,8 @@ class StatisticsController extends Controller
                 return $query->whereBetween('created_at', [$from, $to]);
             })
             ->with('report.user.store', 'currency')
-            ->get();
+            ->get()
+            ->groupBy('report.user_id');
     
         if ($subreportsExpenses->isEmpty()) {
             $bolivaresDelDia = [
@@ -668,10 +679,18 @@ class StatisticsController extends Controller
                 'subreports' => []
             ];
         } else {
-            $totalOriginal = $subreportsExpenses->sum('amount');
+            $totals = $subreportsExpenses->map(function ($userSubreports, $userId) {
+                $totalOriginal = $userSubreports->sum('amount');
+                return [
+                    'user_id' => $userId,
+                    'total' => $totalOriginal,
+                    'subreports' => $userSubreports
+                ];
+            });
+    
             $bolivaresDelDia = [
-                'total' => $totalOriginal,
-                'subreports' => $subreportsExpenses
+                'total' => $totals->sum('total'),
+                'subreports' => $totals->values()
             ];
         }
     
