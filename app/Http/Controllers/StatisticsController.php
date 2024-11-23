@@ -601,7 +601,7 @@ class StatisticsController extends Controller
             $from = Carbon::parse($date, $timezone)->startOfMonth();
             $to = Carbon::parse($date, $timezone)->endOfMonth();
         }
-    
+
         // Función para obtener y calcular los totales
         $calculateTotals = function ($reportId) use ($date, $from, $to) {
             $subreports = Subreport::query()
@@ -609,46 +609,40 @@ class StatisticsController extends Controller
                     $query->where('type_id', $reportId);
                 })
                 ->with('currency', 'report.user.store')
-                ->when($date, function ($query) use ($date, $from, $to) {/* 
-                    return $query->whereDate('created_at', Carbon::parse($date)); */
+                ->when($date, function ($query) use ($date, $from, $to) {
                     return $query->whereBetween('created_at', [$from, $to]);
                 })
-                ->get();
-    
-            $rates = SubreportData::query()
-                ->whereIn('subreport_id', $subreports->pluck('id'))
-                ->where('key', 'rate')
-                ->pluck('value', 'subreport_id');
-    
-            $totalOriginal = $subreports->sum('amount');
-            $totalBolivares = null;
-            if ($reportId === 23) {
-                $totalBolivares = $subreports->sum(function ($subreport) use ($rates) {
+                ->get()
+                ->groupBy('report.user_id');
+
+            $totals = $subreports->map(function ($userSubreports) {
+                $totalOriginal = $userSubreports->sum('amount');
+                $rates = SubreportData::query()
+                    ->whereIn('subreport_id', $userSubreports->pluck('id'))
+                    ->where('key', 'rate')
+                    ->pluck('value', 'subreport_id');
+
+                $totalBolivares = $userSubreports->sum(function ($subreport) use ($rates) {
                     $rate = $rates->get($subreport->id, 1);
                     return $subreport->amount * $rate;
                 });
-            }
-    
-            if($totalBolivares === null){
-                return [
-                    'total' => $totalOriginal,
-                    'subreports' => $subreports
-                ];
-            }else{
+
                 return [
                     'total' => $totalOriginal,
                     'total_bolivares' => $totalBolivares,
-                    'subreports' => $subreports
+                    'subreports' => $userSubreports
                 ];
-            }
+            });
+
+            return $totals;
         };
-    
+
         // Calcular los totales para los reportes de tipo 23, 4, 9 y 11
         $pesosGiros = $calculateTotals(23);
         $bolivaresGirosGestor = $calculateTotals(4);
         $bolivaresComisiones = $calculateTotals(9);
         $bolivaresOtros = $calculateTotals(11);
-    
+
         // Calcular los totales para los subreportes de tipo expense y moneda id 2
         $subreportsExpenses = Subreport::query()
             ->whereHas('report', function ($query) {
@@ -663,15 +657,17 @@ class StatisticsController extends Controller
                 return $query->whereBetween('created_at', [$from, $to]);
             })
             ->with('report.user.store', 'currency')
-            ->get();
-    
-        $totalOriginalExpenses = $subreportsExpenses->sum('amount');
-    
-        $bolivaresDelDia = [
-            'total' => $totalOriginalExpenses,
-            'subreports' => $subreportsExpenses
-        ];
-    
+            ->get()
+            ->groupBy('report.user_id');
+
+        $bolivaresDelDia = $subreportsExpenses->map(function ($userSubreports) {
+            $totalOriginal = $userSubreports->sum('amount');
+            return [
+                'total' => $totalOriginal,
+                'subreports' => $userSubreports
+            ];
+        });
+
         return response()->json([
             'pesos_giros' => $pesosGiros,
             'bolivares_giros_gestor' => $bolivaresGirosGestor,
