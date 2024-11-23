@@ -292,6 +292,10 @@ class ReportController extends Controller
                 'id' => 'required|exists:subreports,id,report_id,'.$id,
             ])->validate();
         }
+
+
+        return response()->json(['message' => 'Reporte editado'], 200);
+
         $edited = DB::transaction(function () use ($subreports, $report, $isDraft) {
             
             if ($isDraft !== "yes") {
