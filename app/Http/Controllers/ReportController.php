@@ -345,7 +345,7 @@ class ReportController extends Controller
                 }
             }
             
-            $report->editable = 0;
+            $report->editable = $isDraft === "yes"? 1 : 0;
             $report->save();
             $inconsistence = new InconsistenceController();
             $report->subreports = $report->subreports()->get();
