@@ -583,7 +583,7 @@ class StatisticsController extends Controller
         $timezone = $request->header('TimeZone', '-04:00');
         $from = null;
         $to = null;
-
+    
         if($period == 'day'){
             $date = now();
             $from = Carbon::parse($date, $timezone)->startOfDay();
@@ -601,7 +601,7 @@ class StatisticsController extends Controller
             $from = Carbon::parse($date, $timezone)->startOfMonth();
             $to = Carbon::parse($date, $timezone)->endOfMonth();
         }
-
+    
         // Función para obtener y calcular los totales
         $calculateTotals = function ($reportId) use ($date, $from, $to) {
             $subreports = Subreport::query()
@@ -614,35 +614,43 @@ class StatisticsController extends Controller
                 })
                 ->get()
                 ->groupBy('report.user_id');
-
+    
+            if ($subreports->isEmpty()) {
+                return collect([
+                    'total' => 0,
+                    'total_bolivares' => 0,
+                    'subreports' => []
+                ]);
+            }
+    
             $totals = $subreports->map(function ($userSubreports) {
                 $totalOriginal = $userSubreports->sum('amount');
                 $rates = SubreportData::query()
                     ->whereIn('subreport_id', $userSubreports->pluck('id'))
                     ->where('key', 'rate')
                     ->pluck('value', 'subreport_id');
-
+    
                 $totalBolivares = $userSubreports->sum(function ($subreport) use ($rates) {
                     $rate = $rates->get($subreport->id, 1);
                     return $subreport->amount * $rate;
                 });
-
+    
                 return [
                     'total' => $totalOriginal,
                     'total_bolivares' => $totalBolivares,
                     'subreports' => $userSubreports
                 ];
             });
-
+    
             return $totals;
         };
-
+    
         // Calcular los totales para los reportes de tipo 23, 4, 9 y 11
         $pesosGiros = $calculateTotals(23);
         $bolivaresGirosGestor = $calculateTotals(4);
         $bolivaresComisiones = $calculateTotals(9);
         $bolivaresOtros = $calculateTotals(11);
-
+    
         // Calcular los totales para los subreportes de tipo expense y moneda id 2
         $subreportsExpenses = Subreport::query()
             ->whereHas('report', function ($query) {
@@ -659,21 +667,28 @@ class StatisticsController extends Controller
             ->with('report.user.store', 'currency')
             ->get()
             ->groupBy('report.user_id');
-
-        $bolivaresDelDia = $subreportsExpenses->map(function ($userSubreports) {
-            $totalOriginal = $userSubreports->sum('amount');
-            return [
-                'total' => $totalOriginal,
-                'subreports' => $userSubreports
-            ];
-        });
-
+    
+        if ($subreportsExpenses->isEmpty()) {
+            $bolivaresDelDia = collect([
+                'total' => 0,
+                'subreports' => []
+            ]);
+        } else {
+            $bolivaresDelDia = $subreportsExpenses->map(function ($userSubreports) {
+                $totalOriginal = $userSubreports->sum('amount');
+                return [
+                    'total' => $totalOriginal,
+                    'subreports' => $userSubreports
+                ];
+            });
+        }
+    
         return response()->json([
-            'pesos_giros' => $pesosGiros,
-            'bolivares_giros_gestor' => $bolivaresGirosGestor,
-            'bolivares_comisiones' => $bolivaresComisiones,
-            'bolivares_otros' => $bolivaresOtros,
-            'bolivares_del_dia' => $bolivaresDelDia
+            'pesos_giros' => $pesosGiros->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $pesosGiros,
+            'bolivares_giros_gestor' => $bolivaresGirosGestor->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $bolivaresGirosGestor,
+            'bolivares_comisiones' => $bolivaresComisiones->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $bolivaresComisiones,
+            'bolivares_otros' => $bolivaresOtros->isEmpty() ? ['total' => 0, 'total_bolivares' => 0, 'subreports' => []] : $bolivaresOtros,
+            'bolivares_del_dia' => $bolivaresDelDia->isEmpty() ? ['total' => 0, 'subreports' => []] : $bolivaresDelDia
         ]);
     }
 }
