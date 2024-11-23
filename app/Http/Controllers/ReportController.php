@@ -299,7 +299,13 @@ class ReportController extends Controller
                 foreach ($subreports as $subreport) {
 
                     //Undo the amount of the subreport
-    
+                    if(!isset($subreport['id'])){
+                        //Then is a new subreport and we need to create it
+                        $report_type = ReportType::find($report->type_id);
+                        $report_type_config = json_decode($report_type->meta_data, true);
+                        $this->create_subreport([$subreport], $report, $report_type_config);
+                        continue;
+                    }
                     //Last subreport data
                     $sub = Subreport::findOrFail($subreport['id']);
                     $auxSub = Subreport::with('data')->findOrFail($subreport['id']);

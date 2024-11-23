@@ -368,8 +368,8 @@ class StatisticsController extends Controller
         }
 
         $transactions = Transaction::where('currency_id', $currency)
-            ->when(!is_numeric($transactionType), function ($query) use ($transactionType) {
-                return $query->where('type', $transactionType);
+            ->when($reportTypeField, function ($query) use ($reportTypeField) {
+                return $query->where('type', $reportTypeField);
             })
             ->whereHas('subreport', function ($query) use ($from, $to, $reportTypeId, $reportTypeField) {
                 $query->whereBetween('created_at', [$from, $to])
@@ -377,19 +377,11 @@ class StatisticsController extends Controller
                         return $query->whereHas('report', function ($query) use ($reportTypeId) {
                             $query->where('type_id', $reportTypeId);
                         });
-                    })
-                    ->when($reportTypeField, function ($query) use ($reportTypeField) {
-                        return $query->whereHas('report', function ($query) use ($reportTypeField) {
-                            $query->whereHas('reportType', function ($query) use ($reportTypeField) {
-                                $query->where('type', $reportTypeField);
-                            });
-                        });
                     });
             });
 
         $transactionsTotal = $transactions->sum('amount');
         $transactions = $transactions->get();
-
         $users = [];
 
         foreach ($transactions as $transaction) {
