@@ -1,0 +1,37 @@
+on:
+  push:
+    branches:
+      - main
+name: 🚀 Deploy website on push
+
+jobs:
+  web-deploy:
+    name: 🎉 Deploy Laravel Backend
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      #sync files via FTP
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+      # Install composer dependencies
+      - name: Install Composer Dependencies
+        run: composer install
+      #configure .env file
+      - name: Configure .env file
+        run: cp .env.example .env
+      # Add JWT secret key
+      - name: Generate JWT Secret Key
+        run: php artisan jwt:secret --force
+      # Run migrations
+      - name: Run Migrations
+        run: php artisan migrate --force
+      # Run schedule:run to test the scheduler task (optional)
+      - name: Run Scheduler
+        run: php artisan schedule:run
+      
