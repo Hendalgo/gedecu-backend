@@ -12,15 +12,6 @@ jobs:
       # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
-      #sync files via FTP
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ftp.gedecuapp.com
-          protocol: ftp
-          port: 21
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASSWORD }}
       # Install composer dependencies
       - name: Install Composer Dependencies
         run: composer install
@@ -30,10 +21,16 @@ jobs:
       # Add JWT secret key
       - name: Generate JWT Secret Key
         run: php artisan jwt:secret --force
-      # Run migrations
-      - name: Run Migrations
-        run: php artisan migrate --force
       # Run schedule:run to test the scheduler task (optional)
       - name: Run Scheduler
         run: php artisan schedule:run
+      #sync files via FTP
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ftp.gedecuapp.com
+          protocol: ftp
+          port: 21
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
       
