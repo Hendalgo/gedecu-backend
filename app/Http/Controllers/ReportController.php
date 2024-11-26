@@ -296,46 +296,47 @@ class ReportController extends Controller
         }
         
         $edited = DB::transaction(function () use ($subreports, $report, $isDraft) {
-            
             if ($isDraft !== "yes") {
                 $report->status = 'completed';
-                foreach ($subreports as $subreport) {
-                    //Undo the amount of the subreport
-                    if(!isset($subreport['id'])){
-                        //Then is a new subreport and we need to create it
-                        $report_type = ReportType::find($report->type_id);
-                        $report_type_config = json_decode($report_type->meta_data, true);
-                        $this->create_subreport([$subreport], $report, $report_type_config);
-                        continue;
-                    }
-                    //Last subreport data
-                    $sub = Subreport::findOrFail($subreport['id']);
-                    $auxSub = Subreport::with('data')->findOrFail($subreport['id']);
-                    $subData = $this->KeyMapValue->transformElement($auxSub)[0];
-    
+            }
+            foreach ($subreports as $subreport) {
+                //Undo the amount of the subreport
+                if(!isset($subreport['id'])){
+                    //Then is a new subreport and we need to create it
                     $report_type = ReportType::find($report->type_id);
                     $report_type_config = json_decode($report_type->meta_data, true);
-                    $this->add_or_substract_amount($subData->data, $report_type_config, $report_type, $report, 'undo', $subreport['id']);
-    
-                    $amount = $subreport['amount'];
-                    $currency = $subreport['currency_id'];
-                    if (array_key_exists('convert_amount', $report_type_config)) {
-                        $amount = $this->calculateAmount($subreport);
-                        $currency = $subreport['conversionCurrency_id'];
-                    }
-    
-                    $sub->amount = $amount;
-                    $sub->currency_id = $currency;
-                    $sub->duplicate = $subreport['isDuplicated'];
-                    $sub->save();
-    
-                    //Edit subreport data
-                    $subreport_data = SubreportData::where('subreport_id', $subreport['id'])->get();
-                    foreach ($subreport_data as $data) {
-                        $data->value = $subreport[$data->key];
-                        $data->save();
-                    }
-    
+                    $this->create_subreport([$subreport], $report, $report_type_config);
+                    continue;
+                }
+                //Last subreport data
+                $sub = Subreport::findOrFail($subreport['id']);
+                $auxSub = Subreport::with('data')->findOrFail($subreport['id']);
+                $subData = $this->KeyMapValue->transformElement($auxSub)[0];
+
+                $report_type = ReportType::find($report->type_id);
+                $report_type_config = json_decode($report_type->meta_data, true);
+                $this->add_or_substract_amount($subData->data, $report_type_config, $report_type, $report, 'undo', $subreport['id']);
+
+                $amount = $subreport['amount'];
+                $currency = $subreport['currency_id'];
+                if (array_key_exists('convert_amount', $report_type_config)) {
+                    $amount = $this->calculateAmount($subreport);
+                    $currency = $subreport['conversionCurrency_id'];
+                }
+
+                $sub->amount = $amount;
+                $sub->currency_id = $currency;
+                $sub->duplicate = $subreport['isDuplicated'];
+                $sub->save();
+
+                //Edit subreport data
+                $subreport_data = SubreportData::where('subreport_id', $subreport['id'])->get();
+                foreach ($subreport_data as $data) {
+                    $data->value = $subreport[$data->key];
+                    $data->save();
+                }
+
+                if ($isDraft !== "yes") {
                     //Add or substract the amount to the bank account
                     $this->add_or_substract_amount($subreport, $report_type_config, $report_type, $report, 'update', $subreport['id']);
                     // Delete Inconsistences
