@@ -543,8 +543,11 @@ class StatisticsController extends Controller
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        // Obtener las cuentas de banco agrupadas por local
-        $banks_accounts = BankAccount::query()
+        $role = $request->get('role', 3);
+        $result = [];
+        if($role == 3){
+            // Obtener las cuentas de banco agrupadas por local
+            $banks_accounts = BankAccount::query()
             ->where('banks_accounts.delete', false)
             ->where('status', 'active')
             ->where('account_type_id', '!=', 3)
@@ -557,32 +560,65 @@ class StatisticsController extends Controller
                 return !is_null($account->store_id);
             });
 
-        // Obtener las cuentas de tipo 3 con delete en false y status en active
-        $accounts_type_3 = BankAccount::query()
-            ->where('banks_accounts.delete', false)
-            ->where('account_type_id', 3)
-            ->where('status', 'active')->get()->toArray();
-        // Combinar los resultados
-        $result = $banks_accounts->groupBy('store_id')->map(function ($accounts, $store_id) use ($accounts_type_3) {
-            $store = $accounts->first()->store;
-            $currencies = $accounts->map(function ($account) use ($accounts_type_3, $store_id) {
-                $currency_id = $account->currency_id;
-               $account_type_3 = collect($accounts_type_3)->firstWhere('store_id', $store_id);
-            
+            // Obtener las cuentas de tipo 3 con delete en false y status en active
+            $accounts_type_3 = BankAccount::query()
+                ->where('banks_accounts.delete', false)
+                ->where('account_type_id', 3)
+                ->where('status', 'active')->get()->toArray();
+            // Combinar los resultados
+            $result = $banks_accounts->groupBy('store_id')->map(function ($accounts, $store_id) use ($accounts_type_3) {
+                $store = $accounts->first()->store;
+                $currencies = $accounts->map(function ($account) use ($accounts_type_3, $store_id) {
+                    $currency_id = $account->currency_id;
+                $account_type_3 = collect($accounts_type_3)->firstWhere('store_id', $store_id);
+                
+                    return [
+                        'currency_id' => $currency_id,
+                        'shortcode' => $account->shortcode,
+                        'symbol' => $account->symbol,
+                        'total' => $account->total,
+                        'total3' => $account_type_3['balance'],
+                    ];
+                });
                 return [
-                    'currency_id' => $currency_id,
-                    'shortcode' => $account->shortcode,
-                    'symbol' => $account->symbol,
-                    'total' => $account->total,
-                    'total3' => $account_type_3['balance'],
+                    'store' => $store,
+                    'currencies' => $currencies
                 ];
-            });
-            return [
-                'store' => $store,
-                'currencies' => $currencies
-            ];
-        })->values();
+            })->values();
+        }else{
+            // Obtener las cuentas de banco agrupadas por usuario
+            $banks_accounts = BankAccount::query()
+                ->where('banks_accounts.delete', false)
+                ->where('status', 'active')
+                ->where('account_type_id', '!=', 3)
+                ->selectRaw('user_id, SUM(balance) as total, currencies.id as currency_id, currencies.shortcode, currencies.symbol')
+                ->leftJoin('currencies', 'banks_accounts.currency_id', '=', 'currencies.id')
+                ->leftJoin('users', 'banks_accounts.user_id', '=', 'users.id')
+                ->where('users.role_id', $role)
+                ->groupBy('user_id', 'currency_id')
+                ->with('user')
+                ->get()
+                ->filter(function ($account) {
+                    return !is_null($account->user_id);
+                });
 
+            // Combinar los resultados
+            $result = $banks_accounts->groupBy('user_id')->map(function ($accounts, $user_id) {
+                $user = $accounts->first()->user;
+                $currencies = $accounts->map(function ($account) {
+                    return [
+                        'currency_id' => $account->currency_id,
+                        'shortcode' => $account->shortcode,
+                        'symbol' => $account->symbol,
+                        'total' => $account->total,
+                    ];
+                });
+                return [
+                    'user' => $user,
+                    'currencies' => $currencies
+                ];
+            })->values();
+        }
         return response()->json($result);
     }
     public function getFinalBalanceTransactions (Request $request){
