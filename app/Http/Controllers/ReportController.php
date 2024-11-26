@@ -333,6 +333,8 @@ class ReportController extends Controller
             foreach ($subreports as $subreport) {
                 //Undo the amount of the subreport
                 if($subreport['id'] === null || $subreport['id'] === 0){
+                    //If the report has the key "id" then unset it
+                    unset($subreport['id']);
                     //Then is a new subreport and we need to create it
                     $report_type = ReportType::find($report->type_id);
                     $report_type_config = json_decode($report_type->meta_data, true);
