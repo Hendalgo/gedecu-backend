@@ -239,7 +239,7 @@ class ReportController extends Controller
         $subreportsCount = $report->subreports()->count();
         $sub = $this->KeyMapValue->transformElement($subreport)[0];
         $currentUser = User::find(auth()->user()->id);
-        if ($currentUser->role->id === 1) {
+        if ($currentUser->role->id === 1 || ($report->status === 'draft' && $report->user_id === $currentUser->id)) {
 
             DB::transaction(function () use ($sub, $report, $id) {
                 //Undo the amount of the subreport
