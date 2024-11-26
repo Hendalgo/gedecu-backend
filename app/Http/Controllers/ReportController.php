@@ -228,7 +228,38 @@ class ReportController extends Controller
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, $id){
+        Validator::make(['id' => $id], [
+            'id' => 'required|exists:reports,id',
+        ])->validate();
+
+        $report = Report::with('subreports')->findOrFail($id);
+        $subreportsCount = $report->subreports()->count();
+        $currentUser = User::find(auth()->user()->id);
+        if ($currentUser->role->id === 1 || ($report->status === 'draft' && $report->user_id === $currentUser->id)) {
+            DB::transaction(function () use ($report) {
+                $report_type = ReportType::find($report->type_id);
+                $report_type_config = json_decode($report_type->meta_data, true);
+                foreach ($report->subreports as $subreport) {
+                    $this->add_or_substract_amount($subreport->data, $report_type_config, $report_type, $report, 'undo', $subreport->id);
+                    Inconsistence::where('subreport_id', $subreport->id)->delete();
+                    Inconsistence::where('associated_id', $subreport->id)->update(['associated_id' => null]);
+                }
+            });
+
+            if ($subreportsCount === 1) {
+                $report->delete();
+
+                return response()->json(['message' => 'Reporte eliminado'], 200);
+            }
+
+            $report->subreports()->delete();
+            $report->delete();
+
+            return response()->json(['message' => 'Reporte eliminado'], 200);
+        }
+    }
+    public function destroySub(Request $request, $id)
     {
         Validator::make(['id' => $id], [
             'id' => 'required|exists:subreports,id',

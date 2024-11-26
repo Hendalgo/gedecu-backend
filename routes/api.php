@@ -54,7 +54,8 @@ Route::middleware('auth.veryfied')->group(function () {
 
             Route::post('reports', [ReportController::class, 'store']);
             Route::put('reports/{id}', [ReportController::class, 'update']);
-            Route::delete('reports/subreports/{id}', [ReportController::class, 'destroy']);
+            Route::delete('reports/subreports/{id}', [ReportController::class, 'destroySub']);
+            Route::delete('reports/{id}', [ReportController::class, 'destroy']);
         });
 
         Route::get('user', [AuthController::class, 'me']);
