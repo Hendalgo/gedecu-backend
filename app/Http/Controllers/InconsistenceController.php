@@ -42,100 +42,10 @@ class InconsistenceController extends Controller
         return response()->json($inconsistence);
     }
 
-    public function index(Request $request)
-    {
-        //Just can access admin
-        $currentUser = auth()->user();
-        if ($currentUser->role_id != 1) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        //Get query parameters
-        $since = $request->input('since');
-        $until = $request->input('until');
-        $search = $request->input('search');
-        $date = $request->input('date');
-        $per_page = $request->input('per_page', 10);
-        $paginate = $request->input('paginate', 'yes');
-        $order_by = $request->input('order', 'created_at');
-        $order = $request->input('order_by', 'desc');
-
-        $subreports = Report::with([
-            'type',
-            'user.store',
-            'subreports' => function ($query) {
-                $query->with([
-                    'data',
-                    'inconsistences' => function ($query) {
-                        $query->whereNull('associated_id'); // Ignora las inconsistencias asociadas
-                    },
-                ]);
-            },
-        ])
-            ->whereHas('subreports', function ($query) {
-                $query->whereExists(function ($query) {
-                    $query->select('*')
-                        ->from('inconsistences')
-                        ->whereColumn('inconsistences.subreport_id', 'subreports.id')
-                        ->where('inconsistences.verified', 0)
-                        ->whereNull('inconsistences.associated_id');
-                });
-            });
-
-        if ($search) {
-            $subreports = $subreports->where(function ($query) use ($search) {
-                $query->whereHas('subreports', function ($query) use ($search) {
-                    $query->whereHas('data', function ($query) use ($search) {
-                        $query->where('value', 'like', '%'.$search.'%');
-                    });
-                })->orWhereHas('user', function ($query) use ($search) {
-                    $query->where('name', 'like', '%'.$search.'%');
-                })->orWhereHas('type', function ($query) use ($search) {
-                    $query->where('name', 'like', '%'.$search.'%');
-                })->orWhere('created_at', 'like', '%'.$search.'%');
-            });
-        }
-
-        if ($since) {
-            $subreports = $subreports->whereHas('subreports', function ($query) use ($since) {
-                $query->where('subreports.created_at', '>=', $since);
-            });
-        }
-        if ($until) {
-            $subreports = $subreports->whereHas('subreports', function ($query) use ($until) {
-                $query->where('subreports.created_at', '<=', $until);
-            });
-        }
-        if ($date) {
-            $subreports = $subreports->whereHas('subreports', function ($query) use ($date) {
-                $query->whereDate('subreports.created_at', $date);
-            });
-        }
-
-        $subreports = $subreports->orderBy($order_by, $order);
-        if ($paginate == 'no') {
-            $subreports = $subreports->get();
-            $subreports->each(function ($report) {
-                $report->subreports->each(function ($subreport) {
-                    $subreport = $this->keyValueMap->transformElement($subreport);
-                });
-            });
-        } else {
-            $subreports = $subreports->paginate($per_page);
-            $subreports->each(function ($report) {
-                $report->subreports->each(function ($subreport) {
-                    $subreport = $this->keyValueMap->transformElement($subreport);
-                });
-            });
-        }
-
-        return response()->json($subreports);
-    }
-
     public function invoke($filtered, $sub, $type, $subreports)
     {
         /**Grouped */
-        if ($type == 1 || $type == 26) {
+        if ($type == 1 || $type == 26 || $type == 48) {
             $this->proveedor_proveedor($filtered, $sub, $type, $subreports);
         }
         /*Grouped */
@@ -378,7 +288,7 @@ class InconsistenceController extends Controller
     /*Check Provider from Gestor type and Provider from provider */
     private function proveedor_proveedor($filtered, $sub, $type, $subreports)
     {
-        if ($type == 1) {
+        if ($type == 1 || $type == 48) {
             $amount = 0;
             $subData = json_decode($sub->data, true);
 
@@ -579,6 +489,13 @@ class InconsistenceController extends Controller
 
     public function check_inconsistences($report, $subreports)
     {
+        // Obtener los IDs adicionales del campo extra_associated
+        $extraAssociatedIds = [];
+        $reportTypeMetaData = json_decode($report->type->meta_data, true);
+        if (isset($reportTypeMetaData['extra_associated'])) {
+            $extraAssociatedIds = $reportTypeMetaData['extra_associated'];
+        }
+
         $toCompare = Subreport::where('duplicate', false)
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->where('verified', 1);
@@ -586,27 +503,22 @@ class InconsistenceController extends Controller
             ->whereDoesntHave('inconsistences', function ($query) {
                 $query->whereNotNull('associated_id');
             })
-            ->whereHas('report', function ($query) use ($report) {
-                $query->whereHas('type', function ($query) use ($report) {
-                    $query->where('associated_type_id', $report->type_id);
+            ->whereHas('report', function ($query) use ($report, $extraAssociatedIds) {
+                $query->whereHas('type', function ($query) use ($report, $extraAssociatedIds) {
+                    $query->where('associated_type_id', $report->type_id)
+                        ->orWhereIn('id', $extraAssociatedIds);
                 });
             })
             ->whereBetween('created_at', [now()->subWeek(), now()])
             ->with('report.type', 'data')
             ->get();
 
-
         $toCompare = $this->keyValueMap->transformElement($toCompare);
-        //Transform the data to json
-        //bc before it works with json data
-        //and now it works with key value
         foreach ($toCompare as $key => $value) {
             $toCompare[$key]->data = json_encode($value->data);
         }
 
         foreach ($subreports as $sub) {
-
-            /**This subreport is alredy in inconsistences table skip */
             $exists = Inconsistence::where(function ($query) use ($sub) {
                 $query->where('associated_id', $sub->id);
             })->OrWhere(function ($query) use ($sub) {
@@ -616,18 +528,15 @@ class InconsistenceController extends Controller
             if ($exists) {
                 continue;
             }
-            //if the subreport is duplicated, then skip it
+
             $sub->data = json_encode($sub->data);
-            //Filter the subreports that have the same currency and amount
             if ($report->type->id != 4 && $report->type->id != 23) {
                 $filtered = $toCompare->filter(function ($value, $key) use ($sub) {
-
                     $valueData = json_decode($value->data, true);
                     $subData = json_decode($sub->data, true);
                     if ($valueData['currency_id'] === $subData['currency_id'] && Carbon::parse($value->created_at)->diffInHours($sub->created_at) <= 24) {
                         return true;
                     }
-
                     return false;
                 });
             } else {
@@ -675,5 +584,94 @@ class InconsistenceController extends Controller
         });
 
         return true;
+    }
+    public function index(Request $request)
+    {
+        //Just can access admin
+        $currentUser = auth()->user();
+        if ($currentUser->role_id != 1) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        //Get query parameters
+        $since = $request->input('since');
+        $until = $request->input('until');
+        $search = $request->input('search');
+        $date = $request->input('date');
+        $per_page = $request->input('per_page', 10);
+        $paginate = $request->input('paginate', 'yes');
+        $order_by = $request->input('order', 'created_at');
+        $order = $request->input('order_by', 'desc');
+
+        $subreports = Report::with([
+            'type',
+            'user.store',
+            'subreports' => function ($query) {
+                $query->with([
+                    'data',
+                    'inconsistences' => function ($query) {
+                        $query->whereNull('associated_id'); // Ignora las inconsistencias asociadas
+                    },
+                ]);
+            },
+        ])
+            ->whereHas('subreports', function ($query) {
+                $query->whereExists(function ($query) {
+                    $query->select('*')
+                        ->from('inconsistences')
+                        ->whereColumn('inconsistences.subreport_id', 'subreports.id')
+                        ->where('inconsistences.verified', 0)
+                        ->whereNull('inconsistences.associated_id');
+                });
+            });
+
+        if ($search) {
+            $subreports = $subreports->where(function ($query) use ($search) {
+                $query->whereHas('subreports', function ($query) use ($search) {
+                    $query->whereHas('data', function ($query) use ($search) {
+                        $query->where('value', 'like', '%'.$search.'%');
+                    });
+                })->orWhereHas('user', function ($query) use ($search) {
+                    $query->where('name', 'like', '%'.$search.'%');
+                })->orWhereHas('type', function ($query) use ($search) {
+                    $query->where('name', 'like', '%'.$search.'%');
+                })->orWhere('created_at', 'like', '%'.$search.'%');
+            });
+        }
+
+        if ($since) {
+            $subreports = $subreports->whereHas('subreports', function ($query) use ($since) {
+                $query->where('subreports.created_at', '>=', $since);
+            });
+        }
+        if ($until) {
+            $subreports = $subreports->whereHas('subreports', function ($query) use ($until) {
+                $query->where('subreports.created_at', '<=', $until);
+            });
+        }
+        if ($date) {
+            $subreports = $subreports->whereHas('subreports', function ($query) use ($date) {
+                $query->whereDate('subreports.created_at', $date);
+            });
+        }
+
+        $subreports = $subreports->orderBy($order_by, $order);
+        if ($paginate == 'no') {
+            $subreports = $subreports->get();
+            $subreports->each(function ($report) {
+                $report->subreports->each(function ($subreport) {
+                    $subreport = $this->keyValueMap->transformElement($subreport);
+                });
+            });
+        } else {
+            $subreports = $subreports->paginate($per_page);
+            $subreports->each(function ($report) {
+                $report->subreports->each(function ($subreport) {
+                    $subreport = $this->keyValueMap->transformElement($subreport);
+                });
+            });
+        }
+
+        return response()->json($subreports);
     }
 }
