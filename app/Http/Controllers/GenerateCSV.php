@@ -51,7 +51,7 @@ class GenerateCSV extends Controller
 
         // Convertir los datos procesados a un array para el CSV
         $csvData = [];
-        $csvData[] = ['Año', 'Mes', 'Nombre del Mes', 'Monto Total', ]; // Encabezados del CSV
+        $csvData[] = ['Año', 'Mes', 'Nombre del Mes', 'Monto Total' ]; // Encabezados del CSV
 
         foreach ($data as $row) {
             // Formatear el monto con el formato 000.000.000,00
