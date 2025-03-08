@@ -64,7 +64,7 @@ class GenerateCSV extends Controller
                 $row['year'],
                 $row['month'],
                 $row['month_name'],
-                'VES'.$formattedAmountWithCurrency, // Monto formateado con la moneda
+                'VES '.$formattedAmountWithCurrency, // Monto formateado con la moneda
             ];
         }
 
