@@ -7,6 +7,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DuplicatedReportController;
+use App\Http\Controllers\GenerateCSV;
 use App\Http\Controllers\InconsistenceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportTypeController;
@@ -43,7 +44,10 @@ Route::group([
 Route::middleware('auth.veryfied')->group(function () {
 
     Route::middleware('check.permissions')->group(function () {
-    
+        
+        //GENERATE CSV
+        Route::get('generate-csv', [GenerateCSV::class, 'generateCSV']);
+
         Route::middleware('assigned.workingdays')->group(function () {
             /**Banks Accounts */
             Route::post('bank-accounts', [BankAccountController::class, 'store']);
