@@ -15,6 +15,7 @@ class GenerateCSV extends Controller
         if (auth()->user()->role_id != 1) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
+
         // Array para almacenar los datos agrupados por mes
         $data = [];
 
@@ -28,13 +29,14 @@ class GenerateCSV extends Controller
                         $monthKey = $date->format('Y-m'); // Formato: Año-Mes (ej. 2023-01)
 
                         foreach ($subreport->data as $dataItem) {
-                           if ($dataItem->key == 'amount') {
+                            if ($dataItem->key == 'amount') {
                                 if (!isset($data[$monthKey])) {
                                     $data[$monthKey] = [
                                         'year' => $date->format('Y'),
                                         'month' => $date->format('m'),
                                         'month_name' => $date->format('F'),
                                         'total_amount' => 0,
+                                        'currency' => '', // Inicializar la moneda
                                     ];
                                 }
                                 $data[$monthKey]['total_amount'] += $dataItem->value;
@@ -49,14 +51,20 @@ class GenerateCSV extends Controller
 
         // Convertir los datos procesados a un array para el CSV
         $csvData = [];
-        $csvData[] = ['Año', 'Mes', 'Nombre del Mes', 'Monto Total']; // Encabezados del CSV
+        $csvData[] = ['Año', 'Mes', 'Nombre del Mes', 'Monto Total', ]; // Encabezados del CSV
 
         foreach ($data as $row) {
+            // Formatear el monto con el formato 000.000.000,00
+            $formattedAmount = number_format($row['total_amount'], 2, ',', '.');
+
+            // Agregar la moneda al final del monto
+            $formattedAmountWithCurrency = $formattedAmount . ' ' . $row['currency'];
+
             $csvData[] = [
                 $row['year'],
                 $row['month'],
                 $row['month_name'],
-                $row['total_amount'],
+                'VES'.$formattedAmountWithCurrency, // Monto formateado con la moneda
             ];
         }
 
